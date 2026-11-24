@@ -7,25 +7,39 @@
   R.STAGES = [
     {
       id: 'city', title: '第一章　ネオン廃都の水道橋', sub: 'STAGE 1  -  NEON RUINS AQUEDUCT', bgm: 'city', len: 3840,
-      ground: [[0, 900], [960, 1500], [1590, 2300], [2360, 3840]],
-      plats: [[1040, 150, 64], [1150, 116, 64], [1516, 160, 56], [1800, 146, 56], [1890, 106, 64], [2460, 150, 56], [2600, 120, 56], [3180, 138, 64], [3560, 138, 64]],
-      enemies: [['robot', 560], ['robot', 760], ['drone', 1100, 96], ['robot', 1260], ['robot', 1420], ['drone', 1330, 100],
-      ['robot', 1760], ['drone', 1960, 90], ['robot', 2060], ['robot', 2180], ['drone', 2230, 110],
-      ['robot', 2520], ['drone', 2600, 80], ['robot', 2700], ['robot', 2800], ['drone', 2760, 100]],
-      items: [['crystal', 430, 150], ['crystal', 1072, 128], ['crystal', 1182, 94], ['crystal', 1544, 138], ['crystal', 1828, 124],
-      ['chest', 1922, 106], ['crystal', 2330, 120], ['crystal', 2488, 128], ['crystal', 2628, 98], ['potion', 2950, 176]],
+      // 高低差のある地形: blocks = 石の段 [x, 幅, 高さ]（地面から積み上がった、乗れる壁）、spikes = トゲ [x, 幅]、plats = 下からすり抜けられる足場 [x, y, 幅]
+      // 段の高さは、ひとつ前の足場から 48 ドット以内（1 回のジャンプで届く）。穴は 100〜120 ドット（途中の足場か、二段ジャンプで越える）
+      ground: [[0, 880], [990, 1480], [1600, 2290], [2390, 3840]],
+      blocks: [[300, 48, 24], [348, 44, 48], [640, 60, 36], [800, 56, 44],
+      [1060, 60, 40], [1120, 72, 72], [1372, 52, 48],
+      [1730, 56, 32], [1786, 56, 64], [1842, 72, 96], [2226, 48, 44],
+      [2470, 64, 48], [2760, 84, 56]],
+      spikes: [[708, 44], [1300, 48], [1930, 56], [2100, 48], [2852, 44]],
+      plats: [[912, 156, 46], [1218, 96, 60], [1500, 152, 40], [1552, 128, 40], [1940, 122, 56], [2030, 96, 56], [2318, 142, 46],
+      [2560, 112, 56], [2650, 84, 56], [3180, 138, 64], [3560, 138, 64]],
+      enemies: [['robot', 560], ['robot', 668], ['drone', 730, 96], ['robot', 770], ['drone', 935, 100],
+      ['drone', 1100, 70], ['robot', 1156], ['robot', 1260], ['drone', 1330, 100], ['robot', 1440], ['drone', 1540, 84],
+      ['robot', 1700], ['robot', 1878], ['drone', 1970, 70], ['robot', 2040], ['robot', 2170], ['drone', 2250, 96], ['drone', 2340, 104],
+      ['robot', 2440], ['drone', 2600, 60], ['robot', 2700], ['robot', 2800], ['drone', 2700, 50], ['robot', 2910]],
+      items: [['crystal', 370, 126], ['crystal', 828, 130], ['crystal', 935, 134], ['crystal', 1156, 100], ['chest', 1248, 96],
+      ['crystal', 1520, 132], ['crystal', 1572, 108], ['crystal', 1878, 76], ['crystal', 1968, 102], ['chest', 2058, 96],
+      ['crystal', 2341, 122], ['crystal', 2588, 92], ['crystal', 2678, 64], ['potion', 2802, 122], ['potion', 2980, 176]],
       checkpoints: [150, 1650, 2920],
       ruins: [[24, 3], [1610, 2], [2880, 2], [3700, 1]],
       boss: { type: 'guard', x: 3560, arena: [3040, 3800], trigger: 3130, name: '重機兵ガーディアン', sub: 'HEAVY GUARDIAN' }
     },
     {
       id: 'school', title: '第二章　玉龍学園　紅い月の下で', sub: 'STAGE 2  -  GYOKURYU ACADEMY', bgm: 'school', len: 3360,
-      ground: [[0, 1100], [1170, 2000], [2080, 3360]],
-      plats: [[1108, 158, 54], [1300, 150, 56], [1400, 114, 64], [1500, 150, 56], [2014, 158, 54], [2790, 136, 60], [2930, 136, 60]],
-      enemies: [['robot', 600], ['robot', 760], ['drone', 700, 96], ['robot', 930], ['drone', 1000, 84],
-      ['robot', 1260], ['drone', 1440, 70], ['robot', 1620], ['robot', 1760], ['drone', 1700, 100], ['drone', 1880, 90]],
-      items: [['crystal', 480, 150], ['crystal', 1136, 136], ['crystal', 1328, 128], ['chest', 1432, 114], ['crystal', 1528, 128],
-      ['crystal', 2042, 136], ['crystal', 2820, 114], ['crystal', 2960, 114]],
+      ground: [[0, 1080], [1190, 1990], [2090, 3360]],
+      blocks: [[420, 56, 28], [476, 56, 56], [690, 64, 44], [840, 48, 36], [888, 52, 72],
+      [1250, 44, 40], [1580, 60, 56], [1640, 72, 92], [1920, 44, 40]],
+      spikes: [[560, 48], [980, 56], [1716, 52], [1810, 52]],
+      plats: [[610, 120, 50], [1112, 152, 52], [1300, 150, 56], [1400, 114, 64], [1490, 84, 56], [1740, 94, 56], [1836, 122, 56],
+      [2018, 150, 50], [2790, 136, 60], [2930, 136, 60]],
+      enemies: [['robot', 380], ['robot', 504], ['drone', 620, 80], ['robot', 722], ['robot', 800], ['drone', 780, 96], ['robot', 914], ['drone', 1010, 84], ['drone', 1135, 100],
+      ['robot', 1310], ['drone', 1440, 60], ['robot', 1460], ['robot', 1540], ['robot', 1676], ['drone', 1700, 50], ['drone', 1790, 76], ['robot', 1880], ['drone', 1960, 90], ['drone', 2040, 100]],
+      items: [['crystal', 504, 114], ['crystal', 635, 98], ['crystal', 914, 98], ['crystal', 1138, 130], ['crystal', 1328, 128], ['chest', 1432, 114], ['crystal', 1518, 62],
+      ['crystal', 1676, 78], ['chest', 1768, 94], ['crystal', 1864, 100], ['crystal', 2043, 128], ['crystal', 2820, 114], ['crystal', 2960, 114]],
       checkpoints: [340, 2150, 2704],
       sakura: [96, 1240, 2170, 2600],
       gate: 196,
@@ -67,6 +81,26 @@
     P.rect(x + 2, y + 8, w - 4, 1, '#37e6ff'); P.rect(x + 6, y + 9, w - 12, 1, '#1aa6c8');
     P.rect(x + 3, y + 10, 3, 3, '#7af3ff'); P.rect(x + w - 6, y + 10, 3, 3, '#7af3ff');
     P.px(x + 4, y + 13, '#37e6ff'); P.px(x + w - 5, y + 13, '#37e6ff');
+  }
+  // 石の段（地面から積み上がった、乗れる壁）
+  function block(P, r, x, h, w) {
+    var y = GY - h;
+    bricks(P, r, x, y, w, h, true);
+    P.rect(x, y, 2, h, ST[5]); P.rect(x + w - 2, y, 2, h, ST[1]);
+    P.rect(x, y, w, 1, '#ffe2ff'); P.rect(x, y + 1, w, 1, '#c79ae8'); P.rect(x, y + 2, w, 1, ST[4]);
+    moss(P, r, x, x + w, y + 3);
+  }
+  // トゲ（桃色に光る結晶の牙）
+  function spikes(P, x, w) {
+    for (var i = 0; i + 6 <= w; i += 6) {
+      P.poly([[x + i, GY], [x + i + 3, GY - 9], [x + i + 6, GY]], '#ff2e88');
+      P.poly([[x + i + 2, GY], [x + i + 3, GY - 7], [x + i + 4, GY]], '#ffb0e0');
+      P.px(x + i + 3, GY - 9, '#ffffff');
+    }
+  }
+  function terrain(P, r, S) {
+    (S.blocks || []).forEach(function (b) { block(P, r, b[0], b[2], b[1]); });
+    (S.spikes || []).forEach(function (k) { spikes(P, k[0], k[1]); });
   }
   // 崩れた石のアーチ（ステージ1 冒頭の遺跡）
   function ruin(P, r, x, n, banner) {
@@ -119,6 +153,7 @@
       for (x = x0; x < x1; x += 5) if (r() < 0.3) P.rect(x, GY, 2 + (r() * 4 | 0), 1, '#ff9ad8');
       moss(P, r, x0, x1, GY + 3); moss(P, r, x0, x1, GY + 18);
     });
+    terrain(P, r, S);
     S.plats.forEach(function (p) { platform(P, p[0], p[1], p[2], false); });
     return cv;
   }
@@ -151,6 +186,7 @@
       P.rect(x0, GY + 8, w, 2, ST[4]); P.rect(x0, GY + 10, w, 1, ST[0]);
       bricks(P, r, x0, GY + 8, 14, 70, true); bricks(P, r, x1 - 14, GY + 8, 14, 70, true);
     });
+    terrain(P, r, S);
     S.plats.forEach(function (p) { platform(P, p[0], p[1], p[2], true); });
     return cv;
   }
@@ -210,6 +246,8 @@
     R.STAGES.forEach(function (S) {
       S.layer = S.id === 'city' ? buildCity(S, BG) : buildSchool(S, BG);
       S.solids = S.ground.map(function (g) { return { x: g[0], y: GY, w: g[1] - g[0], h: 120 }; });
+      S.blockRects = (S.blocks || []).map(function (b) { return { x: b[0], y: GY - b[2], w: b[1], h: b[2] + 60 }; });      // 石の段も、ぶつかる地形に入れる
+      S.solids = S.solids.concat(S.blockRects);
       S.platRects = S.plats.map(function (p) { return { x: p[0], y: p[1], w: p[2] }; });
     });
   };

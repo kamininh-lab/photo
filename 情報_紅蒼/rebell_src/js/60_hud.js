@@ -124,6 +124,10 @@
     S.ground.forEach(function (q) { g.fillRect(bx + q[0] * sx, by, (q[1] - q[0]) * sx, 22); });
     g.fillStyle = '#b49cff';
     S.ground.forEach(function (q) { g.fillRect(bx + q[0] * sx, by, (q[1] - q[0]) * sx, 5); });
+    (S.blocks || []).forEach(function (q) {      // 石の段
+      g.fillStyle = '#8a70e0'; g.fillRect(bx + q[0] * sx, by - q[2] * 0.5, Math.max(4, q[1] * sx), q[2] * 0.5 + 2);
+      g.fillStyle = '#b49cff'; g.fillRect(bx + q[0] * sx, by - q[2] * 0.5, Math.max(4, q[1] * sx), 4);
+    });
     S.plats.forEach(function (q) { g.fillStyle = '#8a70e0'; g.fillRect(bx + q[0] * sx - 2, by - (R.GY - q[1]) * 0.5, Math.max(8, q[2] * sx + 4), 7); });
     G.terminals.forEach(function (tm) { g.fillStyle = tm.on ? CYAN : '#5a8ab0'; g.fillRect(bx + tm.x * sx - 2, by - 12, 5, 12); });
     // 中ボスのいる所（退けるまで、紫の菱形）

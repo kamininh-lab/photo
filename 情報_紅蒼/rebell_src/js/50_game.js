@@ -112,6 +112,12 @@
   function box(b) { return { x: b.x - b.w / 2, y: b.y - b.h, w: b.w, h: b.h }; }
   function onScreen(x, m) { return x > G.cam.x - (m || 40) && x < G.cam.x + R.W + (m || 40); }
   function groundAt(x) { var g = G.S.ground; for (var i = 0; i < g.length; i++) if (x >= g[i][0] && x <= g[i][1]) return true; return false; }
+  // その x で立てる高さ（地面か、石の段のいちばん上）。穴の上なら null
+  function floorAt(x) {
+    var y = groundAt(x) ? GY : null, B = G.S.blockRects || [], i;
+    for (i = 0; i < B.length; i++) if (x >= B[i].x && x <= B[i].x + B[i].w && (y === null || B[i].y < y)) y = B[i].y;
+    return y;
+  }
   function flipRot(p) { return p.flipT > 0 ? p.face * (1 - p.flipT / FLIP) * PI * 2 : 0; }
   R.flipRot = flipRot;
   // 残像を 1 枚置く
@@ -582,11 +588,11 @@
     openChests(hb);
     if (air) {
       // 地面か敵に刺さったら、たぐり寄せに移る
-      var onGround = h[1] >= GY - 3 && groundAt(h[0]);
+      var top = floorAt(h[0]), onGround = top !== null && h[1] >= top - 3;
       if (q.st === 'out' && (struck || onGround)) {
-        q.st = 'reel'; q.t = 0; q.ax = h[0]; q.ay = Math.min(h[1] + 4, GY);
+        q.st = 'reel'; q.t = 0; q.ax = h[0]; q.ay = Math.min(h[1] + 4, top === null ? GY : top);
         R.snd('hit_red'); shake(3); fx({ type: 'spark', x: q.ax, y: q.ay - 4, life: 10, size: 16, col: 'gold' });
-        if (onGround) dust(q.ax, GY, 6);
+        if (onGround) dust(q.ax, top, 6);
         return 0;
       }
       p.vx *= 0.85; p.vy = Math.min(p.vy, 0.5);
@@ -772,7 +778,7 @@
     else if (p.coyote > 0) p.coyote--;
     if (p.flipT > 0 && p.flipT % 4 === 0) ghost(p, 9);
     if (p.y > R.H + 60) {      // 落下
-      p.x = p.safeX; p.y = GY; p.vx = 0; p.vy = 0; p.st = 'free'; p.flipT = 0;
+      p.x = p.safeX; p.y = floorAt(p.safeX) || GY; p.vx = 0; p.vy = 0; p.st = 'free'; p.flipT = 0;
       var keep = p.inv; p.inv = 0; if (!hurtPlayer(14, 0, false)) p.inv = keep; p.vx = 0; p.vy = 0; p.inv = Math.max(p.inv, 90);
     }
   }
@@ -781,7 +787,7 @@
 
   // ---- 敵 ----
   function spawn(type, x, y) {
-    var e = { type: type, x: x, y: y == null ? GY : y, vx: 0, vy: 0, face: -1, st: 'idle', stT: 0, flash: 0, cd: rand(30, 90), animT: rand(0, 60), dead: false, ground: true, invul: 0 };
+    var e = { type: type, x: x, y: y == null ? (floorAt(x) || GY) : y, vx: 0, vy: 0, face: -1, st: 'idle', stT: 0, flash: 0, cd: rand(30, 90), animT: rand(0, 60), dead: false, ground: true, invul: 0 };
     if (type === 'robot') { e.w = 24; e.h = 46; e.hp = e.max = 58; e.exp = 12; }
     else if (type === 'drone') { e.w = 18; e.h = 18; e.hp = e.max = 30; e.exp = 9; e.armor = true; e.baseY = e.y; e.homeX = x; }
     else if (type === 'guard') { e.w = 36; e.h = 66; e.hp = e.max = 620; e.exp = 160; e.armor = true; }
@@ -999,7 +1005,8 @@
       it = G.items[i]; it.t++;
       if (it.loose) {
         it.vy += 0.25; it.x += it.vx; it.y += it.vy;
-        if (it.y >= GY - 12 && groundAt(it.x)) { it.y = GY - 12; it.vy = 0; it.vx = 0; it.loose = false; }
+        var fy = floorAt(it.x);      // 石の段の上にも乗る
+        if (fy !== null && it.vy >= 0 && it.y >= fy - 12) { it.y = fy - 12; it.vy = 0; it.vx = 0; it.loose = false; }
         if (it.y > R.H + 30) it.dead = true;
       }
       if (it.type === 'chest') continue;
@@ -1118,6 +1125,12 @@
     }
   }
 
+  // トゲ: 地面に立っていると刺さる（跳び越えるか、ダッシュで駆け抜ける）
+  function updSpikes() {
+    var p = G.pl, K = G.S.spikes || [], i;
+    if (!p.ground || p.y < GY - 1 || p.inv > 0 || p.st === 'dash' || p.st === 'special' || p.st === 'cross') return;
+    for (i = 0; i < K.length; i++) if (p.x > K[i][0] + 1 && p.x < K[i][0] + K[i][1] - 1) { if (hurtPlayer(12, -p.face, false)) { p.vy = -5; } return; }
+  }
   R.updatePlay = function () {
     G.t++;
     if (G.fadeDir) { G.fade = clamp(G.fade + G.fadeDir * 0.04, 0, 1); if (G.fade === 0 || G.fade === 1) G.fadeDir = 0; }
@@ -1139,7 +1152,7 @@
     updPlayer(); updPShots();
     if (G.slow > 0) G.slow--;
     if (G.cross) updCross(); else if (!(G.slow > 0) || G.t % 3 === 0) { updEnemies(); updShots(); }
-    updItems(); updFx(); updBossTrigger();
+    updItems(); updFx(); updBossTrigger(); updSpikes();
     // カメラ
     var p = G.pl, tx = p.x - R.W * 0.42 + p.face * 26, lo = 0, hi = G.S.len - R.W;
     if (G.arena) { lo = G.arena[0]; hi = G.arena[1] - R.W; }
