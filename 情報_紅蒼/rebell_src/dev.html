@@ -2515,6 +2515,21 @@ else if (e.upd) e.upd(e);
 }
 G.enemies = G.enemies.filter(function (e) { return !e.dead || e === G.boss; });
 }
+var TOUCH = { robot: 6, drone: 5, guard: 10, dragon: 10, karate: 8 };
+function updTouch() {
+var p = G.pl, pb, i, j, e, parts, b;
+if (p.inv > 0 || p.st === 'attack' || p.st === 'dash' || p.st === 'special' || p.st === 'cross' || p.st === 'hurt') return;
+pb = box(p);
+for (i = 0; i < G.enemies.length; i++) {
+e = G.enemies[i];
+if (e.dead || e.dying || e.gone || !TOUCH[e.type] || e.flash > 0 || e.st === 'hurt' || e.st === 'stagger' || e.st === 'intro' || e.invul > 0 || e.hide) continue;
+parts = hurtboxes(e);
+for (j = 0; j < parts.length; j++) {
+b = parts[j];
+if (R.overlap(pb, { x: b.x + 3, y: b.y + 3, w: b.w - 6, h: b.h - 4 })) { hurtPlayer(TOUCH[e.type], p.x >= e.x ? 1 : -1, false); return; }
+}
+}
+}
 function updShots() {
 var p = G.pl, pb = box(p), i, s;
 for (i = 0; i < G.shots.length; i++) {
@@ -2685,6 +2700,7 @@ if (G.comboT > 0) { G.comboT--; if (G.comboT === 0) G.combo = 0; }
 updPlayer(); updPShots();
 if (G.slow > 0) G.slow--;
 if (G.cross) updCross(); else if (!(G.slow > 0) || G.t % 3 === 0) { updEnemies(); updShots(); }
+if (!G.cross) updTouch();
 updItems(); updFx(); updBossTrigger(); updSpikes();
 var p = G.pl, tx = p.x - R.W * 0.42 + p.face * 26, lo = 0, hi = G.S.len - R.W;
 if (G.arena) { lo = G.arena[0]; hi = G.arena[1] - R.W; }
