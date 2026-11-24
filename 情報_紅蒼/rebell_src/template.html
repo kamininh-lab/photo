@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>REBELL ― 紅蒼交錯</title>
+<!-- ドット風フォント（読み込めなくてもシステムフォントで動く） -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #05040f; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; font-family: "DotGothic16", "Yu Gothic UI", "Meiryo", sans-serif; }
+  #wrap { position: relative; width: min(100vw, calc(100vh * 16 / 9)); aspect-ratio: 16 / 9; }
+  #screen { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #0b0a26;
+            touch-action: none; outline: none; }
+  #touch { position: absolute; inset: 0; display: none; pointer-events: none; user-select: none; -webkit-user-select: none; }
+  #touch.on { display: block; }
+  #touch button { position: absolute; pointer-events: auto; touch-action: none; border: 2px solid rgba(255,255,255,.55);
+                  background: rgba(20,16,60,.45); color: #fff; font: bold 2.2vmin "DotGothic16", sans-serif; border-radius: 50%;
+                  width: 11vmin; height: 11vmin; padding: 0; }
+  #touch button.act { background: rgba(255,79,176,.5); }
+  #touch button.sm { width: 8vmin; height: 8vmin; font-size: 1.7vmin; border-radius: 22%; }
+  #err { position: fixed; left: 8px; bottom: 8px; right: 8px; color: #ff9db8; font: 12px monospace; white-space: pre-wrap; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="screen" width="1440" height="810" tabindex="0"></canvas>
+  <div id="touch">
+    <button data-act="left"  style="left:3%;  bottom:8%">◀</button>
+    <button data-act="right" style="left:17%; bottom:8%">▶</button>
+    <button data-act="down"  style="left:10%; bottom:8%">▼</button>
+    <button data-act="attack"  style="right:15%; bottom:6%">攻撃</button>
+    <button data-act="jump"    style="right:3%;  bottom:16%">跳ぶ</button>
+    <button data-act="special" style="right:15%; bottom:26%">特技</button>
+    <button data-act="dash"    style="right:27%; bottom:14%">ダッシュ</button>
+    <button data-act="switch" class="sm" style="right:3%;  bottom:40%">交代</button>
+    <button data-act="cross"  class="sm" style="right:12%; bottom:46%">交錯</button>
+    <button data-act="potion" class="sm" style="left:3%;  bottom:32%">薬</button>
+    <button data-act="crystal" class="sm" style="left:12%; bottom:32%">晶</button>
+    <button data-act="pause"  class="sm" style="left:46%; top:2%">Ⅱ</button>
+  </div>
+</div>
+<div id="err"></div>
+<script>
+// どのファイルで止まったか画面に出す（開発・不具合報告用）
+window.addEventListener('error', function (e) {
+  var el = document.getElementById('err');
+  if (el) el.textContent += (e.message || e) + '  @' + (e.lineno || '') + '\n';
+});
+</script>
+<!--SCRIPTS-->
+</body>
+</html>

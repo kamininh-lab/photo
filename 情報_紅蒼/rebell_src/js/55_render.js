@@ -1,0 +1,343 @@
+// ゲーム画面の描画。背景・敵・エフェクトは 480x270 のドット絵、主人公は用意されたスプライトを細かい解像度で重ねる
+(function () {
+  'use strict';
+  var R = window.REBELL, G = R.game, GY = R.GY, clamp = R.clamp, rand = R.rand, PI = Math.PI;
+  var tintC = null, tintBig = null;
+  var COL = {
+    red: ['#ff2e88', '#ff8ad0', '#fff0fa'], blue: ['#1a9cff', '#6ae8ff', '#f0feff'], gold: ['#ff8a2a', '#ffd36a', '#ffffff']
+  };
+
+  function spr(g, c, x, y, face, ox, oy) {
+    x = Math.round(x); y = Math.round(y);
+    if (face < 0) { g.save(); g.translate(x, y); g.scale(-1, 1); g.drawImage(c, -ox, -oy); g.restore(); }
+    else g.drawImage(c, x - ox, y - oy);
+  }
+  // 主人公のコマを描く（回転 = 宙返り、sx・sy = 踏み切りと着地の伸び縮み、col = 単色で塗る）。
+  // g は表示用のキャンバス。ゲームの 1 ドット単位で位置を決め、絵はその半分の細かさで置く
+  //   br = 立ちポーズの呼吸 { knee, neck: 体を分ける高さ, d: 体の沈み, e: 頭の沈み }
+  function charDraw(g, f, x, y, face, rot, sx, sy, col, br) {
+    var k = R.CHAR_K, c = col ? R.tinted(f, col) : f.c;
+    g.save(); g.translate(Math.round(x), Math.round(y));
+    if (rot) { g.translate(0, -R.CHAR_MID); g.rotate(rot); g.translate(0, R.CHAR_MID); }
+    g.scale(face * (sx || 1) * k, (sy || 1) * k);
+    if (br && (br.d || br.e)) {
+      // 絵を横に切って、上の部分を 1 ドットずつ下げる。下げた部分を後から重ねるので、継ぎ目はできない
+      var kr = f.oy - br.knee, nr = f.oy - br.neck, w = f.w, h = f.h;
+      if (br.d) {
+        g.drawImage(c, 0, kr, w, h - kr, -f.ox, kr - f.oy, w, h - kr);                    // ひざから下はそのまま
+        if (br.e) {
+          g.drawImage(c, 0, nr, w, kr - nr, -f.ox, nr - f.oy + 1, w, kr - nr);            // 体は 1 ドット
+          g.drawImage(c, 0, 0, w, nr, -f.ox, 2 - f.oy, w, nr);                            // 頭は 2 ドット
+        } else g.drawImage(c, 0, 0, w, kr, -f.ox, 1 - f.oy, w, kr);                       // ひざから上を 1 ドット
+      } else {
+        g.drawImage(c, 0, nr, w, h - nr, -f.ox, nr - f.oy, w, h - nr);                    // 首から下はそのまま
+        g.drawImage(c, 0, 0, w, nr, -f.ox, 1 - f.oy, w, nr);                              // 頭だけ 1 ドット
+      }
+    } else g.drawImage(c, -f.ox, -f.oy);
+    g.restore();
+  }
+  // 交代の瞬間に走る、紅と蒼の交差する光
+  function xflash(g, e, cam) {
+    var u = e.t / e.life, x = Math.round(e.x - cam), y = Math.round(e.y), L = 74 * Math.min(1, u * 3.2), i, k;
+    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = 1 - u * u;
+    for (i = 0; i < 2; i++) {
+      var dx = i ? 1 : -1, C = COL[i ? 'blue' : 'red'];
+      for (k = -L; k <= L; k++) {
+        var w = Math.abs(k) < L * 0.3 ? 3 : (Math.abs(k) < L * 0.7 ? 2 : 1);
+        g.fillStyle = Math.abs(k) < L * 0.35 ? C[2] : C[1];
+        g.fillRect(Math.round(x + k * dx), Math.round(y - k * 0.55) - (w >> 1), 1, w);
+      }
+    }
+    g.restore();
+  }
+  function white(c) {
+    var big = c.width > 200;
+    if (big) { if (!tintBig) tintBig = R.mk(c.width, c.height); return R.tint(c, '#ffffff', tintBig); }
+    if (!tintC || tintC.width !== c.width || tintC.height !== c.height) tintC = R.mk(c.width, c.height);
+    return R.tint(c, '#ffffff', tintC);
+  }
+
+  // 三日月形の斬撃。モックに合わせて横に広い楕円にし、白い芯・色のついた外側・尾を引く細い光の筋を重ねる
+  function slash(g, e, cam) {
+    var u = e.t / e.life, f = e.face, cx = e.x - cam, cy = e.y, SX = 1.32;
+    var front = e.a0 + (e.a1 - e.a0) * R.ease(Math.min(1, u * 2.3)), back = e.a0 + (e.a1 - e.a0) * R.ease(Math.max(0, (u - 0.28) / 0.72));
+    if (Math.abs(front - back) < 0.06) return;
+    var C = COL[e.col], n = 18, layer, i, k, a, dir = front > back ? 1 : -1;
+    g.save(); g.globalCompositeOperation = 'lighter';
+    for (layer = 0; layer < 3; layer++) {
+      var rr = e.r - layer * 1.5, th = e.r * [0.5, 0.34, 0.17][layer] * (e.wd || 1);
+      g.globalAlpha = (1 - u * u) * [0.55, 0.8, 1][layer];
+      g.fillStyle = C[layer]; g.beginPath();
+      for (i = 0; i <= n; i++) { k = i / n; a = back + (front - back) * k; g.lineTo(cx + Math.cos(a) * rr * SX * f, cy + Math.sin(a) * rr); }
+      for (i = n; i >= 0; i--) { k = i / n; a = back + (front - back) * k; var t2 = th * Math.pow(k, 0.75) * (1 - Math.pow(k, 8) * 0.7); g.lineTo(cx + Math.cos(a) * (rr - t2) * SX * f, cy + Math.sin(a) * (rr - t2)); }
+      g.closePath(); g.fill();
+    }
+    // 尾を引く細い光の筋（点線）
+    var streak = [[1.07, 0.6, 0], [0.96, 0.85, 1], [0.8, 0.6, 0], [0.64, 0.4, 1], [1.16, 0.35, 1]];
+    g.globalAlpha = (1 - u) * 0.9;
+    for (i = 0; i < streak.length; i++) {
+      var r2 = e.r * streak[i][0], a0 = back - dir * (0.55 - i * 0.07), a1 = back + (front - back) * streak[i][1], step = 1.4 / r2, cnt = 0;
+      g.fillStyle = C[streak[i][2]];
+      for (a = a0; dir > 0 ? a < a1 : a > a1; a += dir * step, cnt++) {
+        if (cnt % 9 > 6) continue;
+        g.fillRect(Math.round(cx + Math.cos(a) * r2 * SX * f), Math.round(cy + Math.sin(a) * r2), 1, 1);
+      }
+    }
+    g.restore();
+  }  function thrust(g, e, cam) {
+    var u = e.t / e.life, C = COL[e.col], x0 = e.x - cam, len = e.len * Math.min(1, u * 3), f = e.face;
+    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = 1 - u * u;
+    var xa = f > 0 ? x0 : x0 - len;
+    g.fillStyle = C[0]; g.fillRect(Math.round(xa), Math.round(e.y - 3), Math.round(len), 6);
+    g.fillStyle = C[1]; g.fillRect(Math.round(xa + (f > 0 ? len * 0.15 : 0)), Math.round(e.y - 2), Math.round(len * 0.85), 4);
+    g.fillStyle = C[2]; g.fillRect(Math.round(xa + (f > 0 ? len * 0.4 : 0)), Math.round(e.y - 1), Math.round(len * 0.6), 2);
+    g.restore();
+  }
+  // ヒットの火花。長い光条が何本も出る星形（モックの橙と白の閃光）
+  function spark(g, e, cam) {
+    var u = e.t / e.life, C = COL[e.col] || COL.gold, x = Math.round(e.x - cam), y = Math.round(e.y), s = e.size * (0.55 + u * 1.0), i, k;
+    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = 1 - u * u;
+    for (i = 0; i < 12; i++) {
+      var a = i * PI / 6 + (e.size % 5) * 0.13 + ((e.x | 0) % 7) * 0.09, L = s * [1.7, 0.55, 1.0, 0.6][i % 4], dx = Math.cos(a), dy = Math.sin(a);
+      for (k = 2; k < L; k++) {
+        g.fillStyle = k < L * 0.45 ? C[2] : (k < L * 0.75 ? C[1] : C[0]);
+        var w = k < L * 0.3 ? 2 : 1; g.fillRect(Math.round(x + dx * k), Math.round(y + dy * k), w, w);
+      }
+    }
+    g.fillStyle = C[2]; var c = Math.max(1, Math.round(s * 0.3 * (1 - u)));
+    g.fillRect(x - c, y - c, c * 2 + 1, c * 2 + 1); g.fillRect(x - c - 2, y - 1, c * 2 + 5, 3); g.fillRect(x - 1, y - c - 2, 3, c * 2 + 5);
+    g.restore();
+  }  function ring(g, e, cam) {
+    var u = e.t / e.life, r = e.r * R.ease(u);
+    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = (1 - u) * 0.9; g.strokeStyle = e.col; g.lineWidth = Math.max(1, 3 * (1 - u));
+    g.beginPath(); g.ellipse(e.x - cam, e.y, r, e.flat ? r * 0.3 : r, 0, 0, PI * 2); g.stroke(); g.restore();
+  }
+  function boom(g, e, cam) {
+    var u = e.t / e.life, r = e.r * (0.3 + 0.7 * R.ease(u)), x = e.x - cam;
+    g.save(); g.globalCompositeOperation = 'lighter';
+    var cols = ['#ff3a6c', '#ff9a3a', '#fff3b0'];
+    for (var i = 0; i < 3; i++) { g.globalAlpha = (1 - u) * (0.5 + i * 0.2); g.fillStyle = cols[i]; g.beginPath(); g.arc(x, e.y, r * (1 - u * 0.4) * (1 - i * 0.28), 0, PI * 2); g.fill(); }
+    g.globalAlpha = (1 - u) * 0.8; g.strokeStyle = '#ff7ad1'; g.lineWidth = 2; g.beginPath(); g.arc(x, e.y, r, 0, PI * 2); g.stroke();
+    g.restore();
+  }
+  function quake(g, e, cam) {      // 紅蓮砕: 地面から突き上がる光の牙
+    g.save(); g.globalCompositeOperation = 'lighter';
+    for (var k = 1; k <= (e.n || 5); k++) {
+      var t = e.t - k * 3; if (t < 0 || t > 16) continue;
+      var u = t / 16, h = (44 - k * 5) * Math.sin(Math.min(1, u * 2.2) * PI / 2) * (1 - u * 0.3);
+      for (var s = -1; s <= 1; s += 2) {
+        var x = e.x - cam + s * k * 20;
+        g.globalAlpha = 1 - u;
+        g.fillStyle = '#ff2e88'; g.beginPath(); g.moveTo(x - 7, e.y); g.lineTo(x + s * 3, e.y - h); g.lineTo(x + 7, e.y); g.fill();
+        g.fillStyle = '#ffd0ec'; g.beginPath(); g.moveTo(x - 3, e.y); g.lineTo(x + s * 2, e.y - h * 0.75); g.lineTo(x + 3, e.y); g.fill();
+      }
+    }
+    g.restore();
+  }
+  function crack(g, e, cam) {
+    var u = e.t / e.life, x = Math.round(e.x - cam);
+    g.save(); g.globalAlpha = 1 - u; g.fillStyle = '#ffd0ec';
+    for (var i = -3; i <= 3; i++) g.fillRect(x + i * 5, e.y - 1 - (3 - Math.abs(i)) * Math.round(3 * (1 - u)), 2, 2 + (3 - Math.abs(i)));
+    g.restore();
+  }
+  // 魔法陣（原画・ポスター中央の紋）
+  function circle(g, x, y, r, rot, alpha) {
+    if (r < 2) return;
+    g.save(); g.globalCompositeOperation = 'lighter'; g.translate(x, y); g.lineWidth = 1;
+    var i, a;
+    for (i = 0; i < 4; i++) { g.globalAlpha = alpha * (i % 2 ? 0.9 : 0.7); g.strokeStyle = i % 2 ? '#37e6ff' : '#ff4fb0'; g.beginPath(); g.arc(0, 0, r * (1 - i * 0.2), 0, PI * 2); g.stroke(); }
+    g.rotate(rot);
+    for (var s = 0; s < 2; s++) {
+      g.strokeStyle = s ? '#7af3ff' : '#ff7ad1'; g.globalAlpha = alpha; g.beginPath();
+      for (i = 0; i <= 3; i++) { a = i * PI * 2 / 3 + s * PI / 3; g.lineTo(Math.cos(a) * r * 0.8, Math.sin(a) * r * 0.8); }
+      g.stroke();
+    }
+    g.strokeStyle = '#ffffff'; g.globalAlpha = alpha * 0.8;
+    for (i = 0; i < 6; i++) { a = i * PI / 3; g.beginPath(); g.moveTo(Math.cos(a) * r * 0.2, Math.sin(a) * r * 0.2); g.lineTo(Math.cos(a) * r, Math.sin(a) * r); g.stroke(); }
+    g.rotate(-rot * 2.3);
+    for (i = 0; i < 12; i++) { a = i * PI / 6; g.fillStyle = i % 2 ? '#37e6ff' : '#ff4fb0'; g.fillRect(Math.round(Math.cos(a) * r * 1.08) - 1, Math.round(Math.sin(a) * r * 1.08) - 1, 2, 2); }
+    g.restore();
+  }
+  R.drawMagicCircle = circle;
+
+  function drawEnemy(g, e, cam) {
+    var S, an, fr, c, x = e.x - cam;
+    if (e.type === 'dragon') {
+      if (e.gone) return;
+      c = R.Dragon.render(e.pose);
+      var jx = e.st === 'die' ? rand(-2, 2) : 0;
+      if (e.st === 'die' && e.stT > 110 && (e.stT >> 1) % 2) return;
+      g.drawImage(e.flash > 0 && (e.flash >> 1) % 2 === 0 ? white(c) : c, Math.round(x - R.Dragon.ox + jx), Math.round(e.y - R.Dragon.oy));
+      return;
+    }
+    if (e.type === 'drone') {
+      S = R.SPR.drone; c = S.fly.frames[(e.animT >> 3) % 2];
+      if (e.flash > 0 || (e.aim > 0 && (e.aim >> 2) % 2)) c = white(c);
+      spr(g, c, x, e.y, e.face, S.ox, S.oy);
+      if (e.aim > 0) { g.fillStyle = '#ff3048'; g.fillRect(Math.round(x) - 1, Math.round(e.y) - 18, 2, 5); g.fillRect(Math.round(x) - 1, Math.round(e.y) - 12, 2, 2); }
+      return;
+    }
+    S = e.type === 'guard' ? R.SPR.guard : R.SPR.robot;
+    var t = e.stT, warn = false;
+    if (e.st === 'walk') { an = 'walk'; fr = Math.floor(e.animT / 7) % 6; }
+    else if (e.st === 'attack') { an = 'attack'; fr = t < 12 ? 0 : t < 24 ? 1 : t < 30 ? 2 : t < 42 ? 3 : 4; warn = t < 24; }
+    else if (e.st === 'punch') { an = 'attack'; fr = t < 13 ? 0 : t < 26 ? 1 : t < 32 ? 2 : t < 46 ? 3 : 4; warn = t < 26; }
+    else if (e.st === 'slam') { an = 'slam'; fr = t < 18 ? 0 : t < 36 ? 1 : t < 42 ? 2 : t < 58 ? 3 : 4; warn = t < 36; }
+    else if (e.st === 'charge') { if (t < 34) { an = 'attack'; fr = 1; warn = true; } else if (t < 80) { an = 'walk'; fr = Math.floor(t / 3) % 6; } else { an = 'walk'; fr = 0; } }
+    else if (e.st === 'hurt') { an = 'hurt'; fr = 0; }
+    else { an = 'walk'; fr = 0; }
+    c = S[an].frames[fr];
+    if (e.flash > 0 && (e.flash >> 1) % 2 === 0) c = white(c);
+    spr(g, c, x, e.y, e.face, S.ox, S.oy);
+    if (warn && (G.t >> 2) % 2) { var hx = Math.round(x), hy = Math.round(e.y - e.h - 16); g.fillStyle = '#ff3048'; g.fillRect(hx - 1, hy, 3, 7); g.fillRect(hx - 1, hy + 9, 3, 3); g.fillStyle = '#ffd0d6'; g.fillRect(hx, hy + 1, 1, 5); }
+  }
+  function drawShot(g, s, cam) {
+    var x = Math.round(s.x - cam), y = Math.round(s.y), I = R.SPR.items, i;
+    if (s.type === 'bullet') g.drawImage(I.bullet, x - 4, y - 4);
+    else if (s.type === 'fireball') g.drawImage(I.fireball, x - 8, y - 8);
+    else if (s.type === 'flame') {
+      var u = s.t / s.life, r = Math.max(2, Math.round(s.r));
+      g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = (1 - u) * 0.75;
+      g.fillStyle = u < 0.25 ? '#fff3b0' : u < 0.55 ? '#ff9a3a' : '#ff3a6c';
+      g.fillRect(x - r, y - r + 1, r * 2, r * 2 - 2); g.fillRect(x - r + 1, y - r, r * 2 - 2, r * 2);
+      g.restore();
+    } else if (s.type === 'shock') {
+      g.save(); g.globalCompositeOperation = 'lighter';
+      var d = s.vx > 0 ? 1 : -1;
+      for (i = 0; i < 5; i++) {
+        var hh = s.h * (1 - i * 0.18) * (0.85 + 0.15 * Math.sin(s.t * 0.8 + i));
+        g.fillStyle = ['#ffffff', '#ffd0ec', '#ff7ad1', '#ff2e88', '#a81868'][i];
+        g.fillRect(x - d * i * 4 - 2, Math.round(y - hh), 4, Math.round(hh));
+      }
+      g.restore();
+    } else if (s.type === 'pillar') {
+      g.save();
+      if (s.t < s.warn) {
+        if ((s.t >> 2) % 2) { g.fillStyle = '#ff3048'; g.fillRect(x - 13, y - 1, 26, 2); g.fillRect(x - 9, y - 3, 18, 1); }
+        g.globalAlpha = 0.35 + 0.3 * (s.t / s.warn); g.fillStyle = '#ff5a6a'; g.fillRect(x, y - 150, 1, 150);
+      } else {
+        var k = s.t > s.life - 12 ? (s.life - s.t) / 12 : Math.min(1, (s.t - s.warn) / 5);
+        g.globalCompositeOperation = 'lighter';
+        for (var yy = 0; yy < 200; yy += 3) {
+          var w = (13 + Math.sin(yy * 0.2 + s.t * 0.9) * 3) * k;
+          g.fillStyle = '#ff2e60'; g.fillRect(Math.round(x - w), y - yy - 3, Math.round(w * 2), 3);
+          g.fillStyle = '#ff9a3a'; g.fillRect(Math.round(x - w * 0.6), y - yy - 3, Math.round(w * 1.2), 3);
+          g.fillStyle = '#fff3b0'; g.fillRect(Math.round(x - w * 0.25), y - yy - 3, Math.round(w * 0.5), 3);
+        }
+      }
+      g.restore();
+    }
+  }
+
+  // ---- 1 フレームの描画。奥から順に 4 回に分けて呼ぶ ----
+  var cam = 0, oy = 0;      // いまのカメラ位置と、画面ゆれの縦ずれ
+
+  // (1) 背景。bg = 480x270 の背景用キャンバス
+  R.renderBack = function (bg) {
+    var S = G.S, sh = G.cam.shake;
+    cam = Math.round(clamp(G.cam.x + (sh > 0.4 ? rand(-1, 1) * sh : 0), 0, S.len - R.W)); oy = sh > 0.4 ? Math.round(rand(-1, 1) * sh * 0.5) : 0;
+    R.viewCam = cam; R.viewOy = oy;
+    R.drawBackdrop(bg, S, cam, G.t, G.rage);
+    bg.drawImage(S.layer, cam, 0, R.W, R.H, 0, oy, R.W, R.H);
+    if (G.slow > 0) { bg.fillStyle = 'rgba(40,70,220,' + (0.24 * Math.min(1, G.slow / 12)) + ')'; bg.fillRect(0, 0, R.W, R.H); }      // ジャスト回避のスロー中は青く沈む
+    var X = G.cross;
+    if (X) {
+      var da = Math.min(1, X.t / 20) * (X.t > 100 ? (118 - X.t) / 18 : 1);
+      bg.fillStyle = 'rgba(8,2,30,' + (0.68 * da) + ')'; bg.fillRect(0, 0, R.W, R.H);
+      circle(bg, X.x - cam, X.y - 30, 78 * R.ease(Math.min(1, X.t / 26)) * (X.t > 96 ? 1 + (X.t - 96) * 0.06 : 1), X.t * 0.04, da);
+      circle(bg, X.x - cam, X.y - 30, 40 * R.ease(Math.min(1, X.t / 30)), -X.t * 0.07, da * 0.8);
+    }
+  };
+
+  // (2) 主人公の後ろに描くもの（端末・アイテム・敵）。fg = 480x270 の透明なキャンバス
+  R.renderMid = function (fg) {
+    var I = R.SPR.items, i, e;
+    fg.clearRect(0, 0, R.W, R.H); fg.imageSmoothingEnabled = false;
+    fg.save(); fg.translate(0, oy);
+    // 端末
+    for (i = 0; i < G.terminals.length; i++) { var tm = G.terminals[i]; fg.drawImage(I.terminal[tm.on ? ((G.t >> 4) % 2) : 0], Math.round(tm.x - cam - 17), GY - 56); if (!tm.on && (G.t >> 4) % 2) { fg.fillStyle = '#7af3ff'; fg.fillRect(Math.round(tm.x - cam) - 1, GY - 66, 2, 5); fg.fillRect(Math.round(tm.x - cam) - 3, GY - 62, 6, 1); } }
+    // アイテム
+    for (i = 0; i < G.items.length; i++) {
+      var it = G.items[i], ix = Math.round(it.x - cam);
+      if (ix < -30 || ix > R.W + 30) continue;
+      if (it.type === 'crystal') { var bob = it.loose ? 0 : Math.round(Math.sin((G.t + it.x) * 0.07) * 3); fg.drawImage(I.crystal[(G.t >> 3) % 4], ix - 7, Math.round(it.y) - 9 + bob); if ((G.t + (it.x | 0)) % 40 < 6) { fg.fillStyle = '#ffffff'; fg.fillRect(ix + 5, Math.round(it.y) - 10 + bob, 1, 5); fg.fillRect(ix + 3, Math.round(it.y) - 8 + bob, 5, 1); } }
+      else if (it.type === 'potion') fg.drawImage(I.potion, ix - 6, Math.round(it.y) - 8 + (it.loose ? 0 : Math.round(Math.sin((G.t + it.x) * 0.07) * 2)));
+      else if (it.type === 'chest') fg.drawImage(I.chest[it.open ? 1 : 0], ix - 13, Math.round(it.y) - 22);
+    }
+    // 敵
+    for (i = 0; i < G.enemies.length; i++) { e = G.enemies[i]; if (!e.dead && e.x > cam - 260 && e.x < cam + R.W + 200) drawEnemy(fg, e, cam); }
+    // 斬撃の弧・突きの線・輪・魔法陣（主人公の絵を隠さないよう、後ろに描く）
+    for (i = 0; i < G.fx.length; i++) {
+      e = G.fx[i];
+      if (e.type === 'slash') slash(fg, e, cam); else if (e.type === 'thrust') thrust(fg, e, cam); else if (e.type === 'ring') ring(fg, e, cam);
+      else if (e.type === 'circle') circle(fg, e.x - cam, e.y, e.r * (0.4 + 0.6 * R.ease(Math.min(1, e.t / (e.life * 0.5)))), e.t * 0.12, 1 - e.t / e.life);
+    }
+    fg.restore();
+  };
+
+  // (3) 主人公（残像・合体技の相棒・プレイヤー・スプライトのエフェクト）。
+  //     g = 表示用のキャンバス、S = ゲームの 1 ドットを何ピクセルで表示しているか
+  R.renderChars = function (g, S) {
+    var p = G.pl, X = G.cross, i, e, f;
+    g.save(); g.setTransform(S, 0, 0, S, 0, oy * S);
+    g.imageSmoothingEnabled = (S === 3); if (S === 3) g.imageSmoothingQuality = 'high';      // 1.5 倍だけは、にじませたほうがドットがそろって見える
+    // 残像（交代で跳び去る相棒は、元の色のまま薄れていく）
+    for (i = 0; i < G.ghosts.length; i++) {
+      var gh = G.ghosts[i], gu = gh.t / gh.life;
+      if (gh.leave) { g.globalAlpha = 0.95 * (1 - gu * gu); charDraw(g, gh.f, gh.x - cam, gh.y, gh.face, 0, 1, 1); }
+      g.globalAlpha = (gh.leave ? 0.45 * gu : (gh.faint ? 0.26 : 0.5)) * (1 - gu);
+      charDraw(g, gh.f, gh.x - cam, gh.y, gh.face, gh.rot || 0, 1, 1, gh.who === 'aoi' ? '#5ad8ff' : '#ff6ac8');
+    }
+    g.globalAlpha = 1;
+    // 合体技中の相棒
+    if (X) {
+      var o = p.who === 'kurenai' ? 'aoi' : 'kurenai';
+      var ox = X.x + X.face * (X.t < 34 ? 56 : 56 - Math.min(1, (X.t - 34) / 14) * 112);
+      g.globalAlpha = Math.min(1, X.t / 12) * (X.t > 104 ? (118 - X.t) / 14 : 1);
+      charDraw(g, R.crossFrame(o, X.t), ox - cam, X.y, X.t < 48 ? -X.face : X.face, 0, 1, 1);
+      g.globalAlpha = 1;
+    }
+    // プレイヤー
+    f = R.curFrame(p);
+    var st = R.curStand, br = null;
+    if (st && G.state !== 'pause') { var bb = R.breath(st, p.animT); br = { knee: st.knee, neck: st.neck, d: bb[0], e: bb[1] }; }
+    else if (st) br = R.lastBreath || null;      // ポーズ中は、止めた瞬間の姿のまま
+    R.lastBreath = br;
+    var blink = p.inv > 0 && p.st !== 'dash' && p.st !== 'special' && p.st !== 'cross' && !X && (G.t >> 1) % 2 === 0 && p.inv < 70 && G.state === 'play';
+    if (!blink) {
+      var psx = 1, psy = 1;
+      if (p.landT > 0 && p.ground && p.st === 'free') { psy = 1 - 0.1 * p.landT / 7; psx = 1 + 0.08 * p.landT / 7; }      // 着地でつぶれる
+      else if (p.stretchT > 0 && p.st === 'free') { psy = 1 + 0.1 * p.stretchT / 6; psx = 1 - 0.07 * p.stretchT / 6; }     // 踏み切りで伸びる
+      charDraw(g, f, p.x - cam, p.y, p.face, R.flipRot(p), psx, psy, p.hurtFlash > 0 && G.state === 'play' ? '#ffffff' : null, br);
+    }
+    // スプライトのコマを使ったエフェクト（合体技のとどめの光の柱）
+    for (i = 0; i < G.fx.length; i++) {
+      e = G.fx[i]; if (e.type !== 'sprfx') continue;
+      var u = e.t / e.life;
+      g.globalAlpha = u > 0.7 ? (1 - u) / 0.3 : 1;
+      charDraw(g, R.frame(e.who, e.group, u < 0.3 ? e.i0 : e.i1), e.x - cam, e.y, 1, 0, 1, 1);
+    }
+    g.restore();
+  };
+
+  // (4) 主人公の手前に描くもの（弾・火花や爆発・粒）
+  R.renderFront = function (fg) {
+    var i, e;
+    fg.clearRect(0, 0, R.W, R.H); fg.imageSmoothingEnabled = false;
+    fg.save(); fg.translate(0, oy);
+    for (i = 0; i < G.shots.length; i++) drawShot(fg, G.shots[i], cam);
+    for (i = 0; i < G.fx.length; i++) {
+      e = G.fx[i];
+      if (e.type === 'spark') spark(fg, e, cam); else if (e.type === 'boom') boom(fg, e, cam); else if (e.type === 'quake') quake(fg, e, cam);
+      else if (e.type === 'crack') crack(fg, e, cam); else if (e.type === 'xflash') xflash(fg, e, cam);
+    }
+    for (i = 0; i < G.parts.length; i++) {
+      var q = G.parts[i], qx = Math.round(q.x - cam), qy = Math.round(q.y);
+      if (qx < -8 || qx > R.W + 8) continue;
+      if (q.petal) { fg.globalAlpha = 0.9; fg.drawImage(R.BG.petal, qx, qy); continue; }
+      fg.globalAlpha = Math.min(1, (1 - q.t / q.life) * 1.6); fg.fillStyle = q.col; fg.fillRect(qx, qy, q.size, q.size);
+    }
+    fg.globalAlpha = 1;
+    fg.restore();
+  };
+})();

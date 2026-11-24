@@ -1,0 +1,537 @@
+// HUD と各画面（タイトル・ポーズ・クリアなど）。1920x1080 の仮想座標で、高解像度のまま描く。
+(function () {
+  'use strict';
+  var R = window.REBELL, G = R.game, clamp = R.clamp, PI = Math.PI;
+  var UI = '"DotGothic16","Yu Gothic UI","Meiryo",sans-serif', SERIF = 'Georgia,"Times New Roman","Yu Mincho",serif', MIN = '"Yu Mincho","Hiragino Mincho ProN",Georgia,serif';
+  var RED = '#ff4a5e', CYAN = '#37e6ff', PINK = '#ff4fb0';
+
+  function T(g, s, x, y, size, col, align, font, stroke, sw) {
+    g.font = size + 'px ' + (font || UI); g.textAlign = align || 'left'; g.textBaseline = 'alphabetic';
+    if (stroke) { g.lineJoin = 'round'; g.lineWidth = sw || Math.max(4, size * 0.18); g.strokeStyle = stroke; g.strokeText(s, x, y); }
+    g.fillStyle = col; g.fillText(s, x, y);
+  }
+  // 角を落とした枠（ドット絵風の角丸）
+  function cham(g, x, y, w, h, c) {
+    g.beginPath(); g.moveTo(x + c, y); g.lineTo(x + w - c, y); g.lineTo(x + w, y + c); g.lineTo(x + w, y + h - c);
+    g.lineTo(x + w - c, y + h); g.lineTo(x + c, y + h); g.lineTo(x, y + h - c); g.lineTo(x, y + c); g.closePath();
+  }
+  function panel(g, x, y, w, h, c, fill, line, lw) {
+    cham(g, x, y, w, h, c); if (fill) { g.fillStyle = fill; g.fill(); }
+    if (line) { g.lineWidth = lw || 4; g.strokeStyle = line; g.lineJoin = 'miter'; g.stroke(); }
+  }
+  function bar(g, x, y, w, h, v, c1, c2) {
+    panel(g, x, y, w, h, 6, '#15122e', '#ffffff', 4);
+    var iw = (w - 12) * clamp(v, 0, 1);
+    if (iw > 1) {
+      var gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, c1); gr.addColorStop(0.55, c2); gr.addColorStop(1, c1);
+      g.fillStyle = gr; g.fillRect(x + 6, y + 6, iw, h - 12);
+      g.fillStyle = 'rgba(255,255,255,.55)'; g.fillRect(x + 8, y + 7, Math.max(0, iw - 4), 3);
+    }
+  }
+  function pix(g, img, x, y, w, h) { g.imageSmoothingEnabled = false; g.drawImage(img, x, y, w, h); }
+
+  function logo(g, cx, y, s) {
+    g.save(); g.translate(cx, y); g.scale(s, s);
+    g.font = 'italic 104px ' + SERIF; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+    g.lineJoin = 'round'; g.lineWidth = 12; g.strokeStyle = 'rgba(18,10,48,.9)'; g.strokeText('REBELL', 0, 0);
+    g.fillStyle = 'rgba(255,60,150,.9)'; g.fillText('REBELL', -4, 3);
+    g.fillStyle = 'rgba(60,220,255,.9)'; g.fillText('REBELL', 4, -2);
+    var gr = g.createLinearGradient(0, -80, 0, 6); gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.5, '#e6dcff'); gr.addColorStop(1, '#a898e8');
+    g.fillStyle = gr; g.fillText('REBELL', 0, 0);
+    // きらめき
+    g.fillStyle = '#ffffff'; g.fillRect(168, -98, 3, 44); g.fillRect(148, -78, 44, 3);
+    g.fillStyle = '#ff7ad1'; g.fillRect(-212, -40, 2, 22); g.fillRect(-222, -30, 22, 2);
+    // 副題
+    g.font = '46px ' + MIN; var sub = ['紅', '蒼', '交', '錯'], cols = [RED, CYAN, '#ff7ad1', '#7af3ff'];
+    for (var i = 0; i < 4; i++) { g.lineWidth = 8; g.strokeStyle = 'rgba(18,10,48,.9)'; g.strokeText(sub[i], -93 + i * 62, 58); g.fillStyle = cols[i]; g.fillText(sub[i], -93 + i * 62, 58); }
+    g.fillStyle = '#ff7ad1'; g.fillRect(-230, 40, 86, 3); g.fillStyle = '#7af3ff'; g.fillRect(144, 40, 86, 3);
+    g.restore();
+  }
+  R.drawLogo = logo;
+
+  // ---- 顔グラフィック（用意された表情一覧。expr = normal / damage / anger / joy）----
+  function faceKey(who, expr) { return (who === 'kurenai' ? 'k_' : 'a_') + expr; }
+  // 枠（x, y, w, h）を埋めるように顔を描く。kind = 'hud'（顔のアップ）か 'band'（目のあたりの横長）。縦横比が違うぶんは中央で切る
+  function drawFace(g, who, expr, kind, x, y, w, h) {
+    var key = faceKey(who, expr), img = R.IMG['face_' + key], FM = window.REBELL_FACES;
+    if (!img || !img.complete || !img.naturalWidth || !FM || !FM[key]) return false;
+    var m = FM[key][kind] || FM[key].hud, s = FM.scale, sx = m[0] * s, sy = m[1] * s, sw = m[2] * s, sh = m[3] * s, ar = w / h;
+    if (sw / sh > ar) { sx += (sw - sh * ar) / 2; sw = sh * ar; } else { sy += (sh - sw / ar) / 2; sh = sw / ar; }
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    g.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+    return true;
+  }
+  // いまの表情。やられた直後・体力わずか = ダメージ、攻撃中 = 怒り、アイテムやレベルアップ = 喜び
+  function exprOf(who) {
+    var p = G.pl, c = p.chars[who], act = p.who === who;
+    if (c.down || G.state === 'gameover') return 'damage';
+    if (G.state === 'clear') return 'joy';
+    if (act && p.hurtFaceT > 0) return 'damage';
+    if (p.joyT > 0 && (act || p.joyAll)) return 'joy';
+    if (G.cross) return 'anger';
+    if (act && p.angerT > 0) return 'anger';
+    if (act && c.hp <= c.max * 0.25) return 'damage';
+    return 'normal';
+  }
+  // 八角形の枠つきの顔
+  function faceFrame(g, who, expr, x, y, w, h, col, glow, shade) {
+    g.save();
+    if (glow) { g.shadowColor = col; g.shadowBlur = 26; cham(g, x + 2, y + 2, w - 4, h - 4, 16); g.fillStyle = col; g.fill(); g.shadowBlur = 0; }
+    cham(g, x, y, w, h, 16); g.fillStyle = '#2e2170'; g.fill();
+    g.save(); cham(g, x, y, w, h, 16); g.clip();
+    drawFace(g, who, expr, 'hud', x, y, w, h);
+    if (shade) { g.fillStyle = shade; g.fillRect(x, y, w, h); }
+    g.restore();
+    g.lineJoin = 'miter'; cham(g, x, y, w, h, 16); g.lineWidth = 6; g.strokeStyle = '#ffffff'; g.stroke();
+    cham(g, x + 5, y + 5, w - 10, h - 10, 12); g.lineWidth = 2; g.strokeStyle = glow ? col : 'rgba(255,255,255,.4)'; g.stroke();
+    g.restore();
+  }
+  function portrait(g, who, x, y, w, h, active, down) {
+    faceFrame(g, who, exprOf(who), x, y, w, h, who === 'kurenai' ? PINK : CYAN, active, down ? 'rgba(40,0,10,.62)' : (active ? null : 'rgba(10,8,40,.42)'));
+    if (down) T(g, 'DOWN', x + w / 2, y + h / 2 + 12, 34, '#ff5a6a', 'center', UI, '#1a0a20');
+  }
+  // 武器の絵（表情一覧に描かれている大鎌と刀）
+  function icon(g, key, x, y, w, h) {
+    var im = R.IMG[key]; if (!im || !im.complete || !im.naturalWidth) return;
+    g.save(); g.imageSmoothingEnabled = true; g.drawImage(im, x, y, w, h); g.restore();
+  }
+
+  function charBlock(g, who, y, active) {
+    var p = G.pl, c = p.chars[who], K = who === 'kurenai';
+    portrait(g, who, 69, y, 168, 114, active, c.down);
+    T(g, K ? '紅' : '蒼', 281, y + 50, 62, K ? RED : CYAN, 'center', MIN, '#120a30', 8);
+    T(g, K ? 'KURENAI' : 'AOI', 281, y + 78, 19, '#ffffff', 'center', UI, '#120a30', 4);
+    T(g, 'Lv.' + p.lv, 596, y + 30, 32, '#ffffff', 'center', SERIF, '#120a30', 6);
+    T(g, 'HP', 345, y + 66, 30, '#ffffff', 'left', UI, '#120a30', 6);
+    bar(g, 396, y + 40, 262, 30, c.hp / c.max, '#ff7a86', '#d82c46');
+    T(g, 'SP', 345, y + 101, 30, '#ffffff', 'left', UI, '#120a30', 6);
+    bar(g, 396, y + 75, 262, 30, c.sp / c.maxsp, '#7af3ff', '#16b6e6');
+    T(g, Math.ceil(c.hp) + '/' + c.max, 652, y + 62, 17, '#ffffff', 'right', UI, '#120a30', 4);
+    if (c.sp >= 30 && active && !c.down) { g.fillStyle = '#ffffff'; g.fillRect(396 + 6 + 250 * 0.3, y + 79, 2, 22); }
+  }
+
+  function minimap(g) {
+    var S = G.S, x = 1552, y = 20, w = 343, h = 143, i;
+    panel(g, x, y, w, h, 10, 'rgba(22,16,60,.86)', '#ffffff', 5);
+    g.save(); cham(g, x + 4, y + 4, w - 8, h - 8, 8); g.clip();
+    g.strokeStyle = 'rgba(120,100,220,.35)'; g.lineWidth = 2;
+    for (i = 1; i < 12; i++) { g.beginPath(); g.moveTo(x + i * 29, y); g.lineTo(x + i * 29, y + h); g.stroke(); }
+    for (i = 1; i < 5; i++) { g.beginPath(); g.moveTo(x, y + i * 29); g.lineTo(x + w, y + i * 29); g.stroke(); }
+    var sx = (w - 30) / S.len, bx = x + 15, by = y + 96;
+    g.fillStyle = '#8a70e0';
+    S.ground.forEach(function (q) { g.fillRect(bx + q[0] * sx, by, (q[1] - q[0]) * sx, 22); });
+    g.fillStyle = '#b49cff';
+    S.ground.forEach(function (q) { g.fillRect(bx + q[0] * sx, by, (q[1] - q[0]) * sx, 5); });
+    S.plats.forEach(function (q) { g.fillStyle = '#8a70e0'; g.fillRect(bx + q[0] * sx - 2, by - (R.GY - q[1]) * 0.5, Math.max(8, q[2] * sx + 4), 7); });
+    G.terminals.forEach(function (tm) { g.fillStyle = tm.on ? CYAN : '#5a8ab0'; g.fillRect(bx + tm.x * sx - 2, by - 12, 5, 12); });
+    // ゴール（宝箱の印）
+    var gx = bx + S.boss.x * sx, gy = by - 24;
+    g.fillStyle = '#7a4a18'; g.fillRect(gx - 14, gy - 2, 28, 24); g.fillStyle = '#ffc83e'; g.fillRect(gx - 11, gy + 1, 22, 18);
+    g.fillStyle = '#7a4a18'; g.fillRect(gx - 11, gy + 7, 22, 3); g.fillRect(gx - 3, gy + 5, 6, 8); g.fillStyle = '#fff3b0'; g.fillRect(gx - 1, gy + 7, 2, 4);
+    // 自分（赤い菱形）
+    var px = bx + G.pl.x * sx, py = by - 14 - clamp((R.GY - G.pl.y) * 0.5, 0, 60), r = 11 + ((G.t >> 4) % 2);
+    g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(px, py - r - 3); g.lineTo(px + r + 3, py); g.lineTo(px, py + r + 3); g.lineTo(px - r - 3, py); g.fill();
+    g.fillStyle = '#ff2e48'; g.beginPath(); g.moveTo(px, py - r); g.lineTo(px + r, py); g.lineTo(px, py + r); g.lineTo(px - r, py); g.fill();
+    g.restore();
+  }
+
+  function helpPanel(g, a) {
+    var x = 22, y = 852, w = 608, h = 206;
+    g.save(); g.globalAlpha = a;
+    panel(g, x, y, w, h, 16, 'rgba(18,12,52,.9)', PINK, 5);
+    panel(g, x + 8, y + 8, w - 16, h - 16, 12, null, 'rgba(120,230,255,.7)', 2);
+    keycap(g, x + 46, y + 22, R.input.usePad ? 'LB' : 'Q'); T(g, '/', x + 122, y + 60, 34, '#fff', 'center'); keycap(g, x + 140, y + 22, R.input.usePad ? 'RB' : 'E');
+    T(g, '：キャラ切り替え', x + 222, y + 60, 34, '#ffffff', 'left', UI, '#120a30', 6);
+    // 紅
+    panel(g, x + 40, y + 78, 208, 78, 12, 'rgba(60,16,60,.9)', '#ff7a6a', 4);
+    drawFace(g, 'kurenai', 'normal', 'hud', x + 46, y + 83, 100, 68); icon(g, 'iconKurenai', x + 150, y + 85, 96, 64);
+    T(g, '⇄', x + 304, y + 132, 54, '#ffffff', 'center', UI);
+    panel(g, x + 360, y + 78, 208, 78, 12, 'rgba(16,30,80,.9)', CYAN, 4);
+    drawFace(g, 'aoi', 'normal', 'hud', x + 366, y + 83, 100, 68); icon(g, 'iconAoi', x + 470, y + 85, 96, 64);
+    T(g, '紅（くれない）', x + 144, y + 190, 27, '#ffffff', 'center', UI, '#120a30', 5);
+    T(g, '蒼（あおい）', x + 464, y + 190, 27, '#ffffff', 'center', UI, '#120a30', 5);
+    g.restore();
+  }
+  function keycap(g, x, y, s, w) {
+    w = w || 62; panel(g, x, y, w, 46, 10, 'rgba(20,14,56,.9)', '#ffffff', 4);
+    T(g, s, x + w / 2, y + 35, 30, '#ffffff', 'center', UI);
+  }
+  function keyHints(g, a) {
+    var list = [['←→', '移動'], ['Space', 'ジャンプ'], ['J', '攻撃'], ['↓+J', '斬り上げ'], ['L', 'ダッシュ'], ['K', '特技'], ['F', '紅蒼交錯']], x = 660, i;
+    g.save(); g.globalAlpha = a;
+    for (i = 0; i < list.length; i++) {
+      g.font = '26px ' + UI; var kw = Math.max(46, g.measureText(list[i][0]).width + 22);
+      panel(g, x, 1012, kw, 40, 8, 'rgba(20,14,56,.85)', '#ffffff', 3); T(g, list[i][0], x + kw / 2, 1042, 26, '#fff', 'center');
+      T(g, list[i][1], x + kw + 8, 1042, 25, '#e8e0ff', 'left', UI, '#120a30', 5);
+      x += kw + 16 + g.measureText(list[i][1]).width + 18;
+    }
+    g.restore();
+  }
+
+  // 右下の斜めカットイン（交代した相棒が斬り込んでくる）。顔グラフィックの「怒り」＝戦う顔を大きく見せる
+  function cutin(g) {
+    var c = G.cutin, u = c.t / 52, k = u < 0.2 ? R.ease(u / 0.2) : (u > 0.8 ? 1 - R.ease((u - 0.8) / 0.2) : 1), off = (1 - k) * 1000;
+    var blue = c.who === 'aoi', col = blue ? CYAN : PINK, dark = blue ? '#0c1450' : '#40103c';
+    g.save(); g.translate(off, 0);
+    g.beginPath(); g.moveTo(1010, 1080); g.lineTo(1300, 790); g.lineTo(1930, 790); g.lineTo(1930, 1080); g.closePath();
+    g.save(); g.clip();
+    var gr = g.createLinearGradient(0, 790, 0, 1080); gr.addColorStop(0, dark); gr.addColorStop(1, blue ? '#162a8a' : '#7a1c58');
+    g.fillStyle = gr; g.fillRect(1000, 780, 940, 310);
+    drawFace(g, c.who, 'anger', 'band', 1176, 790, 764, 290);
+    gr = g.createLinearGradient(1176, 0, 1400, 0); gr.addColorStop(0, dark); gr.addColorStop(1, 'rgba(0,0,0,0)');      // 顔の左端をなじませる
+    g.fillStyle = gr; g.fillRect(1170, 790, 236, 290);
+    // 斬撃の帯
+    g.globalCompositeOperation = 'lighter';
+    for (var i = 0; i < 5; i++) { g.fillStyle = i % 2 ? col : '#ffffff'; g.globalAlpha = 0.42; g.fillRect(1100 + ((c.t * 40 + i * 260) % 1000), 840 + i * 44, 300, 6 + i % 2 * 4); }
+    g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+    g.imageSmoothingEnabled = false;
+    R.drawFrame(g, blue ? R.frame('aoi', 'renjin', 1 + ((c.t >> 2) % 3)) : R.frame('kurenai', 'senpu', (c.t >> 2) % 4), 1232 - (1 - k) * 200, 1072, 3, 1);
+    g.restore();
+    g.lineWidth = 7; g.strokeStyle = '#ffffff'; g.beginPath(); g.moveTo(1010, 1080); g.lineTo(1300, 790); g.lineTo(1930, 790); g.stroke();
+    g.lineWidth = 3; g.strokeStyle = col; g.beginPath(); g.moveTo(1022, 1080); g.lineTo(1305, 797); g.lineTo(1930, 797); g.stroke();
+    T(g, blue ? '蒼' : '紅', 1856, 874, 78, col, 'center', MIN, '#ffffff', 6);
+    g.restore();
+  }
+  // 合体技のカットイン: 紅は左から、蒼は右から、目のあたりの帯がすべり込む
+  function crossBand(g, who, dx, y, a) {
+    var K = who === 'kurenai', col = K ? PINK : CYAN, dark = K ? '#40103c' : '#0c1450', w = 1180, h = 176, sk = 70, x0 = K ? -80 : 1920 + 80 - w - sk;
+    g.save(); g.translate(dx, 0); g.globalAlpha = a;
+    g.beginPath(); g.moveTo(x0 + sk, y); g.lineTo(x0 + w + sk, y); g.lineTo(x0 + w, y + h); g.lineTo(x0, y + h); g.closePath();
+    g.save(); g.clip();
+    var gr = g.createLinearGradient(x0, 0, x0 + w + sk, 0);
+    gr.addColorStop(K ? 0 : 1, K ? '#8a2062' : '#1a36a8'); gr.addColorStop(K ? 1 : 0, dark);
+    g.fillStyle = gr; g.fillRect(x0, y, w + sk, h);
+    var fw = 560, fx = K ? x0 + 150 : x0 + w + sk - 150 - fw;
+    drawFace(g, who, 'anger', 'band', fx, y - 18, fw, 213);
+    gr = g.createLinearGradient(K ? fx + fw - 170 : fx, 0, K ? fx + fw : fx + 170, 0);      // 顔の内側の端をなじませる
+    gr.addColorStop(K ? 0 : 1, 'rgba(0,0,0,0)'); gr.addColorStop(K ? 1 : 0, K ? '#5a1650' : '#12246e');
+    g.fillStyle = gr; g.fillRect(K ? fx + fw - 170 : fx - 2, y, 174, h);
+    g.globalCompositeOperation = 'lighter'; g.globalAlpha = a * 0.4;
+    for (var i = 0; i < 4; i++) { g.fillStyle = i % 2 ? col : '#ffffff'; g.fillRect(x0 + ((G.t * 46 + i * 330) % (w + 300)) * (K ? 1 : -1) + (K ? 0 : w), y + 18 + i * 40, 260, 5 + i % 2 * 4); }
+    g.restore();
+    g.lineJoin = 'miter'; g.lineWidth = 6; g.strokeStyle = '#ffffff';
+    g.beginPath(); g.moveTo(x0 + sk, y); g.lineTo(x0 + w + sk, y); g.moveTo(x0, y + h); g.lineTo(x0 + w, y + h); g.stroke();
+    g.lineWidth = 3; g.strokeStyle = col;
+    g.beginPath(); g.moveTo(x0 + sk, y + 8); g.lineTo(x0 + w + sk, y + 8); g.moveTo(x0, y + h - 8); g.lineTo(x0 + w, y + h - 8); g.stroke();
+    T(g, K ? '紅' : '蒼', K ? x0 + w - 130 : x0 + sk + 150, y + 128, 118, col, 'center', MIN, '#ffffff', 8);
+    g.restore();
+  }
+
+  R.drawHUD = function (g) {
+    var p = G.pl, i;
+    // 文字（ダメージ数字）
+    for (i = 0; i < G.texts.length; i++) {
+      var t = G.texts[i], a = Math.min(1, (1 - t.t / t.life) * 2.2);
+      g.globalAlpha = a; T(g, t.str, (t.x - R.viewCam) * 4, t.y * 4, t.big ? 46 : 32, t.col, 'center', UI, '#1a0a30', 7);
+    }
+    g.globalAlpha = 1;
+    // 左上: 二人の状態
+    charBlock(g, 'kurenai', 18, p.who === 'kurenai');
+    charBlock(g, 'aoi', 138, p.who === 'aoi');
+    g.fillStyle = '#ffffff';
+    g.beginPath(); g.moveTo(43, 96); g.lineTo(56, 114); g.lineTo(47, 114); g.lineTo(47, 146); g.lineTo(56, 146); g.lineTo(43, 164); g.lineTo(30, 146); g.lineTo(39, 146); g.lineTo(39, 114); g.lineTo(30, 114); g.fill();
+    // アイテム枠
+    var slots = [[703, 'potion', p.potions, '1'], [817, 'crystal', p.crystals, '2'], [931, null, 0, '']];
+    for (i = 0; i < 3; i++) {
+      var sx = slots[i][0];
+      panel(g, sx, 40, i < 2 ? 100 : 78, 72, 12, 'rgba(22,16,60,.86)', '#ffffff', 5);
+      if (slots[i][1] === 'potion') pix(g, R.SPR.items.potion, sx + 10, 46, 13 * 3.6, 16 * 3.6);
+      if (slots[i][1] === 'crystal') pix(g, R.SPR.items.crystal[(G.t >> 4) % 4], sx + 10, 44, 15 * 3.2, 19 * 3.2);
+      if (slots[i][1]) { T(g, '×' + slots[i][2], sx + 92, 100, 29, '#ffffff', 'right', UI, '#120a30', 6); T(g, slots[i][3], sx + 50, 134, 19, '#c8c0f0', 'center', UI, '#120a30', 4); }
+    }
+    // 交錯ゲージ
+    var full = p.cross >= 100, cx0 = 1020, cw = 0;
+    T(g, '交錯', 703, 186, 26, full && (G.t >> 3) % 2 ? '#ffffff' : '#ffb8e6', 'left', UI, '#120a30', 6);
+    panel(g, 766, 160, 244, 30, 6, '#15122e', full ? ((G.t >> 3) % 2 ? '#ffffff' : PINK) : '#ffffff', 4);
+    cw = 232 * p.cross / 100;
+    if (cw > 1) { var cg = g.createLinearGradient(772, 0, 1004, 0); cg.addColorStop(0, '#ff4fb0'); cg.addColorStop(0.5, '#ffffff'); cg.addColorStop(1, '#37e6ff'); g.fillStyle = cg; g.fillRect(772, 166, cw, 18); }
+    if (full) T(g, '[F] 紅蒼交錯！', 766, 222, 24, (G.t >> 3) % 2 ? '#ffffff' : '#ffe04a', 'left', UI, '#120a30', 6);
+    logo(g, 1296, 100, 0.86);
+    minimap(g);
+    // コンボ
+    if (G.combo >= 2) {
+      g.save(); g.translate(1680, 392); var s = 1 + G.comboPop * 0.035; g.scale(s, s); g.transform(1, 0, -0.18, 1, 0, 0);
+      g.globalAlpha = Math.min(1, G.comboT / 20);
+      var gr = g.createLinearGradient(0, -110, 0, 0); gr.addColorStop(0, '#fff3a0'); gr.addColorStop(0.5, '#ff9a2a'); gr.addColorStop(1, '#e8501a');
+      g.font = 'bold 128px ' + SERIF; g.textAlign = 'right'; g.lineJoin = 'round'; g.lineWidth = 16; g.strokeStyle = '#2a0c20'; g.strokeText(G.combo, 4, 0); g.fillStyle = gr; g.fillText(G.combo, 4, 0);
+      g.font = 'bold 60px ' + SERIF; g.textAlign = 'left'; g.lineWidth = 12; g.strokeText('HIT', 12, 0); g.fillStyle = gr; g.fillText('HIT', 12, 0);
+      g.fillStyle = '#ff7a2a'; g.beginPath(); g.moveTo(-170, 26); g.lineTo(150, 12); g.lineTo(150, 18); g.fill();
+      g.restore();
+    }
+    // ボスの体力
+    var b = G.boss;
+    if (b && !b.gone && !(b.dead && b.type !== 'dragon')) {
+      var ba = G.bossIntro > 0 ? 1 - G.bossIntro / 110 : 1;
+      g.globalAlpha = ba;
+      T(g, b.name, 520, 968, 38, '#ffffff', 'left', MIN, '#2a0818', 8); T(g, b.sub, 1400, 968, 20, '#ffb0c0', 'right', UI, '#2a0818', 5);
+      bar(g, 510, 978, 900, 30, b.hp / b.max * ba, '#ff9a6a', '#e02a5a');
+      g.globalAlpha = 1;
+      if (G.bossIntro > 20) {
+        var ia = Math.min(1, (110 - G.bossIntro) / 14) * Math.min(1, (G.bossIntro - 20) / 14);
+        g.globalAlpha = ia; g.fillStyle = 'rgba(8,2,24,.6)'; g.fillRect(0, 430, 1920, 200);
+        g.fillStyle = '#ff2e60'; g.fillRect(0, 430, 1920, 5); g.fillRect(0, 625, 1920, 5);
+        T(g, 'WARNING', 960, 500, 44, (G.t >> 3) % 2 ? '#ff5a6a' : '#ffd0d6', 'center', SERIF, '#2a0818', 8);
+        T(g, b.name, 960, 584, 78, '#ffffff', 'center', MIN, '#a8183c', 10); g.globalAlpha = 1;
+      }
+    }
+    if (G.helpT > 0 && !G.boss && G.state === 'play') { var ha = Math.min(1, G.helpT / 40); helpPanel(g, ha); keyHints(g, ha); }
+    if (G.cutin) cutin(g);
+    // 合体技の題字
+    if (G.cross) {
+      var X = G.cross, xa = Math.min(1, X.t / 10) * (X.t > 96 ? Math.max(0, (118 - X.t) / 22) : 1), sp = 150 + Math.max(0, 26 - X.t) * 24;
+      var cu = X.t < 9 ? R.ease(X.t / 9) : X.t > 40 ? Math.max(0, 1 - (X.t - 40) / 9) : 1;      // 二人の顔のカットイン
+      if (cu > 0) { crossBand(g, 'kurenai', -1300 * (1 - cu), 470, Math.min(1, cu * 2)); crossBand(g, 'aoi', 1300 * (1 - cu), 806, Math.min(1, cu * 2)); }
+      g.globalAlpha = xa;
+      var ch = ['紅', '蒼', '交', '錯'], cc = [RED, CYAN, '#ffffff', '#ffffff'];
+      for (i = 0; i < 4; i++) T(g, ch[i], 960 + (i - 1.5) * sp, 330, 150, cc[i], 'center', MIN, i < 2 ? '#ffffff' : (i === 2 ? RED : CYAN), 10);
+      T(g, 'C R O S S   R E B E L L I O N', 960, 392, 30, '#ffffff', 'center', SERIF, '#120a30', 6);
+      g.globalAlpha = 1;
+    }
+    if (G.toast) { var ta = Math.min(1, G.toast.t / 8) * Math.min(1, (130 - G.toast.t) / 20); g.globalAlpha = ta; T(g, G.toast.str, 960, 286 - Math.max(0, 8 - G.toast.t) * 3, 40, G.toast.col, 'center', UI, '#120a30', 9); g.globalAlpha = 1; }
+    if (G.card && G.state === 'play') {
+      var ct = G.card.t, ca = Math.min(1, ct / 24) * Math.min(1, (190 - ct) / 30);
+      g.globalAlpha = ca; g.fillStyle = 'rgba(8,4,30,.62)'; g.fillRect(0, 420, 1920, 220);
+      g.fillStyle = PINK; g.fillRect(0, 420, 960 * Math.min(1, ct / 30) * 2, 4); g.fillStyle = CYAN; g.fillRect(1920 - 1920 * Math.min(1, ct / 30), 636, 1920, 4);
+      T(g, G.card.title, 960, 540, 74, '#ffffff', 'center', MIN, '#3a1470', 10); T(g, G.card.sub, 960, 598, 28, '#c8b8ff', 'center', SERIF, '#120a30', 5);
+      g.globalAlpha = 1;
+    }
+    if (G.flash > 0) { g.fillStyle = 'rgba(255,255,255,' + Math.min(1, G.flash) + ')'; g.fillRect(0, 0, 1920, 1080); }
+    if (G.fade > 0) { g.fillStyle = 'rgba(5,4,15,' + G.fade + ')'; g.fillRect(0, 0, 1920, 1080); }
+  };
+
+  // ---- 各画面 ----
+  function dim(g, a) { g.fillStyle = 'rgba(6,3,22,' + a + ')'; g.fillRect(0, 0, 1920, 1080); }
+  function blinkText(g, s, x, y, size) { if ((G.t >> 5) % 2 === 0) T(g, s, x, y, size, '#ffffff', 'center', UI, '#3a1470', 8); }
+
+  // ---- 起動時のロゴ（GYOKURYU → PHOTO TEAM → タイトル）----
+  // 時間はフレーム数（60 で 1 秒）。l1・l2 = それぞれのロゴが始まる時刻
+  var SP = { l1: 22, len1: 158, gap: 14, len2: 168, tail: 14 };
+  SP.l2 = SP.l1 + SP.len1 + SP.gap; SP.total = SP.l2 + SP.len2 + SP.tail;
+  R.SPLASH_LEN = SP.total;
+  var SANS = '"Segoe UI","Yu Gothic UI","Meiryo",sans-serif', JADE = '#4be8c0', JADE_L = '#c8fff2', embC = null;
+
+  // 1 文字ずつ、字間をあけて中央ぞろえで並べる。fn(文字, x, 何文字目) が 1 文字ぶんを描く
+  function spaced(g, text, cx, font, gap, fn) {
+    g.font = font; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+    var ws = [], total = -gap, i, x;
+    for (i = 0; i < text.length; i++) { ws.push(g.measureText(text[i]).width); total += ws[i] + gap; }
+    x = cx - total / 2;
+    for (i = 0; i < text.length; i++) { fn(text[i], x, i); x += ws[i] + gap; }
+  }
+
+  // ロゴ 1: GYOKURYU。玉（光る輪）の前に龍の影。u = このロゴが始まってからのフレーム数
+  function logoGyokuryu(g, u, len) {
+    var a = Math.min(1, u / 30) * Math.min(1, (len - u) / 26);
+    if (a <= 0) return;
+    var cx = 960, cy = 372, pop = 1 + 0.05 * (1 - R.ease(Math.min(1, u / 44))), font = 'bold 112px ' + SERIF;
+    g.save();
+    // 玉
+    var rg = g.createRadialGradient(cx, cy, 20, cx, cy, 270);
+    rg.addColorStop(0, 'rgba(75,232,192,.36)'); rg.addColorStop(0.6, 'rgba(75,232,192,.10)'); rg.addColorStop(1, 'rgba(75,232,192,0)');
+    g.globalAlpha = a; g.fillStyle = rg; g.fillRect(cx - 280, cy - 280, 560, 560);
+    g.strokeStyle = JADE; g.lineWidth = 3; g.beginPath();
+    g.arc(cx, cy, 196 * pop, -PI / 2, -PI / 2 + PI * 2 * R.ease(Math.min(1, u / 46))); g.stroke();      // 輪を一筆で描く
+    g.globalAlpha = a * 0.45; g.lineWidth = 1.5; g.beginPath(); g.arc(cx, cy, 214 * pop, 0, PI * 2); g.stroke();
+    // 龍（ボスのドット絵を単色の影にして、紋章として使う。翼はゆっくり動く）
+    var dc = R.Dragon.render({ t: u, wing: u * 0.045, jaw: 0.12, lunge: 0, rear: 0.3, claw: 0, tail: 0.1, fire: false, aim: 0 });
+    if (!embC) embC = R.mk(dc.width, dc.height);
+    var e = embC.getContext('2d'), eg = e.createLinearGradient(0, 30, 0, embC.height);
+    eg.addColorStop(0, '#ffffff'); eg.addColorStop(0.55, JADE_L); eg.addColorStop(1, JADE);
+    e.globalCompositeOperation = 'source-over'; e.clearRect(0, 0, embC.width, embC.height); e.drawImage(dc, 0, 0);
+    e.globalCompositeOperation = 'source-in'; e.fillStyle = eg; e.fillRect(0, 0, embC.width, embC.height);
+    var s = 1.25 * pop;
+    g.globalAlpha = a * clamp((u - 6) / 30, 0, 1); g.imageSmoothingEnabled = false; g.shadowColor = JADE; g.shadowBlur = 34;
+    g.drawImage(embC, cx - 226 * s, cy - 168 * s, embC.width * s, embC.height * s);
+    g.shadowBlur = 0;
+    // 文字: 1 文字ずつ浮かび上がる
+    spaced(g, 'GYOKURYU', 960, font, 22, function (ch, x, i) {
+      var k = R.ease(clamp((u - 16 - i * 3) / 16, 0, 1)), y = 716 + (1 - k) * 16;
+      var gr = g.createLinearGradient(0, y - 90, 0, y + 6); gr.addColorStop(0, '#f4fffb'); gr.addColorStop(0.6, JADE_L); gr.addColorStop(1, '#7af0d4');
+      g.globalAlpha = a * k; g.fillStyle = gr; g.shadowColor = JADE; g.shadowBlur = 16; g.fillText(ch, x, y); g.shadowBlur = 0;
+    });
+    // 文字の上を走る光
+    var sw = (u - 50) / 34;
+    if (sw > 0 && sw < 1) {
+      var sx = 960 - 560 + sw * 1120;
+      g.save(); g.beginPath(); g.moveTo(sx - 20, 610); g.lineTo(sx + 70, 610); g.lineTo(sx + 20, 740); g.lineTo(sx - 70, 740); g.closePath(); g.clip();
+      g.globalAlpha = a; g.shadowColor = '#ffffff'; g.shadowBlur = 26;
+      spaced(g, 'GYOKURYU', 960, font, 22, function (ch, x) { g.fillStyle = '#ffffff'; g.fillText(ch, x, 716); });
+      g.restore();
+    }
+    // 下線と、漢字
+    var lw = 660 * R.ease(Math.min(1, u / 36));
+    g.globalAlpha = a; g.fillStyle = JADE; g.fillRect(960 - lw / 2, 754, lw, 3);
+    g.save(); g.translate(960, 755.5); g.rotate(PI / 4); g.fillStyle = JADE_L; g.fillRect(-7, -7, 14, 14); g.restore();
+    g.globalAlpha = a * R.ease(clamp((u - 44) / 24, 0, 1));
+    spaced(g, '玉龍', 960, '44px ' + MIN, 72, function (ch, x) { g.fillStyle = JADE_L; g.fillText(ch, x, 826); });
+    g.restore();
+  }
+
+  // カメラのしぼり（6 枚羽根）。open = 開きぐあい（0〜1）、rot = 回転
+  function aperture(g, cx, cy, r, open, rot, col, edge) {
+    var n = 6, ri = r * 0.84, ro = Math.max(3, ri * open), i, a, b;
+    g.save(); g.translate(cx, cy);
+    g.lineWidth = r * 0.085; g.strokeStyle = col; g.beginPath(); g.arc(0, 0, r, 0, PI * 2); g.stroke();      // 外側の輪
+    g.beginPath(); g.arc(0, 0, ri, 0, PI * 2);                                                              // 羽根 = 円から六角形の穴を抜いた形
+    for (i = 0; i <= n; i++) { a = rot + i * PI * 2 / n; if (i) g.lineTo(Math.cos(a) * ro, Math.sin(a) * ro); else g.moveTo(Math.cos(a) * ro, Math.sin(a) * ro); }
+    g.closePath(); g.fillStyle = col; g.fill('evenodd');
+    g.strokeStyle = edge; g.lineWidth = 4; g.lineCap = 'butt';                                              // 羽根の境目: 穴の辺を外へ延ばした線
+    for (i = 0; i < n; i++) {
+      a = rot + i * PI * 2 / n; b = rot + (i + 1) * PI * 2 / n;
+      var x0 = Math.cos(a) * ro, y0 = Math.sin(a) * ro, dx = x0 - Math.cos(b) * ro, dy = y0 - Math.sin(b) * ro, L = Math.sqrt(dx * dx + dy * dy) || 1;
+      dx /= L; dy /= L;
+      var pd = x0 * dx + y0 * dy, t = -pd + Math.sqrt(Math.max(0, pd * pd - (ro * ro - ri * ri)));
+      g.beginPath(); g.moveTo(x0, y0); g.lineTo(x0 + dx * (t + 2), y0 + dy * (t + 2)); g.stroke();
+    }
+    g.restore();
+  }
+
+  // ロゴ 2: PHOTO TEAM。ファインダーでピントを合わせ、シャッターを切ると、文字がはっきり写る
+  function logoPhoto(g, u, len) {
+    var a = Math.min(1, u / 20) * Math.min(1, (len - u) / 26), SH = 46;      // SH = シャッターが切れる時刻
+    if (a <= 0) return;
+    var cx = 960, cy = 372, shot = u >= SH, k = R.ease(Math.min(1, u / 38)), font = 'bold 100px ' + SANS;
+    g.save(); g.globalAlpha = a;
+    // ファインダーの四隅（内側へ寄ってくる）
+    var bw = 600 + (1 - k) * 230, bh = 350 + (1 - k) * 130, L = 66;
+    g.strokeStyle = shot ? '#ffffff' : 'rgba(255,255,255,.7)'; g.lineWidth = 6; g.lineJoin = 'miter'; g.lineCap = 'square';
+    [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(function (c) {
+      var x = 960 + c[0] * bw, y = 520 + c[1] * bh;
+      g.beginPath(); g.moveTo(x - c[0] * L, y); g.lineTo(x, y); g.lineTo(x, y - c[1] * L); g.stroke();
+    });
+    // しぼり: 絞り込んでいき、切れた瞬間に開く
+    var open = shot ? 0.14 + 0.36 * R.ease(Math.min(1, (u - SH) / 18)) : 0.66 - 0.54 * R.ease(Math.min(1, u / (SH - 6)));
+    g.globalAlpha = a * 0.55; aperture(g, cx - 4, cy + 3, 122, open, u * 0.012, PINK, '#000000');       // 色のずれ（紅と蒼）
+    aperture(g, cx + 4, cy - 3, 122, open, u * 0.012, CYAN, '#000000');
+    g.globalAlpha = a; aperture(g, cx, cy, 122, open, u * 0.012, '#ffffff', '#000000');
+    // 文字: 切る前はピントの合っていない像、切ったあとは、はっきりした文字
+    if (!shot) {
+      var blur = (1 - k) * 14 + 3;
+      g.save(); if ('filter' in g) g.filter = 'blur(' + blur.toFixed(1) + 'px)';
+      g.globalAlpha = a * 0.5;
+      spaced(g, 'PHOTO TEAM', 960, font, 24, function (ch, x) { g.fillStyle = '#ffffff'; g.fillText(ch, x, 706); });
+      g.restore();
+    } else {
+      spaced(g, 'PHOTO TEAM', 960, font, 24, function (ch, x) {
+        g.globalAlpha = a * 0.85; g.fillStyle = PINK; g.fillText(ch, x - 4, 709); g.fillStyle = CYAN; g.fillText(ch, x + 4, 703);
+        g.globalAlpha = a; g.fillStyle = '#ffffff'; g.fillText(ch, x, 706);
+      });
+      var lw = 700 * R.ease(Math.min(1, (u - SH) / 26));
+      g.globalAlpha = a; g.fillStyle = '#ffffff'; g.fillRect(960 - lw / 2, 746, lw, 3);
+      g.fillStyle = PINK; g.fillRect(960 - lw / 2, 753, lw / 2, 2); g.fillStyle = CYAN; g.fillRect(960, 753, lw / 2, 2);
+    }
+    // フラッシュ
+    var fl = shot ? Math.max(0, 1 - (u - SH) / 18) : 0;
+    if (fl > 0) { g.globalAlpha = fl * fl; g.fillStyle = '#ffffff'; g.fillRect(0, 0, 1920, 1080); }
+    g.restore();
+  }
+
+  R.drawSplash = function (g) {
+    var t = G.stateT;
+    g.fillStyle = '#000000'; g.fillRect(0, 0, 1920, 1080);
+    if (t >= SP.l1 && t < SP.l1 + SP.len1) logoGyokuryu(g, t - SP.l1, SP.len1);
+    else if (t >= SP.l2 && t < SP.l2 + SP.len2) logoPhoto(g, t - SP.l2, SP.len2);
+  };
+
+  R.drawTitle = function (g) {
+    var t = G.t, i;
+    var gr = g.createLinearGradient(0, 0, 0, 1080); gr.addColorStop(0, '#0b0a26'); gr.addColorStop(0.6, '#2a1a66'); gr.addColorStop(1, '#5a2470');
+    g.fillStyle = gr; g.fillRect(0, 0, 1920, 1080);
+    g.globalAlpha = 0.55; pix(g, R.BG.sky, 0, 0, 1920, 1080); g.globalAlpha = 0.8; pix(g, R.BG.far, -((t * 0.6) % 3840), 180, 3840, 1080); pix(g, R.BG.far, 3840 - ((t * 0.6) % 3840), 180, 3840, 1080); g.globalAlpha = 1;
+    dim(g, 0.35);
+    // ポスター
+    var img = R.IMG.poster, pw = 664, ph = 996, px = 110, py = 42;
+    g.save(); g.shadowColor = PINK; g.shadowBlur = 50; g.fillStyle = '#ffffff'; g.fillRect(px - 6, py - 6, pw + 12, ph + 12); g.shadowBlur = 0;
+    if (img && img.complete && img.naturalWidth) { g.imageSmoothingEnabled = true; g.drawImage(img, px, py, pw, ph); }
+    g.restore();
+    g.strokeStyle = CYAN; g.lineWidth = 3; g.strokeRect(px - 16, py - 16, pw + 32, ph + 32);
+    R.drawMagicCircleHi(g, 1370, 560, 330, t * 0.004, 0.16);
+    logo(g, 1370, 300, 1.55);
+    T(g, '交わる運命、ぶつかる色。', 1370, 470, 46, '#ffffff', 'center', MIN, '#3a1470', 8);
+    T(g, 'サイバーパンク 2D ドットアクション', 1370, 524, 26, '#c8b8ff', 'center', UI, '#120a30', 5);
+    blinkText(g, 'PRESS  ENTER  /  SPACE', 1370, 640, 46);
+    // 走る二人
+    g.imageSmoothingEnabled = false;
+    R.drawFrame(g, R.frame('kurenai', 'run', Math.floor(t / 5) % R.SPR.kurenai.run.length), 1190, 880, 3, 1); R.drawFrame(g, R.frame('aoi', 'run', (Math.floor(t / 4) + 2) % R.SPR.aoi.run.length), 1510, 880, 3, 1);
+    g.fillStyle = '#ffe2ff'; g.fillRect(920, 880, 900, 4); g.fillStyle = 'rgba(200,150,240,.5)'; g.fillRect(920, 884, 900, 4);
+    var rows = [['←→ / A D', '移動'], ['Space / W', 'ジャンプ（二段で宙返り）'], ['J / Z', '攻撃（連打でコンボ）'], ['↓ + 攻撃', '斬り上げ / 空中で急降下'], ['L / Shift', 'ダッシュ（空中でも可）'], ['K / X', '特技（SP 消費）'], ['Q / E', 'キャラチェンジ'], ['F', '合体技「紅蒼交錯」']];
+    for (i = 0; i < rows.length; i++) {
+      var cx = 930 + (i % 2) * 470, cy = 930 + (i >> 1) * 36;
+      T(g, rows[i][0], cx + 150, cy, 24, '#7af3ff', 'right', UI, '#120a30', 5); T(g, rows[i][1], cx + 168, cy, 24, '#ffffff', 'left', UI, '#120a30', 5);
+    }
+    T(g, 'キャラクターデザイン：このみ　／　ゲームパッド対応（LB・RB で切り替え）　／　M：音のオン・オフ', 1900, 1070, 18, '#a898e8', 'right', UI);
+  };
+  R.drawMagicCircleHi = function (g, x, y, r, rot, alpha) {
+    g.save(); g.translate(x, y); g.globalCompositeOperation = 'lighter'; g.lineWidth = 3; var i, a;
+    for (i = 0; i < 4; i++) { g.globalAlpha = alpha; g.strokeStyle = i % 2 ? CYAN : PINK; g.beginPath(); g.arc(0, 0, r * (1 - i * 0.2), 0, PI * 2); g.stroke(); }
+    g.rotate(rot);
+    for (var s = 0; s < 2; s++) { g.strokeStyle = s ? CYAN : PINK; g.beginPath(); for (i = 0; i <= 3; i++) { a = i * PI * 2 / 3 + s * PI / 3; g.lineTo(Math.cos(a) * r * 0.8, Math.sin(a) * r * 0.8); } g.stroke(); }
+    g.strokeStyle = '#ffffff'; for (i = 0; i < 6; i++) { a = i * PI / 3; g.beginPath(); g.moveTo(Math.cos(a) * r * 0.2, Math.sin(a) * r * 0.2); g.lineTo(Math.cos(a) * r, Math.sin(a) * r); g.stroke(); }
+    g.restore();
+  };
+
+  var STORY = ['紅い月が昇る夜。', 'ネオンの廃都に、機械仕掛けの兵があふれ出した。', '', '「反逆者（REBELL）」と呼ばれる二人――', '大鎌を振るう 紅（くれない）。刀を閃かせる 蒼（あおい）。', '', '交わる運命、ぶつかる色。', '二人は、月の下で目覚めた《龍》を追う。'];
+  R.drawIntro = function (g) {
+    var t = G.stateT, i;
+    g.imageSmoothingEnabled = false; g.drawImage(R.BG.sky, 0, 0, 1920, 1080); g.globalAlpha = 0.85; g.drawImage(R.BG.far, -((t * 0.8) % 3840), 120, 3840, 1080); g.drawImage(R.BG.far, 3840 - ((t * 0.8) % 3840), 120, 3840, 1080); g.globalAlpha = 1;
+    dim(g, 0.5);
+    for (i = 0; i < STORY.length; i++) {
+      var a = clamp((t - i * 50) / 40, 0, 1); if (a <= 0) continue;
+      g.globalAlpha = a;
+      var col = i === 6 ? '#ffd0ec' : '#ffffff';
+      T(g, STORY[i], 960, 300 + i * 74 - (1 - a) * 12, i === 6 ? 54 : 40, col, 'center', MIN, '#1a0c40', 8);
+    }
+    g.globalAlpha = 1;
+    if (t > 60) blinkText(g, 'ENTER でスキップ', 1700, 1040, 24);
+  };
+  R.introDone = function () { return G.stateT > STORY.length * 50 + 150; };
+
+  R.drawPause = function (g) {
+    dim(g, 0.62);
+    T(g, 'PAUSE', 960, 270, 96, '#ffffff', 'center', SERIF, PINK, 10);
+    helpPanel(g, 1);
+    var rows = [['紅 / 蒼', '紅: 大鎌の重い大振り・ひるまない　蒼: 速い連撃・一発は軽い'], ['←→ / A D', '移動（逆を押すと切り返し）'], ['Space / W / ↑', 'ジャンプ　空中でもう一度押すと宙返り'], ['J / Z', '攻撃（連打でコンボ・空中でも続く）'], ['↓ + 攻撃', '地上: 斬り上げて追いかける　空中: 急降下'], ['L / C / Shift', 'ダッシュ（空中は紅 1 回・蒼 2 回）　ぎりぎりでかわすとスロー'], ['ダッシュ中に攻撃', 'ダッシュ斬り'], ['攻撃が当たった後', 'ジャンプ・ダッシュで動きを打ち切れる'], ['Q / E', 'キャラチェンジ（斬り込みながら交代）'], ['攻撃を当てた直後に交代', 'チェイン: 登場攻撃が強くなる'], ['K / X', '特技（SP 30）　紅: 紅蓮砕　蒼: 蒼刃閃'], ['F / V', '合体技「紅蒼交錯」（ゲージ満タン）'], ['1 / 2　　M / B', '薬 / 結晶　　音 / 光のにじみ']];
+    for (var i = 0; i < rows.length; i++) { T(g, rows[i][0], 800, 332 + i * 40, 27, i ? '#7af3ff' : '#ffe04a', 'right', UI, '#120a30', 6); T(g, rows[i][1], 828, 332 + i * 40, 27, '#ffffff', 'left', UI, '#120a30', 6); }
+    blinkText(g, 'Esc / P で再開', 1560, 1010, 32);
+  };
+  R.drawGameOver = function (g) {
+    var a = Math.min(1, G.stateT / 40); dim(g, 0.72 * a); g.globalAlpha = a;
+    faceFrame(g, 'kurenai', 'damage', 636, 150, 300, 204, PINK, false, 'rgba(40,0,10,.25)'); faceFrame(g, 'aoi', 'damage', 984, 150, 300, 204, CYAN, false, 'rgba(40,0,10,.25)');
+    T(g, 'GAME OVER', 960, 530, 130, '#ff5a6a', 'center', SERIF, '#2a0818', 12);
+    T(g, '二人の色は、まだ消えていない。', 960, 620, 40, '#ffffff', 'center', MIN, '#2a0818', 8);
+    g.globalAlpha = 1; if (G.stateT > 50) blinkText(g, 'ENTER でチェックポイントから再開', 960, 750, 38);
+  };
+  function stats(g, y) {
+    var s = Math.floor(G.time / 60), rows = [['TIME', Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2)], ['MAX COMBO', G.maxCombo + ' HIT'], ['撃破数', G.kills], ['LEVEL', 'Lv.' + G.pl.lv]];
+    for (var i = 0; i < rows.length; i++) { T(g, rows[i][0], 900, y + i * 56, 36, '#c8b8ff', 'right', UI, '#120a30', 6); T(g, String(rows[i][1]), 960, y + i * 56, 40, '#ffffff', 'left', UI, '#120a30', 6); }
+  }
+  R.drawClear = function (g) {
+    var a = Math.min(1, G.stateT / 30); dim(g, 0.6 * a); g.globalAlpha = a;
+    faceFrame(g, 'kurenai', 'joy', 636, 96, 300, 204, PINK, true, null); faceFrame(g, 'aoi', 'joy', 984, 96, 300, 204, CYAN, true, null);
+    T(g, 'STAGE CLEAR', 960, 430, 120, '#ffffff', 'center', SERIF, PINK, 12);
+    g.fillStyle = CYAN; g.fillRect(480, 462, 960, 4);
+    stats(g, 540);
+    g.globalAlpha = 1; if (G.stateT > 60) blinkText(g, 'ENTER で次へ', 960, 800, 40);
+  };
+  R.drawEnding = function (g) {
+    var t = G.stateT, a = Math.min(1, t / 60);
+    var gr = g.createLinearGradient(0, 0, 0, 1080); gr.addColorStop(0, '#0b0a26'); gr.addColorStop(1, '#3a1c66'); g.fillStyle = gr; g.fillRect(0, 0, 1920, 1080);
+    g.globalAlpha = 0.5 * a; pix(g, R.BG.sky, 0, 0, 1920, 1080); g.globalAlpha = a;
+    R.drawMagicCircleHi(g, 1380, 540, 420, t * 0.003, 0.14);
+    // 原画（このみさんのイラスト）
+    var img = R.IMG.original, ph = 980, pw = img && img.naturalWidth ? ph * img.naturalWidth / img.naturalHeight : 693, px = 120, py = 50;
+    g.save(); g.shadowColor = CYAN; g.shadowBlur = 44; g.fillStyle = '#ffffff'; g.fillRect(px - 8, py - 8, pw + 16, ph + 16); g.shadowBlur = 0;
+    if (img && img.complete && img.naturalWidth) { g.imageSmoothingEnabled = true; g.drawImage(img, px, py, pw, ph); }
+    g.restore();
+    T(g, 'Original Illustration by このみ', px + pw / 2, py + ph + 40, 24, '#c8b8ff', 'center', SERIF);
+    logo(g, 1380, 200, 1.2);
+    T(g, '月は沈み、街に朝の色が戻る。', 1380, 380, 40, '#ffffff', 'center', MIN, '#1a0c40', 8);
+    T(g, '交わる運命、ぶつかる色。', 1380, 440, 40, '#ffd0ec', 'center', MIN, '#1a0c40', 8);
+    T(g, '――ふたりの反逆は、まだ始まったばかり。', 1380, 500, 34, '#ffffff', 'center', MIN, '#1a0c40', 8);
+    g.save(); g.translate(420, 60); stats(g, 560); g.restore();
+    T(g, 'キャラクターデザイン・原案　このみ', 1380, 850, 28, '#ffffff', 'center', UI, '#120a30', 6);
+    T(g, 'ゲーム制作　Claude  ×  Codex', 1380, 892, 24, '#c8b8ff', 'center', UI, '#120a30', 5);
+    T(g, 'THANK YOU FOR PLAYING', 1380, 950, 38, '#7af3ff', 'center', SERIF, '#120a30', 6);
+    g.globalAlpha = 1; if (t > 120) blinkText(g, 'ENTER でタイトルへ', 1380, 1020, 30);
+  };
+})();
