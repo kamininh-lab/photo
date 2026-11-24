@@ -8,13 +8,13 @@ import numpy as np
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(HERE)
+SOURCE_ART = os.path.join(os.path.dirname(HERE), 'art', 'source')
 SRC = {
-    'original': 'ChatGPT 画像 2026年11月23日 14_03_19.jpg',      # このみさんの原画
-    'poster': 'ネオン都市の紅蒼交錯.png',                         # ポスター
-    'faces': 'ネオン16ビット表情一覧「紅蒼」.png',                # 顔グラフィック（ダメージ・怒り・喜び）
-    'sheet_k': '紅〈KURENAI〉ネオン・スプライトシート.png',       # 左上の大きな顔を「通常」の顔に使う
-    'sheet_a': '蒼（AOI）ネオン刀アクションスプライトシート.png',
+    'original': 'original-art.jpg',      # このみさんの原画
+    'poster': 'neon-city-poster.png',                         # ポスター
+    'faces': 'character-expressions.png',                # 顔グラフィック（ダメージ・怒り・喜び）
+    'sheet_k': 'kurenai-sprites.png',       # 左上の大きな顔を「通常」の顔に使う
+    'sheet_a': 'aoi-sprites.png',
 }
 # 顔: (元の絵, 絵の全体の範囲)。HUD ではこの中の一部（FACE_HUD）を、カットインでは横長の帯（FACE_BAND）を使う
 FACES = {
@@ -43,7 +43,7 @@ def uri(im, fmt, **kw):
 
 
 def main():
-    imgs = {k: Image.open(os.path.join(ROOT, v)).convert('RGB') for k, v in SRC.items()}
+    imgs = {k: Image.open(os.path.join(SOURCE_ART, v)).convert('RGB') for k, v in SRC.items()}
     out, dev, meta = {}, {}, {}
     for k, (src, box) in FACES.items():
         im = imgs[src].crop(box)

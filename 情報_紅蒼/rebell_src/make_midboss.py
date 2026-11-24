@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""フォルダにある「中ボス.png」（空手使い・黒瀬龍士のスプライトシート）から、ゲームで使うコマを切り出して
+"""フォルダにある「kurose-sprites.png」（空手使い・黒瀬龍士のスプライトシート）から、ゲームで使うコマを切り出して
 js/07_midboss.js を作る。
 使い方:  python rebell_src/make_midboss.py [確認用の一覧画像を出すフォルダ]
 
@@ -15,8 +15,8 @@ import sprite_tools as T
 import make_sprites as MS
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(HERE)
-SHEET = '中ボス.png'
+SOURCE_ART = os.path.join(os.path.dirname(HERE), 'art', 'source')
+SHEET = 'kurose-sprites.png'
 OUTLINE = np.array(T.OUTLINE, np.uint8)
 # 段の帯（見出しの線より下、ラベルの文字より上）
 BAND = {'A': (86, 143), 'B': (197, 246), 'C': (303, 357), 'D': (399, 453), 'E': (512, 580), 'F': (652, 702), 'G': (778, 871)}
@@ -177,7 +177,7 @@ def torso_x(rgba):
 
 
 def extract():
-    a = T.load(os.path.join(ROOT, SHEET))
+    a = T.load(os.path.join(SOURCE_ART, SHEET))
     frames = {}
     for name, cfg in CFG.items():
         band, base, items = cfg[:3]
@@ -266,7 +266,7 @@ def data_uri(im, kind, **kw):
 
 
 def faces(dev):
-    src = Image.open(os.path.join(ROOT, SHEET)).convert('RGB')
+    src = Image.open(os.path.join(SOURCE_ART, SHEET)).convert('RGB')
     y, w, h = ICON_BOX
     strip = Image.new('RGB', (w * len(ICON_X), h))
     for i, x in enumerate(ICON_X):

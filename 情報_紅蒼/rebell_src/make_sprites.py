@@ -11,10 +11,10 @@ from PIL import Image, ImageDraw
 import sprite_tools as T
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(HERE)
+SOURCE_ART = os.path.join(os.path.dirname(HERE), 'art', 'source')
 SHEETS = {
-    'kurenai': '紅〈KURENAI〉ネオン・スプライトシート.png',
-    'aoi': '蒼（AOI）ネオン刀アクションスプライトシート.png',
+    'kurenai': 'kurenai-sprites.png',
+    'aoi': 'aoi-sprites.png',
 }
 # 行の帯（ラベルの文字より下、パネルの枠線より上）
 ROW = {'A': (116, 198), 'B': (268, 350), 'C': (413, 489), 'D': (554, 629), 'E': (692, 780), 'F': (832, 946)}
@@ -146,7 +146,7 @@ def lean(rgba, n, neck):
 
 
 def extract(who):
-    a = T.load(os.path.join(ROOT, SHEETS[who]))
+    a = T.load(os.path.join(SOURCE_ART, SHEETS[who]))
     frames = {}
     for name, cfg in CFG[who].items():
         row, base, items = cfg[:3]; gopt = cfg[3] if len(cfg) > 3 else {}
