@@ -23,7 +23,23 @@
       { who: 'aoi', face: 'normal', text: ['うん。力が満ちたら、二人で重ねよう。', '――『紅蒼交錯』を。'] },
       { who: 'kurenai', face: 'anger', pose: 'event', text: ['よーし、行くよ、蒼！', 'あたしたち『REBELL』の出番だ！'] },
       { who: 'aoi', face: 'joy', pose: 'stance', text: ['ええ、紅。背中は任せて。'] }
+    ],
+    // 中ボス「黒瀬 龍士」と初めて会ったとき（52_karate.js の enter から）。
+    // シートの説明に沿わせてある: カメラを手にする異色の武闘家。正体と目的は謎。卓越した空手の技術で立ちはだかる
+    kurose: [
+      { who: 'kurose', text: ['――そこまでだ。', 'いい月、いい顔だ。一枚、撮らせてもらう。'] },
+      { who: 'kurenai', face: 'anger', text: ['誰！？　こっちは急いでるの！', '《龍》は、もう目を覚ましてるんだから！'] },
+      { who: 'kurose', text: ['知っている。だから、ここで確かめる。', '龍の前に立てるだけの腕が、あるのかどうかをな。'] },
+      { who: 'aoi', face: 'normal', text: ['……紅、気をつけて。この人、流れが読めない。', '構えは空手。でも、あのカメラ……何かある。'] },
+      { who: 'kurose', text: ['黒瀬 龍士。通りすがりの、ただの空手使いだ。', 'さあ――二人まとめて、かかってこい。'] },
+      { who: 'kurenai', face: 'anger', pose: 'stance', text: ['言ったね！　行くよ、蒼！'] }
     ]
+  };
+  // 話し手ごとの見た目。side = カットインがすべり込んでくる側（-1 = 左、1 = 右）。portrait = 顔グラフィックの代わりに、シートの大きな絵を使う
+  var WHO = {
+    kurenai: { side: -1, col: PINK, dark: '#40103c', lite: '#8a2062', mid: '#6a1a58', plate: '#5a1650', name: '紅', kana: 'くれない', en: 'KURENAI', icon: 'iconKurenai' },
+    aoi: { side: 1, col: CYAN, dark: '#0c1450', lite: '#1a36a8', mid: '#152a80', plate: '#12246e', name: '蒼', kana: 'あおい', en: 'AOI', icon: 'iconAoi' },
+    kurose: { side: 1, col: '#c98bff', dark: '#170a30', lite: '#4a2890', mid: '#2e1960', plate: '#2a1650', name: '黒瀬', kana: 'くろせ', en: 'KUROSE RYUJI', icon: null, portrait: true }
   };
 
   function count(ln) { var n = 0, i; for (i = 0; i < ln.text.length; i++) n += ln.text[i].length; return n; }
@@ -32,21 +48,24 @@
   // 会話を始める（startStage から呼ばれる）。章の題と曲は、会話が終わってから出す
   //   i = 何番目の台詞か、t = その台詞が始まってからのフレーム数、T = 会話全体のフレーム数、
   //   inT = 入りの演出、outT = 終わりの演出（-1 = まだ）、full = 台詞を全部出したか、prev = すべり出ていく前のカットイン
-  R.beginTalk = function (key) {
-    G.talk = { key: key, lines: R.TALKS[key], i: 0, t: 0, T: 0, inT: 0, outT: -1, full: false, prev: null };
+  //   opt.vs = 向かい合っている相手（中ボス）。ステージの途中の会話で、終わったらそのまま戦いに戻る
+  R.beginTalk = function (key, opt) {
+    G.talk = { key: key, lines: R.TALKS[key], i: 0, t: 0, T: 0, inT: 0, outT: -1, full: false, prev: null, vs: (opt && opt.vs) || null };
     G.state = 'talk'; G.stateT = 0;
   };
   function leave(tk) { tk.outT = 0; tk.prev = null; R.snd('switch'); }
   function finish() {
+    var vs = G.talk.vs;
     G.pl.animT = G.talk.T;      // 立ち姿の呼吸を、会話中の続きから
     G.talk = null; G.state = 'play'; G.stateT = 0;
-    R.openStage();
+    if (!vs) R.openStage();     // ステージの前の会話なら、ここで章の題と曲
   }
   // ok = 決定（台詞を全部出す → 次の台詞へ）、skip = 会話を飛ばす
   R.updateTalk = function (ok, skip) {
     var tk = G.talk, ln;
     if (!tk) { G.state = 'play'; return; }
     G.t++; tk.T++; tk.inT++;
+    if (tk.vs && R.Karate) R.Karate.talkPose(tk.vs, tk.inT >= IN && tk.outT < 0 && tk.lines[tk.i].who === 'kurose', tk.T);      // 中ボスは、話すときだけ手招きする
     if (G.fadeDir) { G.fade = R.clamp(G.fade + G.fadeDir * 0.04, 0, 1); if (G.fade === 0 || G.fade === 1) G.fadeDir = 0; }
     if (tk.prev && ++tk.prev.t > 8) tk.prev = null;
     if (tk.outT >= 0) { if (++tk.outT >= OUT) finish(); return; }
@@ -64,31 +83,46 @@
   // ---- 二人の立ち姿（ゲームの座標。55_render.js の renderChars から呼ばれる。draw = コマを描く関数）----
   R.talkChars = function (g, cam, draw) {
     var tk = G.talk; if (!tk) return;
-    var ln = tk.lines[tk.i], kx = G.pl.x, started = tk.inT >= IN;
-    function actor(who, x, face, ph) {
+    var ln = tk.lines[tk.i], p = G.pl, kx = p.x, started = tk.inT >= IN;
+    // leap = 終わりに跳び去る距離（0 なら、その場に残る）
+    function actor(who, x, face, ph, leap) {
       var S = R.STAND[who], st = S.idle, f, br, y = R.GY, a = 1, v;
       var speaking = started && tk.outT < 0 && ln.who === who;
       if (speaking && ln.pose === 'event') { f = R.frame(who, 'event', 1); st = null; }
       else { if (speaking && ln.pose === 'stance') st = S.stance; f = R.frame(who, st === S.idle ? 'idle' : 'stance', st.i); }
       if (st) { v = R.breath(st, tk.T + ph); br = { knee: st.knee, neck: st.neck, d: v[0], e: v[1] }; }
       if (speaking && tk.t < 14) y -= Math.round(5 * Math.sin(PI * tk.t / 14));       // 話しはじめに、ぴょこんと跳ねる
-      if (who === 'aoi' && tk.outT >= 0) {                                             // 終わり: 蒼は紅の後ろへ跳んで、姿を消す（交代を待つ）
+      if (leap && tk.outT >= 0) {                                                      // 終わり: 相棒は後ろへ跳んで、姿を消す（交代を待つ）
         v = Math.min(1, tk.outT / 26);
-        x -= (GAP + 34) * R.ease(v); y -= Math.round(74 * Math.sin(PI * v * 0.8)); a = 1 - v * v;
+        x -= leap * R.ease(v); y -= Math.round(74 * Math.sin(PI * v * 0.8)); a = 1 - v * v;
         f = R.frame(who, 'jump', v < 0.3 ? 2 : v < 0.65 ? 3 : 4); br = null;
       }
       if (a <= 0) return;
       g.globalAlpha = a; draw(g, f, x - cam, y, face, 0, 1, 1, null, br); g.globalAlpha = 1;
     }
-    actor('aoi', kx + GAP, -1, 40);      // 蒼を先に描く（跳び去るとき、紅の後ろを通る）
-    actor('kurenai', kx, 1, 0);
+    if (tk.vs) {      // 中ボスと向かい合う: いま操作している子が前、相棒はその後ろに控える
+      var fc = tk.vs.x >= kx ? 1 : -1, act = p.who, par = act === 'kurenai' ? 'aoi' : 'kurenai';
+      actor(par, kx - fc * 30, fc, 40, fc * 44);
+      actor(act, kx, fc, 0, 0);
+      return;
+    }
+    actor('aoi', kx + GAP, -1, 40, GAP + 34);      // 蒼を先に描く（跳び去るとき、紅の後ろを通る）
+    actor('kurenai', kx, 1, 0, 0);
   };
+  // 中ボスの大きな絵（顔とカメラが入るように、上寄りを切り取る）
+  function drawPortrait(g, x, y, w, h) {
+    var im = R.IMG.midPortrait;
+    if (!im || !im.complete || !im.naturalWidth) return;
+    var sw = im.naturalWidth, sh = Math.min(im.naturalHeight, sw * h / w), sy = Math.min(im.naturalHeight - sh, im.naturalHeight * 0.06);
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    g.drawImage(im, 0, sy, sw, sh, x, y, w, h);
+  }
 
   // ---- カットイン: 斜めの帯に、話す子の顔。紅は左から、蒼は右からすべり込む ----
   //   k = 出ぐあい（0〜1）、tt = 流れる光の筋の時刻、pt = この表情になってからのフレーム数
   function band(g, who, expr, k, tt, pt) {
     if (k <= 0) return;
-    var K = who === 'kurenai', col = K ? PINK : CYAN, dark = K ? '#40103c' : '#0c1450', lite = K ? '#8a2062' : '#1a36a8', mid = K ? '#6a1a58' : '#152a80';
+    var W = WHO[who], K = W.side < 0, col = W.col, dark = W.dark, lite = W.lite, mid = W.mid;      // K = 左からすべり込む（紅）。蒼と中ボスは右から
     var w = 1250, h = 300, sk = 84, y = 138, x0 = K ? -90 : 1920 + 90 - w - sk, i, gr, im;
     g.save(); g.translate((1 - k) * (K ? -1 : 1) * (w + 240), 0);
     g.beginPath(); g.moveTo(x0 + sk, y); g.lineTo(x0 + w + sk, y); g.lineTo(x0 + w, y + h); g.lineTo(x0, y + h); g.closePath();
@@ -96,11 +130,13 @@
     gr = g.createLinearGradient(x0, 0, x0 + w + sk, 0); gr.addColorStop(K ? 0 : 1, lite); gr.addColorStop(K ? 1 : 0, dark);
     g.fillStyle = gr; g.fillRect(x0, y, w + sk, h);
     // 武器の絵（大鎌・刀）を、帯のまん中にうっすらと
-    im = R.IMG[K ? 'iconKurenai' : 'iconAoi'];
+    im = W.icon ? R.IMG[W.icon] : null;
     if (im && im.complete && im.naturalWidth) { g.globalAlpha = 0.34; g.imageSmoothingEnabled = true; g.drawImage(im, K ? x0 + 596 : x0 + w + sk - 596 - 330, y + 40, 330, 220); g.globalAlpha = 1; }
     // 顔（出た瞬間は少し大きく、すぐ戻る）
     var fw = 450, fh = 306, fx = K ? x0 + 150 : x0 + w + sk - 150 - fw, pop = 1 + 0.07 * Math.max(0, 1 - pt / 9);
-    g.save(); g.translate(fx + fw / 2, y + h / 2); g.scale(pop, pop); U.drawFace(g, who, expr, 'hud', -fw / 2, -fh / 2, fw, fh); g.restore();
+    g.save(); g.translate(fx + fw / 2, y + h / 2); g.scale(pop, pop);
+    if (W.portrait) drawPortrait(g, -fw / 2, -fh / 2, fw, fh); else U.drawFace(g, who, expr, 'hud', -fw / 2, -fh / 2, fw, fh);
+    g.restore();
     // 顔の両端を、帯の色になじませる
     gr = g.createLinearGradient(K ? fx + fw - 150 : fx, 0, K ? fx + fw : fx + 150, 0);
     gr.addColorStop(K ? 0 : 1, 'rgba(0,0,0,0)'); gr.addColorStop(K ? 1 : 0, mid);
@@ -120,20 +156,20 @@
     g.beginPath(); g.moveTo(x0 + sk, y + 9); g.lineTo(x0 + w + sk, y + 9); g.moveTo(x0, y + h - 9); g.lineTo(x0 + w, y + h - 9); g.stroke();
     // 名前
     var nx = K ? x0 + w - 200 : x0 + sk + 216;
-    T(g, K ? '紅' : '蒼', nx, y + 190, 168, col, 'center', U.MIN, '#ffffff', 9);
-    T(g, K ? 'KURENAI' : 'AOI', nx, y + 246, 30, '#ffffff', 'center', U.font, '#120a30', 6);
+    T(g, W.name, nx, y + (W.name.length > 1 ? 184 : 190), W.name.length > 1 ? 140 : 168, col, 'center', U.MIN, '#ffffff', 9);
+    T(g, W.en, nx, y + 246, 30, '#ffffff', 'center', U.font, '#120a30', 6);
     g.restore();
   }
 
   // ---- 台詞の枠 ----  k = 出ぐあい（下からせり上がる）
   function box(g, tk, ln, k) {
-    var K = ln.who === 'kurenai', col = K ? PINK : CYAN, x = 250, w = 1420, h = 204, y = 806 + (1 - k) * 320, n = shownOf(tk), i;
+    var W = WHO[ln.who], K = W.side < 0, col = W.col, x = 250, w = 1420, h = 204, y = 806 + (1 - k) * 320, n = shownOf(tk), i;
     panel(g, x, y, w, h, 18, 'rgba(14,9,44,.92)', col, 5); panel(g, x + 9, y + 9, w - 18, h - 18, 12, null, 'rgba(255,255,255,.3)', 2);
-    // 名札（紅は左、蒼は右）
-    var nw = 286, nx = K ? x + 46 : x + w - 46 - nw;
-    panel(g, nx, y - 36, nw, 62, 12, K ? '#5a1650' : '#12246e', col, 4);
-    T(g, K ? '紅' : '蒼', nx + 54, y + 12, 50, '#ffffff', 'center', U.MIN, '#120a30', 6);
-    T(g, K ? 'くれない' : 'あおい', nx + 100, y + 7, 30, '#ffffff', 'left', U.font, '#120a30', 5);
+    // 名札（紅は左、蒼と中ボスは右）
+    var nw = 286, nx = K ? x + 46 : x + w - 46 - nw, two = W.name.length > 1;
+    panel(g, nx, y - 36, nw, 62, 12, W.plate, col, 4);
+    T(g, W.name, nx + (two ? 78 : 54), y + 12, 50, '#ffffff', 'center', U.MIN, '#120a30', 6);
+    T(g, W.kana, nx + (two ? 142 : 100), y + 7, 30, '#ffffff', 'left', U.font, '#120a30', 5);
     // 台詞（1 文字ずつ出る）
     var y0 = y + (ln.text.length > 1 ? 106 : 138);
     for (i = 0; i < ln.text.length && n > 0; i++) { T(g, ln.text[i].slice(0, n), x + 70, y0 + i * 64, 44, '#ffffff', 'left', U.font, '#120a30', 8); n -= ln.text[i].length; }

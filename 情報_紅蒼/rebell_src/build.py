@@ -14,7 +14,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 OUT = os.path.join(ROOT, 'REBELL_紅蒼交錯.html')
 INDEX = os.path.join(ROOT, 'index.html')      # 配布用と同じ中身を、この名前でも置く
-DEV_SWAP = {'05_assets.js': 'assets_dev.js', '06_sprites.js': 'sprites_dev.js'}
+DEV_SWAP = {'05_assets.js': 'assets_dev.js', '06_sprites.js': 'sprites_dev.js', '07_midboss.js': 'midboss_dev.js'}
 # アプリ内プレビューは 500KB くらいまでしか開けないので、確認用からは音のモジュールを外す（無くても動く）
 DEV_SKIP = ('10_codex_audio.js', '11_codex_sfx_slash.js')
 

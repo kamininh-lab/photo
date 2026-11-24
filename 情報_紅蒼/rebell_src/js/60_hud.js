@@ -126,6 +126,12 @@
     S.ground.forEach(function (q) { g.fillRect(bx + q[0] * sx, by, (q[1] - q[0]) * sx, 5); });
     S.plats.forEach(function (q) { g.fillStyle = '#8a70e0'; g.fillRect(bx + q[0] * sx - 2, by - (R.GY - q[1]) * 0.5, Math.max(8, q[2] * sx + 4), 7); });
     G.terminals.forEach(function (tm) { g.fillStyle = tm.on ? CYAN : '#5a8ab0'; g.fillRect(bx + tm.x * sx - 2, by - 12, 5, 12); });
+    // 中ボスのいる所（退けるまで、紫の菱形）
+    if (S.mid && !G.midDone) {
+      var mx = bx + S.mid.x * sx, my = by - 12;
+      g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(mx, my - 11); g.lineTo(mx + 9, my); g.lineTo(mx, my + 11); g.lineTo(mx - 9, my); g.fill();
+      g.fillStyle = (G.t >> 4) % 2 ? '#a050ff' : '#7a2be0'; g.beginPath(); g.moveTo(mx, my - 8); g.lineTo(mx + 6, my); g.lineTo(mx, my + 8); g.lineTo(mx - 6, my); g.fill();
+    }
     // ゴール（宝箱の印）
     var gx = bx + S.boss.x * sx, gy = by - 24;
     g.fillStyle = '#7a4a18'; g.fillRect(gx - 14, gy - 2, 28, 24); g.fillStyle = '#ffc83e'; g.fillRect(gx - 11, gy + 1, 22, 18);
@@ -263,17 +269,19 @@
     // ボスの体力
     var b = G.boss;
     if (b && !b.gone && !(b.dead && b.type !== 'dragon')) {
-      var ba = G.bossIntro > 0 ? 1 - G.bossIntro / 110 : 1;
+      var mid = !!b.mid, ba = G.bossIntro > 0 ? clamp(1 - G.bossIntro / 110, 0, 1) : 1;      // mid = 中ボス（紫の帯と、顔のアイコン）
       g.globalAlpha = ba;
-      T(g, b.name, 520, 968, 38, '#ffffff', 'left', MIN, '#2a0818', 8); T(g, b.sub, 1400, 968, 20, '#ffb0c0', 'right', UI, '#2a0818', 5);
-      bar(g, 510, 978, 900, 30, b.hp / b.max * ba, '#ff9a6a', '#e02a5a');
+      T(g, b.name, 520, 968, 38, '#ffffff', 'left', MIN, mid ? '#1e0a3c' : '#2a0818', 8); T(g, b.sub, 1400, 968, 20, mid ? '#d9b8ff' : '#ffb0c0', 'right', UI, mid ? '#1e0a3c' : '#2a0818', 5);
+      if (mid) bar(g, 510, 978, 900, 30, b.hp / b.max * ba, '#c98bff', '#7a2be0'); else bar(g, 510, 978, 900, 30, b.hp / b.max * ba, '#ff9a6a', '#e02a5a');
+      if (mid) midFace(g, b, 392, 906, 104, 114);
       g.globalAlpha = 1;
-      if (G.bossIntro > 20) {
+      if (G.bossIntro > 20 && G.bossIntro <= 110) {
         var ia = Math.min(1, (110 - G.bossIntro) / 14) * Math.min(1, (G.bossIntro - 20) / 14);
         g.globalAlpha = ia; g.fillStyle = 'rgba(8,2,24,.6)'; g.fillRect(0, 430, 1920, 200);
-        g.fillStyle = '#ff2e60'; g.fillRect(0, 430, 1920, 5); g.fillRect(0, 625, 1920, 5);
-        T(g, 'WARNING', 960, 500, 44, (G.t >> 3) % 2 ? '#ff5a6a' : '#ffd0d6', 'center', SERIF, '#2a0818', 8);
-        T(g, b.name, 960, 584, 78, '#ffffff', 'center', MIN, '#a8183c', 10); g.globalAlpha = 1;
+        g.fillStyle = mid ? '#a050ff' : '#ff2e60'; g.fillRect(0, 430, 1920, 5); g.fillRect(0, 625, 1920, 5);
+        if (mid) T(g, 'MID BOSS　―　空手使い', 960, 500, 40, (G.t >> 3) % 2 ? '#c98bff' : '#f0e0ff', 'center', UI, '#1e0a3c', 8);
+        else T(g, 'WARNING', 960, 500, 44, (G.t >> 3) % 2 ? '#ff5a6a' : '#ffd0d6', 'center', SERIF, '#2a0818', 8);
+        T(g, b.name, 960, 584, 78, '#ffffff', 'center', MIN, mid ? '#5a1ea8' : '#a8183c', 10); g.globalAlpha = 1;
       }
     }
     if (G.helpT > 0 && !G.boss && G.state === 'play') { var ha = Math.min(1, G.helpT / 40); helpPanel(g, ha); keyHints(g, ha); }
@@ -297,9 +305,27 @@
       T(g, G.card.title, 960, 540, 74, '#ffffff', 'center', MIN, '#3a1470', 10); T(g, G.card.sub, 960, 598, 28, '#c8b8ff', 'center', SERIF, '#120a30', 5);
       g.globalAlpha = 1;
     }
+    if (G.dazzle > 0) {      // 中ボスのフラッシュで目がくらんでいる: 画面が白く飛び、だんだん戻る
+      g.fillStyle = 'rgba(255,255,255,' + (0.88 * Math.pow(G.dazzle / 84, 1.25)) + ')'; g.fillRect(0, 0, 1920, 1080);
+    }
     if (G.flash > 0) { g.fillStyle = 'rgba(255,255,255,' + Math.min(1, G.flash) + ')'; g.fillRect(0, 0, 1920, 1080); }
     if (G.fade > 0) { g.fillStyle = 'rgba(5,4,15,' + G.fade + ')'; g.fillRect(0, 0, 1920, 1080); }
   };
+  // 中ボスの顔（シートの表情アイコン）。八角形の枠に入れる
+  function midFace(g, b, x, y, w, h) {
+    var im = R.IMG.midIcons, D = window.REBELL_MIDBOSS, i = R.Karate.icon(b);
+    if (!im || !im.complete || !im.naturalWidth || !D) return;
+    g.save();
+    cham(g, x, y, w, h, 14); g.fillStyle = '#1e0a3c'; g.fill();
+    g.save(); cham(g, x, y, w, h, 14); g.clip();
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    g.drawImage(im, i * D.iconSize[0], 0, D.iconSize[0], D.iconSize[1], x, y, w, h);
+    if (b.flash > 0) { g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(x, y, w, h); }
+    g.restore();
+    g.lineJoin = 'miter'; cham(g, x, y, w, h, 14); g.lineWidth = 5; g.strokeStyle = '#ffffff'; g.stroke();
+    cham(g, x + 4, y + 4, w - 8, h - 8, 11); g.lineWidth = 2; g.strokeStyle = '#c98bff'; g.stroke();
+    g.restore();
+  }
 
   // ---- 各画面 ----
   function dim(g, a) { g.fillStyle = 'rgba(6,3,22,' + a + ')'; g.fillRect(0, 0, 1920, 1080); }

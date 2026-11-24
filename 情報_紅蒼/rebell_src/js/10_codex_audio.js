@@ -83,6 +83,17 @@
         '93 91 88 - 84 88 93 96|89 84 81 77 81 84 89 -|' +
         '87 83 81 78 75 78 83 87|95 90 87 83 81 78 75 -')
     },
+    // 中ボス戦（黒瀬 龍士）。神妙な曲: 遅く、音数を絞った、和の音階（都節 D E♭ G A B♭）。
+    // 和音の欄は、低い持続音と笙ふうの響きに使う。旋律は尺八ふう（「-」のあいだは前の音を伸ばす）。編曲は solemn()
+    midboss: {
+      bpm: 88, loop: true,
+      harmony: chords('38,45,50|38,45,51|38,43,50|38,46,50|38,45,50|39,46,51|38,43,50|38,45,51|' +
+        '38,45,50|43,46,50|39,46,51|38,45,50|45,50,51|43,46,50|39,46,51|38,45,50'),
+      melody: rows('62 - - - 63 - 62 -|57 - - - - - 58 -|62 - - 67 - - 69 -|70 - 69 - 67 - - -|' +
+        '69 - - - 70 - 69 67|63 - - - 62 - - -|67 - 69 - 70 - 74 -|75 - 74 - 69 - - -|' +
+        '74 - 75 74 70 - 69 -|67 - 69 70 74 - - -|75 - 79 - 81 - 79 75|74 - - 70 69 - 67 -|' +
+        '81 - 82 81 79 - 75 -|74 75 74 70 69 - 67 -|63 - 62 - 58 - 57 -|62 - - - - - - -')
+    },
     clear: { bpm: 120, loop: false, seconds: 4.35 },
     gameover: { bpm: 120, loop: false, seconds: 4.4 }
   };
@@ -297,12 +308,71 @@
     }
   }
 
+  // 中ボス戦「神妙」の編曲。前半（A）は音を絞って静かに、後半（B）は太鼓と箏が細かくなって張りつめる。
+  //   低い持続音 / 笙ふうの薄い和音 / 尺八ふうの旋律（やわらかい立ち上がり・半音下からのしゃくり・息の音）/ 箏のつまびき / 太鼓 / 鈴 / 拍子木
+  function solemn(g, bar, beat, b, chord, melody, eighth, barTime, t) {
+    const k = beat / 2;
+    if (beat === 0) {
+      voice(g, t, barTime * 1.02, { freq: hz(chord[0]), wave: 'triangle', vol: 0.085, attack: 0.25, hold: 0.8, cut: 420 });
+      voice(g, t, barTime * 1.02, { freq: hz(chord[1]), wave: 'sine', vol: 0.035, attack: 0.4, hold: 0.8, cut: 600 });
+      chord.forEach((n, i) => voice(g, t, barTime * 0.98, {
+        freq: hz(n + 24), wave: 'sawtooth', vol: b ? 0.026 : 0.018,
+        attack: 0.5, hold: 0.7, cut: b ? 1500 : 1000, cutTo: 700, detune: (i - 1) * 6
+      }));
+    }
+    if (beat % 2 === 0 && melody[k] !== null) {
+      let len = 1;
+      while (k + len < 8 && melody[k + len] === null) len++;
+      const f = hz(melody[k]), d = eighth * len * 0.96;
+      voice(g, t, d, { freq: f, wave: 'triangle', vol: 0.105, attack: 0.06, hold: 0.75, cut: 2600, cutTo: 1500, detune: -4 });
+      voice(g, t, d, { freq: f, wave: 'sine', vol: 0.042, attack: 0.09, hold: 0.75, cut: 3000, detune: 5 });
+      voice(g, t, Math.min(0.11, d), { freq: f * 0.944, to: f, wave: 'triangle', vol: 0.036, attack: 0.01, cut: 2000 });
+      voice(g, t, Math.min(0.16, d), { noise: true, filter: 'bandpass', cut: Math.min(6000, f * 3), q: 2.2, vol: 0.026, attack: 0.02 });
+      if (b) voice(g, t, d, { freq: f / 2, wave: 'triangle', vol: 0.034, attack: 0.08, hold: 0.7, cut: 1200 });
+    }
+    const pluck = (n, v, len) => {
+      voice(g, t, len, { freq: hz(n), wave: 'triangle', vol: v, attack: 0.002, hold: 0.05, cut: 5200, cutTo: 900 });
+      voice(g, t, len * 0.6, { freq: hz(n + 12), wave: 'square', vol: v * 0.22, attack: 0.002, hold: 0.04, cut: 6000, cutTo: 1500 });
+    };
+    const don = v => {
+      tone(g, t, 0.42, 92, 0.3 * v, 'triangle', 40, 700);
+      hiss(g, t, 0.09, 0.12 * v, 420, 'lowpass', 120);
+      tone(g, t, 0.05, 180, 0.12 * v, 'sine', 90, 900);
+    };
+    const ten = v => {
+      tone(g, t, 0.09, 300, 0.11 * v, 'triangle', 230, 1800);
+      hiss(g, t, 0.05, 0.07 * v, 1800, 'bandpass', 900);
+    };
+    const ka = v => {
+      tone(g, t, 0.035, 1250, 0.07 * v, 'square', 1100, 3200);
+      hiss(g, t, 0.02, 0.05 * v, 3500);
+    };
+    const rin = () => [1, 2.76, 5.4].forEach((m, i) => voice(g, t, 2.6 - i * 0.6, {
+      freq: hz(74) * m, wave: 'sine', vol: [0.06, 0.028, 0.012][i], attack: 0.002, hold: 0.03, cut: 9000
+    }));
+    if (!b) {
+      if (beat % 2 === 0) pluck(chord[[0, 1, 2, 1, 2, 1, 0, 1][k]] + (k === 4 ? 24 : 12), k % 4 === 0 ? 0.085 : 0.06, eighth * 2.6);
+      if (beat === 0) don(1);
+      if (bar % 2 === 1 && (beat === 10 || beat === 12)) don(beat === 10 ? 0.5 : 0.7);
+      if (bar % 2 === 0 && beat === 8) ten(0.8);
+      if (bar === 7 && (beat === 8 || beat === 12 || beat === 14)) ka(1);
+    } else {
+      pluck(chord[[0, 1, 2, 1, 0, 2, 1, 2, 0, 1, 2, 1, 2, 1, 2, 1][beat]] + (beat % 4 === 2 ? 24 : 12), beat % 4 === 0 ? 0.075 : 0.05, eighth * 1.8);
+      if (beat === 0 || beat === 6 || beat === 8) don(beat === 6 ? 0.55 : 1);
+      if (bar % 2 === 1 && beat === 14) don(0.7);
+      if (beat === 4 || beat === 12) ten(1); else if (beat === 2 || beat === 10) ten(0.45);
+      if (bar === 15 && [0, 4, 8, 10, 12, 13, 14, 15].includes(beat)) ka(0.7 + beat * 0.03);
+    }
+    if (bar % 4 === 0 && beat === 0) rin();
+  }
+
   function arrange(g, index, t) {
     if (!g.score.loop) { jingle(g, index, t); return; }
     const s = index % 256, bar = Math.floor(s / 16), beat = s % 16;
     const b = bar >= 8, chord = g.score.harmony[bar], root = chord[0];
     const eighth = 60 / g.score.bpm / 2, barTime = eighth * 8;
     const name = g.name, melody = g.score.melody[bar];
+    if (name === 'midboss') { solemn(g, bar, beat, b, chord, melody, eighth, barTime, t); return; }
     if (beat === 0) pad(g, t, chord, barTime * 0.94, b);
     if (name === 'title') {
       if (beat % 2 === 0) {
@@ -534,10 +604,25 @@
       case 'deny':
         p(110, 100, 0.11, 0.16, 'square', 0, 1000);
         p(110, 90, 0.13, 0.16, 'square', 0.14, 1000); break;
+      // ---- 中ボス（黒瀬 龍士）----
+      case 'shutter':      // カメラのシャッター: カシャッ（幕が開いて閉じる 2 つの音）と、フラッシュの高い光
+        n(0.014, 0.3, 3000); p(2400, 1700, 0.022, 0.1, 'square');
+        p(160, 70, 0.08, 0.2, 'triangle');
+        n(0.022, 0.26, 2200, 0.065); p(1900, 1300, 0.02, 0.08, 'square', 0.065);
+        p(3200, 5200, 0.14, 0.06, 'triangle', 0.02); break;
+      case 'guard':        // ガード: 鈍い受け止めと、短い金属音
+        p(210, 120, 0.09, 0.26, 'triangle');
+        n(0.05, 0.16, 1500, 0, 'bandpass', 900);
+        p(1900, 1500, 0.11, 0.07, 'triangle', 0.01); break;
+      case 'wave':         // 衝撃掌打: 空気を押し出す低い音と、うなり
+        n(0.5, 0.26, 600, 0, 'bandpass', 2400);
+        p(90, 300, 0.35, 0.2, 'sawtooth', 0, 1200);
+        p(520, 180, 0.4, 0.1, 'triangle', 0.03); break;
     }
   }
 
   const effects = new Set([
+    'shutter', 'guard', 'wave',
     'select', 'start', 'jump', 'djump', 'land', 'dash',
     'slash_red1', 'slash_red2', 'slash_red3', 'slash_blue1', 'slash_blue2', 'slash_blue3',
     'hit', 'hit_heavy', 'special_red', 'special_blue', 'switch', 'cross',

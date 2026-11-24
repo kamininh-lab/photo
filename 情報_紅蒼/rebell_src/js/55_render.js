@@ -4,7 +4,8 @@
   var R = window.REBELL, G = R.game, GY = R.GY, clamp = R.clamp, rand = R.rand, PI = Math.PI;
   var tintC = null, tintBig = null;
   var COL = {
-    red: ['#ff2e88', '#ff8ad0', '#fff0fa'], blue: ['#1a9cff', '#6ae8ff', '#f0feff'], gold: ['#ff8a2a', '#ffd36a', '#ffffff']
+    red: ['#ff2e88', '#ff8ad0', '#fff0fa'], blue: ['#1a9cff', '#6ae8ff', '#f0feff'], gold: ['#ff8a2a', '#ffd36a', '#ffffff'],
+    purple: ['#7a2be0', '#c98bff', '#ffffff']      // 中ボスの蹴りの軌跡
   };
 
   function spr(g, c, x, y, face, ox, oy) {
@@ -162,6 +163,7 @@
 
   function drawEnemy(g, e, cam) {
     var S, an, fr, c, x = e.x - cam;
+    if (e.draw) { e.draw(g, e, cam); return; }      // 中ボスと写し身は、自分で描く（52_karate.js）
     if (e.type === 'dragon') {
       if (e.gone) return;
       c = R.Dragon.render(e.pose);
@@ -193,6 +195,7 @@
   }
   function drawShot(g, s, cam) {
     var x = Math.round(s.x - cam), y = Math.round(s.y), I = R.SPR.items, i;
+    if (s.draw) { s.draw(g, s, cam); return; }      // 中ボスの技（衝撃波・地裂の牙）
     if (s.type === 'bullet') g.drawImage(I.bullet, x - 4, y - 4);
     else if (s.type === 'fireball') g.drawImage(I.fireball, x - 8, y - 8);
     else if (s.type === 'flame') {
@@ -380,6 +383,7 @@
       e = G.fx[i];
       if (e.type === 'spark') spark(fg, e, cam); else if (e.type === 'boom') boom(fg, e, cam); else if (e.type === 'quake') quake(fg, e, cam);
       else if (e.type === 'crack') crack(fg, e, cam); else if (e.type === 'xflash') xflash(fg, e, cam);
+      else if (e.type === 'kfx') R.Karate.drawFx(fg, e, cam);      // 中ボスの地裂撃
     }
     for (i = 0; i < G.parts.length; i++) {
       var q = G.parts[i], qx = Math.round(q.x - cam), qy = Math.round(q.y);

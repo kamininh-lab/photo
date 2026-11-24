@@ -193,9 +193,19 @@
   function damageEnemy(e, dmg, dir, kb, opt) {
     opt = opt || {};
     if (e.dead || e.dying || e.invul > 0) return false;
-    var p = G.pl, d = Math.round(dmg * atkMul() * rand(0.92, 1.08) * (opt.weak ? 1.6 : 1));
-    e.hp -= d; e.flash = 7;
+    // 中ボス（52_karate.js）は、受け方を自分で決める: false = 見切って当たらない / { mul, guard } = ダメージの倍率と、ガードしたか
+    var gd = e.onHit ? e.onHit(e, dmg, dir, kb, opt) : null;
+    if (gd === false) return false;
+    var p = G.pl, d = Math.round(dmg * atkMul() * rand(0.92, 1.08) * (opt.weak ? 1.6 : 1) * (gd ? gd.mul : 1));
     var cx = opt.cx != null ? opt.cx : e.x, cy = opt.cy != null ? opt.cy : e.y - e.h * 0.55;
+    if (gd && gd.guard) {      // ガードされた: 少しだけ削れる（これで倒れることはない）。コンボも SP も伸びない
+      d = Math.max(1, d); e.hp = Math.max(1, e.hp - d); e.flash = 3;
+      fx({ type: 'spark', x: cx + rand(-3, 3), y: cy + rand(-4, 4), life: 8, size: 11, col: 'blue' });
+      text(cx, cy - 8, d, '#aebcff');
+      G.hitstop = Math.max(G.hitstop, 2); shake(1.5); R.snd('guard');
+      return true;
+    }
+    e.hp -= d; e.flash = 7;
     fx({ type: 'spark', x: cx + rand(-5, 5), y: cy + rand(-6, 6), life: opt.heavy ? 13 : 9, size: opt.heavy ? 24 : 13, col: opt.col || 'gold' });
     burst(cx, cy, opt.heavy ? 10 : 4, opt.col === 'blue' ? ['#7af3ff', '#ffffff', '#37e6ff'] : ['#ffd36a', '#ffffff', '#ff7ad1'], opt.heavy ? 4 : 2.6, 18, 0.12);
     text(cx, cy - 8, d, opt.weak ? '#ffe04a' : '#ffffff', opt.weak || opt.heavy);
@@ -211,12 +221,15 @@
     G.hitstop = Math.max(G.hitstop, opt.stop || 0);
     shake(opt.heavy ? 4 : 1.5);
     R.snd(opt.snd || (opt.heavy ? 'hit_heavy' : 'hit'), { step: Math.min(12, G.combo) });      // コンボが続くほど音が上がっていく
+    if (e.afterHit) e.afterHit(e, d, dir, kb, opt);      // 中ボス: ひるみ・ガードへの切り替え
     if (e.hp <= 0) killEnemy(e, dir);
     return true;
   }
   function killEnemy(e, dir) {
     if (e.dead) return;
-    e.dead = true; e.hp = 0; G.kills++;
+    e.dead = true; e.hp = 0;
+    if (e.onKill) { e.onKill(e, dir); return; }      // 中ボスと、その写し身は、倒れ方を自分で決める
+    G.kills++;
     if (e.type === 'dragon') { e.st = 'die'; e.stT = 0; e.dead = false; e.dying = true; G.shots = []; R.snd('boss_die'); R.bgm(null); return; }
     R.snd(e.type === 'guard' ? 'explosion' : 'enemy_die');
     fx({ type: 'boom', x: e.x, y: e.y - e.h / 2, life: 18, r: e.type === 'guard' ? 44 : 22 });
@@ -560,7 +573,7 @@
         if (r.n < 3 && q.age - r.t >= 8) {
           var keep = e.vx;
           r.n++; r.t = q.age;
-          damageEnemy(e, a.dmg * mult, q.face, a.kb, { weak: parts[j].weak, stop: a.stop, gain: 0.6, col: 'gold', snd: 'hit_red', cx: clamp(h[0], parts[j].x, parts[j].x + parts[j].w), cy: clamp(h[1], parts[j].y, parts[j].y + parts[j].h) });
+          damageEnemy(e, a.dmg * mult, q.face, a.kb, { weak: parts[j].weak, stop: a.stop, gain: 0.6, chain: true, col: 'gold', snd: 'hit_red', cx: clamp(h[0], parts[j].x, parts[j].x + parts[j].w), cy: clamp(h[1], parts[j].y, parts[j].y + parts[j].h) });
           if (q.st === 'back' && !e.armor && !e.dead) e.vx = keep;      // 引きずっている最中は、当たっても押し戻さない
         }
         struck = true; break;
@@ -773,6 +786,7 @@
     else if (type === 'drone') { e.w = 18; e.h = 18; e.hp = e.max = 30; e.exp = 9; e.armor = true; e.baseY = e.y; e.homeX = x; }
     else if (type === 'guard') { e.w = 36; e.h = 66; e.hp = e.max = 620; e.exp = 160; e.armor = true; }
     else if (type === 'dragon') { e.w = 110; e.h = 90; e.hp = e.max = 2000; e.exp = 0; e.armor = true; e.pose = { t: 0, wing: 0, jaw: 0, lunge: 0, rear: 0, claw: 0, tail: 0, fire: false, aim: 0 }; e.phase = 1; e.cd = 100; }
+    else if (R.Karate) R.Karate.init(e);      // 中ボス「黒瀬 龍士」（karate）と、その写し身（photo）。中身は 52_karate.js
     return e;
   }
   function shoot(o) { o.t = 0; G.shots.push(o); return o; }
@@ -948,6 +962,7 @@
       if (e.dead) continue;
       if (e.flash > 0) e.flash--;
       if (e.type === 'robot') updRobot(e); else if (e.type === 'drone') updDrone(e); else if (e.type === 'guard') updGuard(e); else if (e.type === 'dragon') updDragon(e);
+      else if (e.upd) e.upd(e);      // 中ボスと写し身
     }
     G.enemies = G.enemies.filter(function (e) { return !e.dead || e === G.boss; });
   }
@@ -972,8 +987,8 @@
       } else if (s.type === 'pillar') {
         if (s.t === s.warn) { R.snd('fire'); shake(4); }
         hit = s.t > s.warn && s.t < s.life - 12 && R.overlap({ x: s.x - s.w / 2, y: s.y - s.h, w: s.w, h: s.h }, pb);
-      }
-      if (hit) { if (hurtPlayer(s.dmg, R.sign(s.vx || (p.x - s.x)), s.type === 'shock')) { if (s.type === 'bullet') s.dead = true; } }
+      } else if (s.upd) hit = s.upd(s, p, pb);      // 中ボスの技（衝撃波・地裂）は、動きを自分で決める
+      if (hit) { if (hurtPlayer(s.dmg, R.sign(s.vx || (p.x - s.x)), s.type === 'shock' || !!s.big)) { if (s.type === 'bullet') s.dead = true; } }
       if (s.t > s.life || s.x < G.cam.x - 80 || s.x > G.cam.x + R.W + 80) s.dead = true;
     }
     G.shots = G.shots.filter(function (s) { return !s.dead; });
@@ -1038,7 +1053,7 @@
         if (e.dead || !onScreen(e.x, 10)) return;
         var hbs = hurtboxes(e), h = hbs[0];
         if (fin) fx({ type: 'sprfx', who: 'aoi', group: 'ougi', i0: 2, i1: 3, x: e.x, y: e.type === 'drone' ? GY : e.y, life: 30 });
-        damageEnemy(e, fin ? 80 : 20, R.sign(e.x - p.x) || 1, fin ? 5 : 0.4, { heavy: fin, noGain: true, col: X.t % 4 ? 'blue' : 'gold', weak: !!h.weak, lift: fin ? -5 : 0, cx: h.x + h.w / 2 + rand(-10, 10), cy: h.y + h.h / 2 + rand(-10, 10), stop: fin ? 8 : 2 });
+        damageEnemy(e, fin ? 80 : 20, R.sign(e.x - p.x) || 1, fin ? 5 : 0.4, { heavy: fin, noGain: true, cross: true, col: X.t % 4 ? 'blue' : 'gold', weak: !!h.weak, lift: fin ? -5 : 0, cx: h.x + h.w / 2 + rand(-10, 10), cy: h.y + h.h / 2 + rand(-10, 10), stop: fin ? 8 : 2 });
       });
       shake(fin ? 12 : 4); if (fin) { G.flash = 0.9; R.snd('explosion'); }
     }
@@ -1051,6 +1066,8 @@
     var S = R.STAGES[idx], p = G.pl;
     G.stageIdx = idx; G.S = S; G.enemies = []; G.shots = []; G.pshots = []; G.items = []; G.fx = []; G.parts = []; G.texts = []; G.ghosts = [];
     G.boss = null; G.arena = null; G.cross = null; G.bossDefeated = false; G.rage = false; G.combo = 0; G.hitstop = 0; G.slow = 0;
+    G.dazzle = 0; G.bossIntro = 0;
+    if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; }      // 中ボスを倒したか・もう会ったか（やり直しても覚えておく。ステージを最初から始めるときだけ戻す）
     S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });
     S.items.forEach(function (q) { G.items.push({ type: q[0], x: q[1], y: q[2], t: 0, open: false }); });
     G.terminals = S.checkpoints.map(function (x) { return { x: x, on: false }; });
@@ -1079,7 +1096,15 @@
     R.startStage(G.stageIdx, true);
   };
   function updBossTrigger() {
-    var S = G.S, b = S.boss, p = G.pl;
+    var S = G.S, b = S.boss, m = S.mid, p = G.pl;
+    // 中ボス: ステージの途中で立ちはだかる。退けると先へ進める（ステージクリアにはならない）。一騎打ちなので、ほかの敵は入れない
+    if (m && R.Karate && R.Karate.ok() && !G.midDone && !G.boss && !G.cross && p.x > m.trigger && p.x < m.arena[1]) {
+      G.arena = m.arena.slice();
+      G.boss = spawn(m.type, m.x, GY); G.boss.name = m.name; G.boss.sub = m.sub; G.boss.mid = m; G.enemies.push(G.boss);
+      G.enemies = G.enemies.filter(function (e) { return e === G.boss || e.x < m.arena[0] - 60 || e.x > m.arena[1] + 60; });
+      G.shots = []; G.bossIntro = 150;
+      R.Karate.enter(G.boss, m);
+    }
     if (!G.boss && !G.bossDefeated && p.x > b.trigger) {
       G.arena = b.arena.slice();
       G.boss = spawn(b.type, b.x, GY); G.boss.name = b.name; G.boss.sub = b.sub; G.enemies.push(G.boss);
@@ -1097,6 +1122,7 @@
     G.t++;
     if (G.fadeDir) { G.fade = clamp(G.fade + G.fadeDir * 0.04, 0, 1); if (G.fade === 0 || G.fade === 1) G.fadeDir = 0; }
     if (G.flash > 0) G.flash = Math.max(0, G.flash - 0.05);
+    if (G.dazzle > 0) G.dazzle--;      // 中ボスのフラッシュで目がくらんでいる時間
     if (G.cam.shake > 0) G.cam.shake *= 0.86;
     if (G.card) { G.card.t++; if (G.card.t > 190) G.card = null; }
     if (G.toast) { G.toast.t++; if (G.toast.t > 130) G.toast = null; }
@@ -1119,6 +1145,18 @@
     if (G.arena) { lo = G.arena[0]; hi = G.arena[1] - R.W; }
     G.cam.x += (clamp(tx, lo, hi) - G.cam.x) * 0.1;
     if (G.cam.x < lo) G.cam.x += Math.min(4, lo - G.cam.x); if (G.cam.x > hi) G.cam.x -= Math.min(4, G.cam.x - hi);
+  };
+  // 中ボスを退けたあと: 道が開き、ステージの曲に戻る（52_karate.js から呼ばれる）
+  R.midBossDone = function (e) {
+    e.dead = true; e.gone = true;
+    if (G.boss === e) G.boss = null;
+    G.arena = null; G.midDone = true; G.shots = [];
+    R.bgm(G.S.bgm);
+  };
+  // 別ファイルの敵（52_karate.js）が使う部品
+  R.GX = {
+    fx: fx, part: part, burst: burst, text: text, toast: toast, shake: shake, dust: dust, box: box, onScreen: onScreen, groundAt: groundAt,
+    moveBody: moveBody, hurtPlayer: hurtPlayer, shoot: shoot, dropItem: dropItem, gainExp: gainExp, spawn: spawn, MID: MID
   };
   R.G = G;
 })();

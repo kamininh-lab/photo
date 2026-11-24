@@ -153,6 +153,7 @@
     try { if (document.fonts && document.fonts.load) { document.fonts.load('20px DotGothic16'); } } catch (e) { }
     cv.addEventListener('pointerdown', function () { cv.focus(); });
     window.addEventListener('resize', resize);
-    R.loadChars(function () { R.ready = true; requestAnimationFrame(frame); });      // 主人公のスプライトを読み込んでから始める
+    // 主人公と中ボスのスプライトを読み込んでから始める
+    R.loadChars(function () { R.loadKarate(function () { R.ready = true; requestAnimationFrame(frame); }); });
   });
 })();
