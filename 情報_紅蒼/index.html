@@ -34,6 +34,7 @@
     <button data-act="jump"    style="right:3%;  bottom:16%">跳ぶ</button>
     <button data-act="special" style="right:15%; bottom:26%">特技</button>
     <button data-act="dash"    style="right:27%; bottom:14%">ダッシュ</button>
+    <button data-act="shot"    style="right:27%; bottom:34%">遠距離</button>
     <button data-act="switch" class="sm" style="right:3%;  bottom:40%">交代</button>
     <button data-act="cross"  class="sm" style="right:12%; bottom:46%">交錯</button>
     <button data-act="potion" class="sm" style="left:3%;  bottom:32%">薬</button>
@@ -181,12 +182,13 @@ window.addEventListener('error', function (e) {
     ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
     ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down',
     Space: 'jump', KeyJ: 'attack', KeyZ: 'attack', KeyK: 'special', KeyX: 'special',
+    KeyU: 'shot', KeyI: 'shot', KeyG: 'shot',      // 遠距離攻撃
     KeyL: 'dash', KeyC: 'dash', ShiftLeft: 'dash', ShiftRight: 'dash',
     KeyQ: 'switch', KeyE: 'switch', KeyF: 'cross', KeyV: 'cross',
     Digit1: 'potion', KeyR: 'potion', Digit2: 'crystal', KeyT: 'crystal',
     Escape: 'pause', KeyP: 'pause', Enter: 'ok', KeyM: 'mute', KeyB: 'bloom'
   };
-  var ACTIONS = ['left', 'right', 'up', 'down', 'jump', 'attack', 'special', 'dash', 'switch', 'cross', 'potion', 'crystal', 'pause', 'ok', 'mute', 'bloom'];
+  var ACTIONS = ['left', 'right', 'up', 'down', 'jump', 'attack', 'shot', 'special', 'dash', 'switch', 'cross', 'potion', 'crystal', 'pause', 'ok', 'mute', 'bloom'];
   var I = R.input = { down: {}, hit: {}, any: false, pad: false };
   var kdown = {}, latch = {}, touch = {}, sim = {}, padPrev = {}, anyLatch = false;
   ACTIONS.forEach(function (a) { I.down[a] = false; I.hit[a] = false; });
@@ -216,6 +218,7 @@ window.addEventListener('error', function (e) {
       o.left = o.left || b(14) || ax < -0.4; o.right = o.right || b(15) || ax > 0.4;
       o.up = o.up || ay < -0.6; o.down = o.down || ay > 0.6;
       o.jump = o.jump || b(0); o.dash = o.dash || b(1) || b(7); o.attack = o.attack || b(2); o.special = o.special || b(3);
+      o.shot = o.shot || b(6);      // LT = 遠距離攻撃
       var lb = b(4), rb = b(5);
       o.cross = o.cross || (lb && rb); o.switch = o.switch || ((lb || rb) && !(lb && rb));
       o.potion = o.potion || b(12); o.crystal = o.crystal || b(13);
@@ -2587,7 +2590,7 @@ window.REBELL_SPRITES = {
   var R = window.REBELL, GY = R.GY, clamp = R.clamp, lerp = R.lerp, rand = R.rand, PI = Math.PI;
   var G = R.game = {
     state: 'title', t: 0, stageIdx: 0, S: null, cam: { x: 0, shake: 0 }, pl: null,
-    enemies: [], shots: [], items: [], fx: [], parts: [], texts: [], ghosts: [], terminals: [],
+    enemies: [], shots: [], pshots: [], items: [], fx: [], parts: [], texts: [], ghosts: [], terminals: [],
     hitstop: 0, combo: 0, comboT: 0, comboPop: 0, maxCombo: 0, boss: null, arena: null, cross: null, cutin: null,
     helpT: 0, card: null, toast: null, flash: 0, slow: 0, fade: 0, fadeDir: 0, time: 0, kills: 0, respawn: null, stateT: 0, rage: false
   };
@@ -2599,6 +2602,13 @@ window.REBELL_SPRITES = {
   // box は「向いている側」を正にした相対矩形 [x, y, w, h]（y は足元が 0）。dur・h0・h1・cancel はフレーム数。
   // rise=自分も跳び上がる / slide=滑り込む速さ / air=空中用 / dive=急降下 / walk=移動で打ち切れる時間
   // rehit=この時刻にもう一度当たる（二段） / fin=とどめ級の重い音 / wd=斬撃の太さ / sndAt=風切り音を鳴らす時刻
+  //
+  // 遠距離攻撃（s = 地上で続けて出せる並び、as = 空中、asd = 空中で↓を押しながら、airShots = 一度の滞空で撃てる回数）
+  //   紅 = 鎖鎌（kusari）。鎌を鎖で投げ、当てた敵を手元へ引きずり寄せる。空中では斜め下へ打ち込み、鎖をたぐって自分ごと叩きつける
+  //     kusari = { ang: 投げる向き（0 = 水平、正 = 下向き）, len: 届く長さ, out・hold・back: 伸びる・止まる・戻るフレーム数, hy: 手の高さ, pull: 自分を引き寄せる速さ }
+  //   蒼 = 飛ぶ斬撃（shot）。軽いが速く、離れたまま 3 発まで続けて撃てる。空中では同じ高さへ、↓を押しながらだと斜め下へ
+  //     shot = { at: 撃つフレーム, vx・vy: 飛ぶ速さ, dmg, r: 大きさ, life: 飛ぶフレーム数, pierce: 貫く数, dx・y: 出る位置, big: 大きい刃 }
+  //     back = 撃った反動で下がる速さ / hover = 撃つたびに浮く速さ
   var ATK = {
     kurenai: {
       g: [
@@ -2613,7 +2623,12 @@ window.REBELL_SPRITES = {
       up: { seq: [[0, 'atk', 1], [6, 'atk', 2], [9, 'combo', 2], [16, 'leap', 2]], dur: 30, h0: 9, h1: 16, dmg: 20, box: [-10, -64, 74, 70], kb: 0.6, lunge: 1.8, lift: -7.4, rise: -6.8, fx: [1.7, -2.7, 50], wd: 1.15, snd: 'slash_red2', cancel: 13, stop: 5, heavy: true, scrape: true },
       dive: { dive: true, dur: 90, h0: 7, h1: 90, dmg: 16, land: 30, rad: 60, box: [-16, -32, 34, 40], kb: 1, snd: 'slash_red1', sndAt: 0, cancel: 99, stop: 2, heavy: true, fin: true },
       dash: { seq: [[0, 'step', 0], [4, 'step', 1], [14, 'atk', 3], [21, 'atk', 0]], dur: 26, h0: 4, h1: 12, dmg: 26, box: [-26, -50, 92, 56], kb: 4.5, slide: 4.8, fx: [-3.1, 1.5, 52], wd: 1.15, snd: 'slash_red1', sndAt: 0, cancel: 17, stop: 6, heavy: true, fin: true },
-      swin: { seq: [[0, 'airatk', 2], [4, 'leap', 3, ['airatk', 2]], [16, 'land', 1], [23, 'land', 2]], dur: 29, h0: 4, h1: 11, dmg: 32, box: [-18, -58, 90, 62], kb: 5, lunge: 2.4, drop: true, fx: [-2.6, 1.2, 56], wd: 1.25, snd: 'slash_red1', sndAt: 0, cancel: 17, walk: 19, stop: 7, heavy: true, fin: true, shock: true, quake: 2 }
+      swin: { seq: [[0, 'airatk', 2], [4, 'leap', 3, ['airatk', 2]], [16, 'land', 1], [23, 'land', 2]], dur: 29, h0: 4, h1: 11, dmg: 32, box: [-18, -58, 90, 62], kb: 5, lunge: 2.4, drop: true, fx: [-2.6, 1.2, 56], wd: 1.25, snd: 'slash_red1', sndAt: 0, cancel: 17, walk: 19, stop: 7, heavy: true, fin: true, shock: true, quake: 2 },
+      // 遠距離「紅鎖」: 大きく振りかぶって鎖鎌を投げる（投げている間はひるまない）。戻るとき、当てた敵を引きずり寄せる
+      s: [{ seq: [[0, 'combo', 0], [9, 'atk', 4], [15, 'atk', 3], [36, 'atk', 2], [42, 'atk', 0]], kusari: { ang: 0, len: 122, out: 10, hold: 5, back: 12, hy: -20 }, dur: 47, h0: 9, h1: 36, dmg: 10, kb: 0.6, snd: 'slash_red3', sndAt: 5, cancel: 38, stop: 2, heavy: true }],
+      // 空中「流星鎖」: 斜め下へ打ち込み、鎖をたぐって落ちる。着地でまわりを吹き飛ばす
+      as: { seq: [[0, 'leap', 2], [7, 'airatk', 1]], kusari: { ang: 0.86, len: 150, out: 8, back: 8, hy: -16, pull: 11.5 }, dur: 110, h0: 7, h1: 110, dmg: 10, land: 34, rad: 64, box: [-16, -34, 36, 42], kb: 1, snd: 'slash_red2', sndAt: 3, cancel: 999, stop: 2, heavy: true, fin: true },
+      airShots: 1
     },
     aoi: {
       g: [
@@ -2632,7 +2647,17 @@ window.REBELL_SPRITES = {
       up: { seq: [[0, 'atk', 1], [2, 'combo', 2], [9, 'jump', 1]], dur: 18, h0: 2, h1: 7, dmg: 5, box: [-4, -54, 44, 58], kb: 0.5, lunge: 1.8, lift: -7, rise: -7, fx: [1.4, -2.3, 32], wd: 0.62, snd: 'slash_blue2', cancel: 6, stop: 1 },
       dive: { dive: true, dur: 90, h0: 4, h1: 90, dmg: 6, land: 8, rad: 38, box: [-12, -28, 26, 34], kb: 1, snd: 'slash_blue3', cancel: 99, stop: 1 },
       dash: { seq: [[0, 'iai', 0], [3, 'iai', 1], [10, 'atk', 3]], dur: 15, h0: 1, h1: 9, dmg: 8, box: [0, -30, 80, 22], kb: 1.6, slide: 8.2, thrust: 96, snd: 'slash_blue3', cancel: 9, stop: 1 },
-      swin: { seq: [[0, 'thrust', 0], [4, 'thrust', 2], [11, 'thrust', 1]], dur: 17, h0: 1, h1: 10, dmg: 9, box: [-10, -36, 94, 32], kb: 2.2, slide: 8.6, thrust: 116, snd: 'slash_blue3', cancel: 9, walk: 11, stop: 2 }
+      swin: { seq: [[0, 'thrust', 0], [4, 'thrust', 2], [11, 'thrust', 1]], dur: 17, h0: 1, h1: 10, dmg: 9, box: [-10, -36, 94, 32], kb: 2.2, slide: 8.6, thrust: 116, snd: 'slash_blue3', cancel: 9, walk: 11, stop: 2 },
+      // 遠距離「蒼燕」: 刀を振って、三日月の刃を飛ばす。3 発目は居合いの大きな刃で、敵を貫く
+      s: [
+        { seq: [[0, 'flash', 0], [3, 'combo', 1], [9, 'atk', 3]], shot: { at: 3, vx: 6.6, vy: 0, dmg: 4, r: 11, life: 28, pierce: 1, dx: 16, y: -21 }, dur: 15, h0: 3, h1: 3, kb: 0.5, snd: 'slash_blue1', sndAt: 0, cancel: 8, back: 0.7 },
+        { seq: [[0, 'flash', 1], [3, 'combo', 2], [9, 'atk', 3]], shot: { at: 3, vx: 6.6, vy: 0, dmg: 4, r: 11, life: 28, pierce: 1, dx: 16, y: -25 }, dur: 15, h0: 3, h1: 3, kb: 0.5, snd: 'slash_blue2', sndAt: 0, cancel: 8, back: 0.7 },
+        { seq: [[0, 'iai', 0], [5, 'iai', 1], [13, 'atk', 3]], shot: { at: 6, vx: 7.6, vy: 0, dmg: 8, r: 17, life: 30, pierce: 4, dx: 40, y: -20, big: true }, dur: 27, h0: 6, h1: 6, kb: 1.6, snd: 'slash_blue4', sndAt: 2, cancel: 21, back: 1.8 }
+      ],
+      // 空中: 同じ高さへまっすぐ / ↓を押しながらだと斜め下へ。撃つたびに少し浮いて、後ろへ下がる
+      as: { seq: [[0, 'airatk', 1], [8, 'jump', 3]], shot: { at: 3, vx: 6.6, vy: 0, dmg: 4, r: 11, life: 28, pierce: 1, dx: 14, y: -20 }, dur: 14, h0: 3, h1: 3, kb: 0.5, snd: 'slash_blue1', sndAt: 0, cancel: 8, hover: -1.9, back: 0.9 },
+      asd: { seq: [[0, 'airatk', 0], [8, 'jump', 3]], shot: { at: 3, vx: 5.4, vy: 3.9, dmg: 4, r: 11, life: 32, pierce: 1, dx: 12, y: -14 }, dur: 14, h0: 3, h1: 3, kb: 0.5, snd: 'slash_blue2', sndAt: 0, cancel: 8, hover: -2.4, back: 1.2 },
+      airShots: 3
     }
   };
   ['kurenai', 'aoi'].forEach(function (k) {      // コンボのつながり
@@ -2640,6 +2665,10 @@ window.REBELL_SPRITES = {
     for (i = 0; i < T.g.length; i++) T.g[i].nextA = T.g[i + 1] || null;
     for (i = 0; i < T.a.length; i++) T.a[i].nextA = T.a[i + 1] || null;
     T.swin.nextA = T.g[1]; T.dash.nextA = T.g[1]; T.up.nextA = null; T.dive.nextA = null;
+    // 遠距離: 続けて撃てる並び（nextS）。撃ったあとは、ふつうの攻撃へつなげられる
+    for (i = 0; i < T.s.length; i++) { T.s[i].nextS = T.s[i + 1] || null; T.s[i].nextA = T.g[0]; }
+    if (!T.asd) T.asd = T.as;
+    T.as.nextS = null; T.asd.nextS = null; T.as.nextA = T.g[0]; T.asd.nextA = T.g[0];
   });
   var AOI_FIN = { dmg: 14, box: [-24, -50, 80, 56], kb: 4, heavy: true, stop: 4 };      // 蒼刃閃の締めの一太刀
   // 紅は重く、蒼は速い（走る速さ・ダッシュの速さと間隔・空中ダッシュの回数）
@@ -2710,6 +2739,7 @@ window.REBELL_SPRITES = {
       x: 80, y: GY, vx: 0, vy: 0, w: 11, h: 32, face: 1, ground: true, jumps: 0, coyote: 0, drop: 0,
       who: 'kurenai', st: 'free', stT: 0, atk: null, buf: false, hitSet: [], inv: 0, dashCd: 0, switchCd: 0, animT: 0,
       flipT: 0, landT: 0, skidT: 0, stretchT: 0, dashWin: 0, justCd: 0, runPh: 0, running: false, stopT: 0, airAtk: 0, airDashed: 0, rose: false,
+      airShot: 0, kusari: null,      // 空中で遠距離攻撃を出した回数 / 紅の鎖鎌のようす
       battleT: 0, angerT: 0, hurtFaceT: 0, joyT: 0, joyAll: false, hurtBig: false, landAnim: null,      // 構えを続ける時間 / 顔グラフィックの表情
       chars: { kurenai: { hp: BASE.kurenai.hp, max: BASE.kurenai.hp, sp: 60, maxsp: 100, down: false }, aoi: { hp: BASE.aoi.hp, max: BASE.aoi.hp, sp: 60, maxsp: 100, down: false } },
       lv: 1, exp: 0, potions: 3, crystals: 0, cross: 0, safeX: 80, hurtFlash: 0, spHits: {}
@@ -2729,9 +2759,11 @@ window.REBELL_SPRITES = {
   function startAttack(a) {
     var p = G.pl;
     p.st = 'attack'; p.stT = 0; p.atk = a; p.buf = false; p.hitSet = []; p.fxDone = false; p.sndDone = false; p.flipT = 0; p.skidT = 0; p.landT = 0; p.landAnim = null;
-    p.battleT = 150; p.angerT = 50;
+    p.battleT = 150; p.angerT = 50; p.kusari = null;
     if (a.air) { p.airAtk++; if (p.airAtk <= ATK[p.who].a.length) p.vy = Math.min(p.vy, -1.4); }      // 空中で振るたびに少し浮く
     else if (a.dive) { p.vy = -2.2; p.vx *= 0.4; }
+    else if (a.hover) { p.airShot++; p.vy = Math.min(p.vy, a.hover); }                                  // 蒼は、空中で撃つたびに少し浮く
+    else if (a.kusari && a.kusari.pull) { p.airShot++; p.vy = Math.min(p.vy, -1.6); p.vx *= 0.5; }      // 紅は、空中で一瞬ためてから鎌を打ち込む
     else if (a.lunge) p.vx = p.face * a.lunge;
     if (p.who === 'aoi') ghost(p, 8);      // 蒼は一振りごとに残像を引く
   }
@@ -2758,8 +2790,9 @@ window.REBELL_SPRITES = {
     else if (e.type === 'drone') { e.vx = dir * kb; }
     G.combo++; G.comboT = 130; G.comboPop = 8; G.maxCombo = Math.max(G.maxCombo, G.combo);
     if (!opt.noGain) {
-      var c = p.chars[p.who]; c.sp = Math.min(c.maxsp, c.sp + (opt.heavy ? 5 : 3));
-      p.cross = Math.min(100, p.cross + 2.2 + Math.min(3, G.combo * 0.08));
+      var c = p.chars[p.who], gm = opt.gain == null ? 1 : opt.gain;      // gain = SP とゲージのたまり方（離れて当てる攻撃は少なめ）
+      c.sp = Math.min(c.maxsp, c.sp + (opt.heavy ? 5 : 3) * gm);
+      p.cross = Math.min(100, p.cross + (2.2 + Math.min(3, G.combo * 0.08)) * gm);
     }
     G.hitstop = Math.max(G.hitstop, opt.stop || 0);
     shake(opt.heavy ? 4 : 1.5);
@@ -2802,15 +2835,19 @@ window.REBELL_SPRITES = {
         }
       }
     }
-    // 宝箱も叩ける
+    openChests(hb);
+    return any;
+  }
+  // 宝箱も叩ける（斬撃でも、飛び道具でも、鎖鎌でも）
+  function openChests(hb) {
+    var p = G.pl, i, it;
     for (i = 0; i < G.items.length; i++) {
-      var it = G.items[i];
+      it = G.items[i];
       if (it.type === 'chest' && !it.open && R.overlap(hb, { x: it.x - 12, y: it.y - 20, w: 24, h: 20 })) {
         it.open = true; p.joyT = 60; p.joyAll = false; R.snd('pickup'); fx({ type: 'spark', x: it.x, y: it.y - 10, life: 10, size: 14, col: 'gold' });
         dropItem('potion', it.x, it.y - 16); dropItem('crystal', it.x - 8, it.y - 16); dropItem('crystal', it.x + 8, it.y - 16); dropItem('crystal', it.x, it.y - 22);
       }
     }
-    return any;
   }
   function hurtboxes(e) {
     if (e.type === 'dragon') {
@@ -2935,7 +2972,10 @@ window.REBELL_SPRITES = {
     R.curStand = null;      // 立ちポーズのときだけ、呼吸の指定が入る（描くときに使う）
     if (G.state === 'gameover') return FR(who, 'down', 0);
     if (G.state === 'clear' && p.ground) return FR(who, 'event', (G.stateT >> 4) % 4 === 3 ? 0 : 1);      // 勝利のポーズ
-    if (p.st === 'attack') return p.atk.dive ? FR(who, 'airatk', 0) : seqFrame(who, p.atk.seq, t, p.ground);
+    if (p.st === 'attack') {
+      if (p.atk.dive || (p.kusari && p.kusari.st === 'reel')) return FR(who, 'airatk', 0);      // 急降下 / 鎖をたぐって落ちる
+      return seqFrame(who, p.atk.seq, t, p.ground);
+    }
     if (p.st === 'special') {
       if (K) {
         if (p.slammed) { n = t - p.slamT; return n < 8 ? FR(who, 'leap', 3) : FR(who, 'spin', n < 13 ? 0 : n < 18 ? 1 : 2); }
@@ -2976,9 +3016,17 @@ window.REBELL_SPRITES = {
     R.snd('dash');
     fx({ type: 'thrust', x: p.x + p.face * 4, y: p.y - MID + 2, face: -p.face, life: 10, col: p.who === 'kurenai' ? 'red' : 'blue', len: 40 });
   }
-  // 次につなぐ攻撃を決める（buf: 'atk' / 'down'）
+  // いま出せる遠距離攻撃（地上 / 空中 / 空中で↓）。空中では、一度の滞空で撃てる回数に限りがある
+  function shotOf(p, down) {
+    var T = ATK[p.who];
+    if (p.ground) return T.s[0];
+    if (p.airShot >= T.airShots) return null;
+    return down ? T.asd : T.as;
+  }
+  // 次につなぐ攻撃を決める（buf: 'atk' / 'down' / 'shot'）
   function nextAttack(p, a, buf) {
     var T = ATK[p.who];
+    if (buf === 'shot') return (p.ground && a.nextS !== undefined) ? a.nextS : shotOf(p, R.input.down.down);      // 蒼は 3 発まで続けて撃てる
     if (buf === 'down') return p.ground ? (a === T.up ? null : T.up) : T.dive;
     if (!p.ground) return a.air ? a.nextA : (p.airAtk < T.a.length ? T.a[0] : null);
     if (a.air) return T.g[0];
@@ -3001,6 +3049,131 @@ window.REBELL_SPRITES = {
     });
     p.st = 'free'; p.landT = red ? 12 : 6; p.landAnim = red ? ['leap', 3] : null; p.entry = false; p.vx = 0;      // 紅は着地で光の柱が立つ
   }
+
+  // ---- 遠距離攻撃 ----
+  // 蒼: 三日月の刃を 1 枚飛ばす
+  function fireShot(p, a) {
+    var s = a.shot, x = p.x + p.face * s.dx, y = p.y + s.y;
+    G.pshots.push({ x: x, y: y, vx: p.face * s.vx, vy: s.vy, t: 0, life: s.life, dmg: s.dmg, kb: a.kb || 0.5, r: s.r, pierce: s.pierce, big: !!s.big, hit: [] });
+    if (a.back) p.vx = -p.face * a.back;      // 撃った反動で、少し下がる（間合いを保つ）
+    fx({ type: 'ring', x: x, y: y, life: 8, r: s.r + 5, col: '#7af3ff' });
+    if (s.big) { fx({ type: 'thrust', x: p.x, y: y, face: p.face, life: 9, col: 'blue', len: 70 }); shake(2); }
+  }
+  function updPShots() {
+    var i, j, k, s, e, hb, parts;
+    for (i = 0; i < G.pshots.length; i++) {
+      s = G.pshots[i]; s.t++; s.x += s.vx; s.y += s.vy;
+      hb = { x: s.x - s.r * 0.8, y: s.y - s.r * 0.75, w: s.r * 1.6, h: s.r * 1.5 };
+      for (j = 0; j < G.enemies.length && !s.dead; j++) {
+        e = G.enemies[j];
+        if (e.dead || s.hit.indexOf(e) >= 0) continue;
+        parts = hurtboxes(e);
+        for (k = 0; k < parts.length; k++) {
+          if (!R.overlap(hb, parts[k])) continue;
+          s.hit.push(e);
+          damageEnemy(e, s.dmg, R.sign(s.vx) || 1, s.kb, { heavy: s.big, weak: parts[k].weak, stop: s.big ? 3 : 1, gain: 0.5, col: 'blue', snd: s.big ? 'hit_blue_heavy' : 'hit_blue',
+            cx: clamp(s.x, parts[k].x, parts[k].x + parts[k].w), cy: clamp(s.y, parts[k].y, parts[k].y + parts[k].h) });
+          if (--s.pierce <= 0) s.dead = true;
+          break;
+        }
+      }
+      openChests(hb);
+      // 地面・壁に当たるか、飛びきったら消える
+      var wall = false, S = G.S.solids;
+      for (j = 0; j < S.length; j++) if (R.overlap({ x: s.x - 2, y: s.y - 2, w: 4, h: 4 }, S[j])) wall = true;
+      if (wall || (s.y >= GY - 1 && groundAt(s.x))) { s.dead = true; burst(s.x, Math.min(s.y, GY - 2), 5, ['#7af3ff', '#ffffff'], 2, 12, 0.05); }
+      if (s.t >= s.life || s.x < G.cam.x - 60 || s.x > G.cam.x + R.W + 60) s.dead = true;
+      if (!s.dead && s.t % 2 === 0) part(s.x - s.vx * 1.5 + rand(-2, 2), s.y + rand(-s.r * 0.6, s.r * 0.6), -s.vx * 0.08, rand(-0.2, 0.2), 9, s.t % 4 ? '#6ae8ff' : '#ffffff', 1, 0, true);
+    }
+    G.pshots = G.pshots.filter(function (q) { return !q.dead; });
+  }
+  // 紅: 鎖鎌。伸びる → 止まる → 戻る。戻るとき、当てた敵を手元へ引きずり寄せる。
+  // 空中（pull）では、地面か敵に打ち込んだら、鎖をたぐってそこへ落ちる（着地は急降下と同じ衝撃波）。
+  // p.kusari = { st: 'out' / 'hold' / 'back' / 'reel' / 'done', t, len: いまの長さ, hits: 当てた敵, spin: 鎌の回転, ax・ay: 打ち込んだ所 }
+  // 戻り値 = このフレームの重力
+  function kusariHead(p, a) {
+    var k = a.kusari, q = p.kusari;
+    if (q.st === 'reel') return [q.ax, q.ay - 4];
+    return [p.x + q.face * (9 + Math.cos(k.ang) * q.len), p.y + k.hy + Math.sin(k.ang) * q.len];
+  }
+  function kusari(p, a, mult, grav) {
+    var k = a.kusari, q = p.kusari, air = !!k.pull, i, e, r, h, hb, parts, j;
+    if (p.ground) p.vx *= 0.8;
+    if (p.stT < a.h0) {      // 振りかぶり（空中では、一瞬止まる）
+      if (air) { p.vx *= 0.85; p.vy = Math.min(p.vy, 0.4); return 0.1; }
+      return grav;
+    }
+    if (!q) q = p.kusari = { st: 'out', t: 0, age: 0, len: 0, face: p.face, hits: [], spin: 0, ax: 0, ay: 0 };
+    q.t++; q.age++;
+    if (q.st === 'reel') {      // 鎖をたぐって、打ち込んだ所へ落ちる
+      var dx = q.ax - p.x, dy = q.ay - p.y, d = Math.sqrt(dx * dx + dy * dy);
+      if (d < 14 || q.t > 44) { p.vx *= 0.3; p.vy = 9; q.st = 'done'; return 0; }      // 着いた（空中の敵なら、そこから真下へ）
+      p.vx = dx / d * k.pull; p.vy = dy / d * k.pull; q.len = d;
+      if (p.stT % 2 === 0) ghost(p, 9);
+      hitEnemies(p, a, mult);
+      return 0;
+    }
+    if (q.st === 'done') return air ? 0.45 : grav;
+    q.spin += 0.66;
+    if (q.st === 'out') {
+      q.len = k.len * (1 - Math.pow(1 - Math.min(1, q.t / k.out), 2));
+      if (q.t >= k.out) { q.st = air ? 'back' : 'hold'; q.t = 0; q.len0 = q.len; }
+    } else if (q.st === 'hold') {
+      if (q.t >= k.hold) {      // 引き戻す: 当てた敵を、目の前まで引きずる
+        q.st = 'back'; q.t = 0; q.len0 = q.len; R.snd('dash');
+        q.hits.forEach(function (rec) {
+          var en = rec.e, D = p.x + q.face * 32 - en.x;
+          if (en.dead || en.armor || Math.abs(D) < 10 || Math.abs(D) > 180) return;
+          en.vx = clamp(D * 0.14, -16, 16); en.st = 'hurt'; en.stT = 0;
+          burst(en.x, en.y - en.h * 0.5, 5, ['#ff8ad0', '#ffffff'], 2, 12, 0.05);
+        });
+      }
+    } else if (q.st === 'back') {
+      q.len = q.len0 * (1 - R.ease(Math.min(1, q.t / k.back)));
+      if (q.t >= k.back) { q.st = 'done'; q.len = 0; if (!air) dust(p.x + q.face * 8, p.y, 3); }
+    }
+    if (q.st === 'done') return air ? 0.45 : grav;
+    // 鎌の頭の当たり（同じ敵には、少し間をあけて 3 回まで）
+    h = kusariHead(p, a); hb = { x: h[0] - 14, y: h[1] - 14, w: 28, h: 28 };
+    var struck = false;
+    for (i = 0; i < G.enemies.length; i++) {
+      e = G.enemies[i]; if (e.dead) continue;
+      parts = hurtboxes(e);
+      for (j = 0; j < parts.length; j++) {
+        if (!R.overlap(hb, parts[j])) continue;
+        r = null; q.hits.forEach(function (rec) { if (rec.e === e) r = rec; });
+        if (!r) { r = { e: e, n: 0, t: -99 }; q.hits.push(r); }
+        if (r.n < 3 && q.age - r.t >= 8) {
+          var keep = e.vx;
+          r.n++; r.t = q.age;
+          damageEnemy(e, a.dmg * mult, q.face, a.kb, { weak: parts[j].weak, stop: a.stop, gain: 0.6, col: 'gold', snd: 'hit_red', cx: clamp(h[0], parts[j].x, parts[j].x + parts[j].w), cy: clamp(h[1], parts[j].y, parts[j].y + parts[j].h) });
+          if (q.st === 'back' && !e.armor && !e.dead) e.vx = keep;      // 引きずっている最中は、当たっても押し戻さない
+        }
+        struck = true; break;
+      }
+    }
+    openChests(hb);
+    if (air) {
+      // 地面か敵に刺さったら、たぐり寄せに移る
+      var onGround = h[1] >= GY - 3 && groundAt(h[0]);
+      if (q.st === 'out' && (struck || onGround)) {
+        q.st = 'reel'; q.t = 0; q.ax = h[0]; q.ay = Math.min(h[1] + 4, GY);
+        R.snd('hit_red'); shake(3); fx({ type: 'spark', x: q.ax, y: q.ay - 4, life: 10, size: 16, col: 'gold' });
+        if (onGround) dust(q.ax, GY, 6);
+        return 0;
+      }
+      p.vx *= 0.85; p.vy = Math.min(p.vy, 0.5);
+      return 0.1;      // 投げている間は、空中に止まる
+    }
+    return grav;
+  }
+  // 描画用: 鎖の両端と鎌の回転（鎖鎌を出していなければ null）
+  R.kusariView = function () {
+    var p = G.pl, a = p.atk, q = p.kusari, h;
+    if (p.st !== 'attack' || !a || !a.kusari || !q || q.st === 'done' || q.len < 3) return null;
+    h = kusariHead(p, a);
+    return { x0: p.x + q.face * 9, y0: p.y + a.kusari.hy, x1: h[0], y1: h[1], spin: q.st === 'reel' ? 0.6 * q.face : q.spin * q.face, stuck: q.st === 'reel' };
+  };
 
   function updPlayer() {
     var p = G.pl, I = R.input, K = p.who === 'kurenai', T = ATK[p.who], B = BASE[p.who], a, nx;
@@ -3037,6 +3210,7 @@ window.REBELL_SPRITES = {
         else if (p.dashWin > 0) startAttack(T.dash);                         // ダッシュ直後: ダッシュ斬り
         else startAttack(p.ground ? T.g[0] : T.a[0]);
       }
+      else if (I.hit.shot) { if ((a = shotOf(p, I.down.down))) startAttack(a); }      // 遠距離: 紅は鎖鎌、蒼は飛ぶ斬撃
       else if (I.hit.special) startSpecial();
       else if (I.hit.dash && canDash(p)) startDash(move);
       if (I.hit.switch) doSwitch();
@@ -3053,6 +3227,8 @@ window.REBELL_SPRITES = {
           if (p.stT % 2 === 0) ghost(p, 9);
           hitEnemies(p, a, mult);
         }
+      } else if (a.kusari) {
+        grav = kusari(p, a, mult, grav);      // 紅の鎖鎌
       } else {
         if (a.slide && p.stT <= a.h1 + 2) {                                  // 滑り込みながら斬る
           p.vx = p.face * a.slide * Math.max(0.25, 1 - p.stT / (a.h1 + 4));
@@ -3061,6 +3237,8 @@ window.REBELL_SPRITES = {
         } else if (p.ground) p.vx *= 0.84;
         else p.vx += clamp(move * speed * 0.8 - p.vx, -0.25, 0.25);
         if (a.air && p.airAtk <= T.a.length && p.stT < a.h1 + 3) grav = 0.16;          // 空中コンボの間はふわりと浮く
+        if (a.hover && p.stT < 9) grav = 0.14;                                         // 空中で撃つ間も、ふわりと浮く
+        if (a.shot && p.stT === a.shot.at) fireShot(p, a);                             // 蒼の飛ぶ斬撃
         if (a.hopAt && p.stT === a.hopAt && p.ground) { p.vy = a.hop; dust(p.x, p.y, 6); }      // 大鎌落とし: 跳び上がって
         if (a.slamAt && p.stT === a.slamAt && !p.ground) p.vy = 6.5;                             //               一気に落ちる
         if (a.scrape && p.stT === a.h0 - 2 && p.ground) { dust(p.x + p.face * 8, p.y, 4); burst(p.x + p.face * 12, p.y - 2, 6, ['#ffd36a', '#ffffff', '#ff7ad1'], 2.4, 12, 0.1); }      // 刃が地面を擦る
@@ -3068,22 +3246,24 @@ window.REBELL_SPRITES = {
         if (a.fxs) for (var fi = 0; fi < a.fxs.length; fi++) if (p.stT === a.fxs[fi][0]) slashFx(p, a, p.entry, a.fxs[fi].slice(1));
         if (a.rise && p.stT === a.h0) { p.vy = a.rise; p.jumps = Math.max(p.jumps, 1); p.rose = true; dust(p.x, p.y, 5); }
         if (a.rehit && p.stT === a.rehit) p.hitSet = [];
-        if (open && p.stT <= a.h1) hitEnemies(p, a, mult);
+        if (a.box && open && p.stT <= a.h1) hitEnemies(p, a, mult);
         if (a.shock && p.stT === a.h0 + 1 && p.ground) {
           shake(a.fin ? 8 : 5); dust(p.x + p.face * 30, p.y, 12); R.snd('slam_red'); fx({ type: 'crack', x: p.x + p.face * 32, y: p.y, life: 22 });
           if (a.quake) fx({ type: 'quake', x: p.x + p.face * 30, y: p.y, life: 24, face: p.face, n: a.quake });
         }
       }
       if (I.hit.attack && p.stT > 2) p.buf = I.down.down ? 'down' : 'atk';
-      if (a.dive) {
+      if (I.hit.shot && p.stT > 2) p.buf = 'shot';
+      var locked = !!a.kusari && p.stT < a.cancel;      // 鎖鎌は、投げたら戻るまで動けない（大振りの代わりに、ひるまない）
+      if (a.dive || (a.kusari && a.kusari.pull)) {
         if (p.ground && p.stT >= a.h0) diveLand(p, a, mult);
         else if (p.stT >= a.dur) { p.st = 'free'; p.entry = false; }
       }
       else if (I.hit.switch && open) doSwitch();
-      else if (I.hit.dash && open && canDash(p)) startDash(move);
-      else if (I.hit.special && open) startSpecial();
+      else if (!locked && I.hit.dash && open && canDash(p)) startDash(move);
+      else if (!locked && I.hit.special && open) startSpecial();
       else if (I.hit.cross) startCross();
-      else if (jumpHit && open && (p.hitSet.length > 0 || p.stT >= a.cancel) && (p.ground || p.jumps < 2)) { p.st = 'free'; p.entry = false; doJump(p); }      // ジャンプで打ち切る
+      else if (!locked && jumpHit && open && (p.hitSet.length > 0 || p.stT >= a.cancel) && (p.ground || p.jumps < 2)) { p.st = 'free'; p.entry = false; doJump(p); }      // ジャンプで打ち切る
       else if (p.buf && p.stT >= (p.buf === 'down' ? Math.min(a.cancel, a.h1) : a.cancel) && (nx = nextAttack(p, a, p.buf))) { p.entry = false; if (move) p.face = move; startAttack(nx); }      // ↓+攻撃（斬り上げ・急降下）は早めに出せる
       else if (a.walk && p.stT >= a.walk && move) { p.st = 'free'; p.entry = false; }
       else if (p.stT >= a.dur) { p.st = 'free'; p.entry = false; }
@@ -3092,6 +3272,7 @@ window.REBELL_SPRITES = {
       p.stT++; p.vx = p.face * B.dash * (p.stT < 9 ? 1 : 0.72); p.vy = wasGround ? 0.01 : 0; grav = 0;      // 地上では、わずかに押しつけて接地を保つ
       if (p.stT % 2 === 0) ghost(p, 12);
       if (I.hit.attack) startAttack(I.down.down && !p.ground ? T.dive : T.dash);
+      else if (I.hit.shot && (a = shotOf(p, I.down.down))) startAttack(a);      // ダッシュから、そのまま遠距離攻撃
       else if (I.hit.switch) doSwitch();
       else if (jumpHit && (p.ground || p.jumps < 2)) { p.st = 'free'; doJump(p); }      // ダッシュジャンプ: 勢いを残して跳ぶ
       else if (p.stT >= 11) { p.st = 'free'; p.dashWin = 6; p.vx = p.face * speed * 1.25; }
@@ -3158,7 +3339,7 @@ window.REBELL_SPRITES = {
         if (p.st !== 'special' && !(p.st === 'attack' && p.atk.dive)) { R.snd('land'); dust(p.x, p.y, vy0 > 6 ? 6 : 3); if (p.st === 'free') { p.landT = vy0 > 6 ? 7 : 4; p.landAnim = null; } }
         p.flipT = 0;
       }
-      p.jumps = 0; p.coyote = 6; p.airAtk = 0; p.airDashed = 0; p.rose = false;
+      p.jumps = 0; p.coyote = 6; p.airAtk = 0; p.airDashed = 0; p.airShot = 0; p.rose = false;
       if (groundAt(p.x - 10) && groundAt(p.x + 10)) p.safeX = p.x;
     }
     else if (p.coyote > 0) p.coyote--;
@@ -3454,7 +3635,7 @@ window.REBELL_SPRITES = {
   // talk = ステージの前にはさむ会話の名前（65_talk.js の R.TALKS）。会話があるときは、章の題と曲を会話のあとに回す
   R.startStage = function (idx, fromCheckpoint, talk) {
     var S = R.STAGES[idx], p = G.pl;
-    G.stageIdx = idx; G.S = S; G.enemies = []; G.shots = []; G.items = []; G.fx = []; G.parts = []; G.texts = []; G.ghosts = [];
+    G.stageIdx = idx; G.S = S; G.enemies = []; G.shots = []; G.pshots = []; G.items = []; G.fx = []; G.parts = []; G.texts = []; G.ghosts = [];
     G.boss = null; G.arena = null; G.cross = null; G.bossDefeated = false; G.rage = false; G.combo = 0; G.hitstop = 0; G.slow = 0;
     S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });
     S.items.forEach(function (q) { G.items.push({ type: q[0], x: q[1], y: q[2], t: 0, open: false }); });
@@ -3515,7 +3696,7 @@ window.REBELL_SPRITES = {
     }
     G.time++;
     if (G.comboT > 0) { G.comboT--; if (G.comboT === 0) G.combo = 0; }
-    updPlayer();
+    updPlayer(); updPShots();
     if (G.slow > 0) G.slow--;
     if (G.cross) updCross(); else if (!(G.slow > 0) || G.t % 3 === 0) { updEnemies(); updShots(); }
     updItems(); updFx(); updBossTrigger();
@@ -3762,6 +3943,52 @@ window.REBELL_SPRITES = {
     }
   }
 
+  // 蒼の飛ぶ斬撃（三日月の刃）。進む向きへ弓なりにふくらみ、後ろへ細い光の尾を引く
+  function wave(g, s, cam) {
+    var C = COL.blue, r = s.r * (s.t < 3 ? 0.55 + s.t * 0.15 : 1), fade = Math.min(1, (s.life - s.t) / 6), n = 10, layer, i, a, th;
+    g.save(); g.globalCompositeOperation = 'lighter';
+    g.translate(Math.round(s.x - cam), Math.round(s.y)); g.rotate(Math.atan2(s.vy, s.vx));
+    for (layer = 0; layer < 3; layer++) {
+      var rr = r - layer * 1.3;
+      g.globalAlpha = fade * [0.55, 0.85, 1][layer]; g.fillStyle = C[layer]; g.beginPath();
+      for (i = 0; i <= n; i++) { a = -1.2 + 2.4 * i / n; g.lineTo(-rr * 0.5 + Math.cos(a) * rr, Math.sin(a) * rr * 1.08); }                                  // 外側の弧
+      for (i = n; i >= 0; i--) {                                                                                                                         // 内側の弧（まん中が太く、両端がとがる）
+        a = -1.2 + 2.4 * i / n; th = r * [0.62, 0.42, 0.2][layer] * (1 - Math.pow(Math.abs(i / n - 0.5) * 2, 2));
+        g.lineTo(-rr * 0.5 + Math.cos(a) * (rr - th), Math.sin(a) * rr * 1.08);
+      }
+      g.closePath(); g.fill();
+    }
+    g.globalAlpha = fade * 0.75;
+    g.fillStyle = C[1]; g.fillRect(Math.round(-r * 2.1), -1, Math.round(r * 1.5), 1);
+    g.fillStyle = C[0]; g.fillRect(Math.round(-r * 2.9), Math.round(r * 0.35), Math.round(r * 1.3), 1); g.fillRect(Math.round(-r * 2.5), Math.round(-r * 0.45), Math.round(r * 1.1), 1);
+    g.restore();
+  }
+  // 紅の鎖鎌。手元から伸びる鎖（明るい輪と暗い輪が交互）と、その先で回る鎌
+  function kusariDraw(g, v, cam) {
+    var x0 = v.x0 - cam, y0 = v.y0, x1 = v.x1 - cam, y1 = v.y1, dx = x1 - x0, dy = y1 - y0, d = Math.sqrt(dx * dx + dy * dy), n = Math.max(1, Math.floor(d / 3.5)), C = COL.red, i, a, layer;
+    g.save();
+    for (i = 1; i < n; i++) {
+      var px = Math.round(x0 + dx * i / n), py = Math.round(y0 + dy * i / n);
+      g.fillStyle = i % 2 ? '#ffe3f3' : '#c2408e'; g.fillRect(px - 1, py - 1, 2, 2);
+    }
+    g.translate(Math.round(x1), Math.round(y1)); g.rotate(v.spin);
+    // 柄
+    g.fillStyle = '#ffd36a'; g.fillRect(-11, -1, 15, 2); g.fillStyle = '#fff3b0'; g.fillRect(-11, -1, 15, 1);
+    // 刃: 三日月（外側の弧と、少しずらした内側の弧）
+    g.globalCompositeOperation = 'lighter';
+    for (layer = 0; layer < 3; layer++) {
+      var R0 = 15.5 - layer * 1.5, th = [6.6, 4.5, 2.1][layer];
+      g.globalAlpha = v.stuck ? 0.9 : [0.7, 0.9, 1][layer]; g.fillStyle = C[layer]; g.beginPath();
+      for (i = 0; i <= 12; i++) { a = -2.0 + 3.1 * i / 12; g.lineTo(2 + Math.cos(a) * R0, Math.sin(a) * R0); }
+      for (i = 12; i >= 0; i--) { a = -2.0 + 3.1 * i / 12; var t2 = th * Math.sin(Math.PI * Math.min(1, i / 12 * 1.15)); g.lineTo(2 + Math.cos(a) * (R0 - t2), Math.sin(a) * (R0 - t2)); }
+      g.closePath(); g.fill();
+    }
+    if (!v.stuck) {      // 回っている間は、うすい円の残像
+      g.globalAlpha = 0.28; g.strokeStyle = C[1]; g.lineWidth = 2; g.beginPath(); g.arc(2, 0, 14, v.spin * 0.5, v.spin * 0.5 + 4.2); g.stroke();
+    }
+    g.restore();
+  }
+
   // ---- 1 フレームの描画。奥から順に 4 回に分けて呼ぶ ----
   var cam = 0, oy = 0;      // いまのカメラ位置と、画面ゆれの縦ずれ
 
@@ -3860,6 +4087,9 @@ window.REBELL_SPRITES = {
     fg.clearRect(0, 0, R.W, R.H); fg.imageSmoothingEnabled = false;
     fg.save(); fg.translate(0, oy);
     for (i = 0; i < G.shots.length; i++) drawShot(fg, G.shots[i], cam);
+    for (i = 0; i < G.pshots.length; i++) wave(fg, G.pshots[i], cam);      // 蒼の飛ぶ斬撃
+    var kv = G.pl && G.state !== 'talk' ? R.kusariView() : null;            // 紅の鎖鎌
+    if (kv) kusariDraw(fg, kv, cam);
     for (i = 0; i < G.fx.length; i++) {
       e = G.fx[i];
       if (e.type === 'spark') spark(fg, e, cam); else if (e.type === 'boom') boom(fg, e, cam); else if (e.type === 'quake') quake(fg, e, cam);
@@ -4040,13 +4270,13 @@ window.REBELL_SPRITES = {
     T(g, s, x + w / 2, y + 35, 30, '#ffffff', 'center', UI);
   }
   function keyHints(g, a) {
-    var list = [['←→', '移動'], ['Space', 'ジャンプ'], ['J', '攻撃'], ['↓+J', '斬り上げ'], ['L', 'ダッシュ'], ['K', '特技'], ['F', '紅蒼交錯']], x = 660, i;
+    var list = [['←→', '移動'], ['Space', 'ジャンプ'], ['J', '攻撃'], ['U', '遠距離'], ['↓+J', '斬り上げ'], ['L', 'ダッシュ'], ['K', '特技'], ['F', '交錯']], x = 648, i;
     g.save(); g.globalAlpha = a;
     for (i = 0; i < list.length; i++) {
-      g.font = '26px ' + UI; var kw = Math.max(46, g.measureText(list[i][0]).width + 22);
-      panel(g, x, 1012, kw, 40, 8, 'rgba(20,14,56,.85)', '#ffffff', 3); T(g, list[i][0], x + kw / 2, 1042, 26, '#fff', 'center');
-      T(g, list[i][1], x + kw + 8, 1042, 25, '#e8e0ff', 'left', UI, '#120a30', 5);
-      x += kw + 16 + g.measureText(list[i][1]).width + 18;
+      g.font = '24px ' + UI; var kw = Math.max(42, g.measureText(list[i][0]).width + 18);
+      panel(g, x, 1014, kw, 38, 8, 'rgba(20,14,56,.85)', '#ffffff', 3); T(g, list[i][0], x + kw / 2, 1042, 24, '#fff', 'center');
+      T(g, list[i][1], x + kw + 7, 1042, 23, '#e8e0ff', 'left', UI, '#120a30', 5);
+      g.font = '23px ' + UI; x += kw + 7 + g.measureText(list[i][1]).width + 16;
     }
     g.restore();
   }
@@ -4609,9 +4839,9 @@ window.REBELL_SPRITES = {
     g.imageSmoothingEnabled = false;
     R.drawFrame(g, R.frame('kurenai', 'run', Math.floor(t / 5) % R.SPR.kurenai.run.length), 1190, 880, 3, 1); R.drawFrame(g, R.frame('aoi', 'run', (Math.floor(t / 4) + 2) % R.SPR.aoi.run.length), 1510, 880, 3, 1);
     g.fillStyle = '#ffe2ff'; g.fillRect(920, 880, 900, 4); g.fillStyle = 'rgba(200,150,240,.5)'; g.fillRect(920, 884, 900, 4);
-    var rows = [['←→ / A D', '移動'], ['Space / W', 'ジャンプ（二段で宙返り）'], ['J / Z', '攻撃（連打でコンボ）'], ['↓ + 攻撃', '斬り上げ / 空中で急降下'], ['L / Shift', 'ダッシュ（空中でも可）'], ['K / X', '特技（SP 消費）'], ['Q / E', 'キャラチェンジ'], ['F', '合体技「紅蒼交錯」']];
+    var rows = [['←→ / A D', '移動'], ['Space / W', 'ジャンプ（二段で宙返り）'], ['J / Z', '攻撃（連打でコンボ）'], ['U / G', '遠距離攻撃（空中でも可）'], ['↓ + 攻撃', '斬り上げ / 空中で急降下'], ['L / Shift', 'ダッシュ（空中でも可）'], ['K / X', '特技（SP 消費）'], ['Q / E', 'キャラチェンジ'], ['F', '合体技「紅蒼交錯」']];
     for (i = 0; i < rows.length; i++) {
-      var cx = 930 + (i % 2) * 470, cy = 930 + (i >> 1) * 36;
+      var cx = 930 + (i % 2) * 470, cy = 920 + (i >> 1) * 30;
       T(g, rows[i][0], cx + 150, cy, 24, '#7af3ff', 'right', UI, '#120a30', 5); T(g, rows[i][1], cx + 168, cy, 24, '#ffffff', 'left', UI, '#120a30', 5);
     }
     T(g, 'キャラクターデザイン：このみ　／　ゲームパッド対応（LB・RB で切り替え）　／　M：音のオン・オフ', 1900, 1070, 18, '#a898e8', 'right', UI);
@@ -4645,8 +4875,10 @@ window.REBELL_SPRITES = {
     dim(g, 0.62);
     T(g, 'PAUSE', 960, 270, 96, '#ffffff', 'center', SERIF, PINK, 10);
     helpPanel(g, 1);
-    var rows = [['紅 / 蒼', '紅: 大鎌の重い大振り・ひるまない　蒼: 速い連撃・一発は軽い'], ['←→ / A D', '移動（逆を押すと切り返し）'], ['Space / W / ↑', 'ジャンプ　空中でもう一度押すと宙返り'], ['J / Z', '攻撃（連打でコンボ・空中でも続く）'], ['↓ + 攻撃', '地上: 斬り上げて追いかける　空中: 急降下'], ['L / C / Shift', 'ダッシュ（空中は紅 1 回・蒼 2 回）　ぎりぎりでかわすとスロー'], ['ダッシュ中に攻撃', 'ダッシュ斬り'], ['攻撃が当たった後', 'ジャンプ・ダッシュで動きを打ち切れる'], ['Q / E', 'キャラチェンジ（斬り込みながら交代）'], ['攻撃を当てた直後に交代', 'チェイン: 登場攻撃が強くなる'], ['K / X', '特技（SP 30）　紅: 紅蓮砕　蒼: 蒼刃閃'], ['F / V', '合体技「紅蒼交錯」（ゲージ満タン）'], ['1 / 2　　M / B', '薬 / 結晶　　音 / 光のにじみ']];
-    for (var i = 0; i < rows.length; i++) { T(g, rows[i][0], 800, 332 + i * 40, 27, i ? '#7af3ff' : '#ffe04a', 'right', UI, '#120a30', 6); T(g, rows[i][1], 828, 332 + i * 40, 27, '#ffffff', 'left', UI, '#120a30', 6); }
+    var rows = [['紅 / 蒼', '紅: 大鎌の重い大振り・ひるまない　蒼: 速い連撃・一発は軽い'], ['←→ / A D', '移動（逆を押すと切り返し）'], ['Space / W / ↑', 'ジャンプ　空中でもう一度押すと宙返り'], ['J / Z', '攻撃（連打でコンボ・空中でも続く）'], ['↓ + 攻撃', '地上: 斬り上げて追いかける　空中: 急降下'],
+      ['U / G', '遠距離　紅: 鎖鎌を投げて敵を引き寄せる　蒼: 飛ぶ斬撃を 3 連射'], ['空中で U / G', '紅: 鎌を打ち込んで叩きつける　蒼: 空中から撃つ（↓で斜め下）'],
+      ['L / C / Shift', 'ダッシュ（空中は紅 1 回・蒼 2 回）　ぎりぎりでかわすとスロー'], ['ダッシュ中に攻撃', 'ダッシュ斬り'], ['攻撃が当たった後', 'ジャンプ・ダッシュで動きを打ち切れる'], ['Q / E', 'キャラチェンジ（斬り込みながら交代）'], ['攻撃を当てた直後に交代', 'チェイン: 登場攻撃が強くなる'], ['K / X', '特技（SP 30）　紅: 紅蓮砕　蒼: 蒼刃閃'], ['F / V', '合体技「紅蒼交錯」（ゲージ満タン）'], ['1 / 2　　M / B', '薬 / 結晶　　音 / 光のにじみ']];
+    for (var i = 0; i < rows.length; i++) { T(g, rows[i][0], 800, 322 + i * 36, 27, i ? '#7af3ff' : '#ffe04a', 'right', UI, '#120a30', 6); T(g, rows[i][1], 828, 322 + i * 36, 27, '#ffffff', 'left', UI, '#120a30', 6); }
     blinkText(g, 'Esc / P で再開', 1560, 1010, 32);
   };
   R.drawGameOver = function (g) {

@@ -53,7 +53,7 @@
   function compose() {
     resize();
     F.setTransform(1, 0, 0, 1, 0, 0); F.globalAlpha = 1; F.globalCompositeOperation = 'source-over'; F.imageSmoothingEnabled = false;
-    var st = G.state, world = st === 'play' || st === 'pause' || st === 'gameover' || st === 'clear';
+    var st = G.state, world = st === 'play' || st === 'pause' || st === 'gameover' || st === 'clear' || st === 'talk';
     if (world) {      // 奥から順に: 背景 → 看板の文字 → 敵と斬撃の弧 →（光のにじみ）→ 主人公（細かい解像度）→ 弾・火花
       R.renderBack(bg); F.drawImage(bgC, 0, 0, cv.width, cv.height);
       decals();
@@ -64,7 +64,8 @@
       F.setTransform(1, 0, 0, 1, 0, 0); F.globalAlpha = 1; F.imageSmoothingEnabled = false; F.drawImage(fgC, 0, 0, cv.width, cv.height);
     }
     F.setTransform(SCALE / 4, 0, 0, SCALE / 4, 0, 0);
-    if (world) {
+    if (st === 'talk') { vignette(); R.drawTalk(F); }      // ステージの前の会話（HUD は出さない）
+    else if (world) {
       vignette(); R.drawHUD(F);
       if (st === 'pause') R.drawPause(F); else if (st === 'gameover') R.drawGameOver(F); else if (st === 'clear') R.drawClear(F);
     } else if (st === 'logo') R.drawSplash(F);
@@ -96,6 +97,9 @@
       case 'intro':
         G.t++; G.stateT++;
         if ((ok && G.stateT > 20) || R.introDone()) { R.snd('select'); R.newGame(); }
+        break;
+      case 'talk':      // ステージの前の会話。決定で次の台詞へ、Esc で飛ばす
+        R.updateTalk(ok, I.hit.pause);
         break;
       case 'play':
         if (I.hit.pause) { G.state = 'pause'; R.snd('select'); } else R.updatePlay();
@@ -145,7 +149,7 @@
     loadImages();
     R.buildEnemies(); R.buildStages();
     G.pl = null; G.S = R.STAGES[0];
-    G.state = 'logo'; G.stateT = 0; G.titleFade = 0;      // まずロゴ（GYOKURYU → PHOTO TEAM）を出してから、タイトルへ
+    G.state = 'logo'; G.stateT = 0; G.titleFade = 0;      // まずロゴ（GYOKURYU → PHOTO TEAM → presents By KONOMI）を出してから、タイトルへ
     try { if (document.fonts && document.fonts.load) { document.fonts.load('20px DotGothic16'); } } catch (e) { }
     cv.addEventListener('pointerdown', function () { cv.focus(); });
     window.addEventListener('resize', resize);

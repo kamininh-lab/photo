@@ -128,12 +128,13 @@
     ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
     ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down',
     Space: 'jump', KeyJ: 'attack', KeyZ: 'attack', KeyK: 'special', KeyX: 'special',
+    KeyU: 'shot', KeyI: 'shot', KeyG: 'shot',      // 遠距離攻撃
     KeyL: 'dash', KeyC: 'dash', ShiftLeft: 'dash', ShiftRight: 'dash',
     KeyQ: 'switch', KeyE: 'switch', KeyF: 'cross', KeyV: 'cross',
     Digit1: 'potion', KeyR: 'potion', Digit2: 'crystal', KeyT: 'crystal',
     Escape: 'pause', KeyP: 'pause', Enter: 'ok', KeyM: 'mute', KeyB: 'bloom'
   };
-  var ACTIONS = ['left', 'right', 'up', 'down', 'jump', 'attack', 'special', 'dash', 'switch', 'cross', 'potion', 'crystal', 'pause', 'ok', 'mute', 'bloom'];
+  var ACTIONS = ['left', 'right', 'up', 'down', 'jump', 'attack', 'shot', 'special', 'dash', 'switch', 'cross', 'potion', 'crystal', 'pause', 'ok', 'mute', 'bloom'];
   var I = R.input = { down: {}, hit: {}, any: false, pad: false };
   var kdown = {}, latch = {}, touch = {}, sim = {}, padPrev = {}, anyLatch = false;
   ACTIONS.forEach(function (a) { I.down[a] = false; I.hit[a] = false; });
@@ -163,6 +164,7 @@
       o.left = o.left || b(14) || ax < -0.4; o.right = o.right || b(15) || ax > 0.4;
       o.up = o.up || ay < -0.6; o.down = o.down || ay > 0.6;
       o.jump = o.jump || b(0); o.dash = o.dash || b(1) || b(7); o.attack = o.attack || b(2); o.special = o.special || b(3);
+      o.shot = o.shot || b(6);      // LT = 遠距離攻撃
       var lb = b(4), rb = b(5);
       o.cross = o.cross || (lb && rb); o.switch = o.switch || ((lb || rb) && !(lb && rb));
       o.potion = o.potion || b(12); o.crystal = o.crystal || b(13);

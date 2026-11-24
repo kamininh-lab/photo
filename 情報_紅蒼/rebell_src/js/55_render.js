@@ -229,6 +229,52 @@
     }
   }
 
+  // 蒼の飛ぶ斬撃（三日月の刃）。進む向きへ弓なりにふくらみ、後ろへ細い光の尾を引く
+  function wave(g, s, cam) {
+    var C = COL.blue, r = s.r * (s.t < 3 ? 0.55 + s.t * 0.15 : 1), fade = Math.min(1, (s.life - s.t) / 6), n = 10, layer, i, a, th;
+    g.save(); g.globalCompositeOperation = 'lighter';
+    g.translate(Math.round(s.x - cam), Math.round(s.y)); g.rotate(Math.atan2(s.vy, s.vx));
+    for (layer = 0; layer < 3; layer++) {
+      var rr = r - layer * 1.3;
+      g.globalAlpha = fade * [0.55, 0.85, 1][layer]; g.fillStyle = C[layer]; g.beginPath();
+      for (i = 0; i <= n; i++) { a = -1.2 + 2.4 * i / n; g.lineTo(-rr * 0.5 + Math.cos(a) * rr, Math.sin(a) * rr * 1.08); }                                  // 外側の弧
+      for (i = n; i >= 0; i--) {                                                                                                                         // 内側の弧（まん中が太く、両端がとがる）
+        a = -1.2 + 2.4 * i / n; th = r * [0.62, 0.42, 0.2][layer] * (1 - Math.pow(Math.abs(i / n - 0.5) * 2, 2));
+        g.lineTo(-rr * 0.5 + Math.cos(a) * (rr - th), Math.sin(a) * rr * 1.08);
+      }
+      g.closePath(); g.fill();
+    }
+    g.globalAlpha = fade * 0.75;
+    g.fillStyle = C[1]; g.fillRect(Math.round(-r * 2.1), -1, Math.round(r * 1.5), 1);
+    g.fillStyle = C[0]; g.fillRect(Math.round(-r * 2.9), Math.round(r * 0.35), Math.round(r * 1.3), 1); g.fillRect(Math.round(-r * 2.5), Math.round(-r * 0.45), Math.round(r * 1.1), 1);
+    g.restore();
+  }
+  // 紅の鎖鎌。手元から伸びる鎖（明るい輪と暗い輪が交互）と、その先で回る鎌
+  function kusariDraw(g, v, cam) {
+    var x0 = v.x0 - cam, y0 = v.y0, x1 = v.x1 - cam, y1 = v.y1, dx = x1 - x0, dy = y1 - y0, d = Math.sqrt(dx * dx + dy * dy), n = Math.max(1, Math.floor(d / 3.5)), C = COL.red, i, a, layer;
+    g.save();
+    for (i = 1; i < n; i++) {
+      var px = Math.round(x0 + dx * i / n), py = Math.round(y0 + dy * i / n);
+      g.fillStyle = i % 2 ? '#ffe3f3' : '#c2408e'; g.fillRect(px - 1, py - 1, 2, 2);
+    }
+    g.translate(Math.round(x1), Math.round(y1)); g.rotate(v.spin);
+    // 柄
+    g.fillStyle = '#ffd36a'; g.fillRect(-11, -1, 15, 2); g.fillStyle = '#fff3b0'; g.fillRect(-11, -1, 15, 1);
+    // 刃: 三日月（外側の弧と、少しずらした内側の弧）
+    g.globalCompositeOperation = 'lighter';
+    for (layer = 0; layer < 3; layer++) {
+      var R0 = 15.5 - layer * 1.5, th = [6.6, 4.5, 2.1][layer];
+      g.globalAlpha = v.stuck ? 0.9 : [0.7, 0.9, 1][layer]; g.fillStyle = C[layer]; g.beginPath();
+      for (i = 0; i <= 12; i++) { a = -2.0 + 3.1 * i / 12; g.lineTo(2 + Math.cos(a) * R0, Math.sin(a) * R0); }
+      for (i = 12; i >= 0; i--) { a = -2.0 + 3.1 * i / 12; var t2 = th * Math.sin(Math.PI * Math.min(1, i / 12 * 1.15)); g.lineTo(2 + Math.cos(a) * (R0 - t2), Math.sin(a) * (R0 - t2)); }
+      g.closePath(); g.fill();
+    }
+    if (!v.stuck) {      // 回っている間は、うすい円の残像
+      g.globalAlpha = 0.28; g.strokeStyle = C[1]; g.lineWidth = 2; g.beginPath(); g.arc(2, 0, 14, v.spin * 0.5, v.spin * 0.5 + 4.2); g.stroke();
+    }
+    g.restore();
+  }
+
   // ---- 1 フレームの描画。奥から順に 4 回に分けて呼ぶ ----
   var cam = 0, oy = 0;      // いまのカメラ位置と、画面ゆれの縦ずれ
 
@@ -281,6 +327,7 @@
     var p = G.pl, X = G.cross, i, e, f;
     g.save(); g.setTransform(S, 0, 0, S, 0, oy * S);
     g.imageSmoothingEnabled = (S === 3); if (S === 3) g.imageSmoothingQuality = 'high';      // 1.5 倍だけは、にじませたほうがドットがそろって見える
+    if (G.state === 'talk') { R.talkChars(g, cam, charDraw); g.restore(); return; }          // 会話シーンでは、二人の立ち姿を並べる（65_talk.js）
     // 残像（交代で跳び去る相棒は、元の色のまま薄れていく）
     for (i = 0; i < G.ghosts.length; i++) {
       var gh = G.ghosts[i], gu = gh.t / gh.life;
@@ -326,6 +373,9 @@
     fg.clearRect(0, 0, R.W, R.H); fg.imageSmoothingEnabled = false;
     fg.save(); fg.translate(0, oy);
     for (i = 0; i < G.shots.length; i++) drawShot(fg, G.shots[i], cam);
+    for (i = 0; i < G.pshots.length; i++) wave(fg, G.pshots[i], cam);      // 蒼の飛ぶ斬撃
+    var kv = G.pl && G.state !== 'talk' ? R.kusariView() : null;            // 紅の鎖鎌
+    if (kv) kusariDraw(fg, kv, cam);
     for (i = 0; i < G.fx.length; i++) {
       e = G.fx[i];
       if (e.type === 'spark') spark(fg, e, cam); else if (e.type === 'boom') boom(fg, e, cam); else if (e.type === 'quake') quake(fg, e, cam);

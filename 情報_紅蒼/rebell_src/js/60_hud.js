@@ -29,6 +29,7 @@
     }
   }
   function pix(g, img, x, y, w, h) { g.imageSmoothingEnabled = false; g.drawImage(img, x, y, w, h); }
+  R.UI = { T: T, panel: panel, cham: cham, font: UI, MIN: MIN, SERIF: SERIF };      // 会話シーン（65_talk.js）でも使う部品
 
   function logo(g, cx, y, s) {
     g.save(); g.translate(cx, y); g.scale(s, s);
@@ -61,6 +62,7 @@
     g.drawImage(img, sx, sy, sw, sh, x, y, w, h);
     return true;
   }
+  R.UI.drawFace = drawFace;
   // いまの表情。やられた直後・体力わずか = ダメージ、攻撃中 = 怒り、アイテムやレベルアップ = 喜び
   function exprOf(who) {
     var p = G.pl, c = p.chars[who], act = p.who === who;
@@ -157,13 +159,13 @@
     T(g, s, x + w / 2, y + 35, 30, '#ffffff', 'center', UI);
   }
   function keyHints(g, a) {
-    var list = [['←→', '移動'], ['Space', 'ジャンプ'], ['J', '攻撃'], ['↓+J', '斬り上げ'], ['L', 'ダッシュ'], ['K', '特技'], ['F', '紅蒼交錯']], x = 660, i;
+    var list = [['←→', '移動'], ['Space', 'ジャンプ'], ['J', '攻撃'], ['U', '遠距離'], ['↓+J', '斬り上げ'], ['L', 'ダッシュ'], ['K', '特技'], ['F', '交錯']], x = 648, i;
     g.save(); g.globalAlpha = a;
     for (i = 0; i < list.length; i++) {
-      g.font = '26px ' + UI; var kw = Math.max(46, g.measureText(list[i][0]).width + 22);
-      panel(g, x, 1012, kw, 40, 8, 'rgba(20,14,56,.85)', '#ffffff', 3); T(g, list[i][0], x + kw / 2, 1042, 26, '#fff', 'center');
-      T(g, list[i][1], x + kw + 8, 1042, 25, '#e8e0ff', 'left', UI, '#120a30', 5);
-      x += kw + 16 + g.measureText(list[i][1]).width + 18;
+      g.font = '24px ' + UI; var kw = Math.max(42, g.measureText(list[i][0]).width + 18);
+      panel(g, x, 1014, kw, 38, 8, 'rgba(20,14,56,.85)', '#ffffff', 3); T(g, list[i][0], x + kw / 2, 1042, 24, '#fff', 'center');
+      T(g, list[i][1], x + kw + 7, 1042, 23, '#e8e0ff', 'left', UI, '#120a30', 5);
+      g.font = '23px ' + UI; x += kw + 7 + g.measureText(list[i][1]).width + 16;
     }
     g.restore();
   }
@@ -303,10 +305,10 @@
   function dim(g, a) { g.fillStyle = 'rgba(6,3,22,' + a + ')'; g.fillRect(0, 0, 1920, 1080); }
   function blinkText(g, s, x, y, size) { if ((G.t >> 5) % 2 === 0) T(g, s, x, y, size, '#ffffff', 'center', UI, '#3a1470', 8); }
 
-  // ---- 起動時のロゴ（GYOKURYU → PHOTO TEAM → タイトル）----
-  // 時間はフレーム数（60 で 1 秒）。l1・l2 = それぞれのロゴが始まる時刻
-  var SP = { l1: 22, len1: 158, gap: 14, len2: 168, tail: 14 };
-  SP.l2 = SP.l1 + SP.len1 + SP.gap; SP.total = SP.l2 + SP.len2 + SP.tail;
+  // ---- 起動時のロゴ（GYOKURYU → PHOTO TEAM → presents By KONOMI → タイトル）----
+  // 時間はフレーム数（60 で 1 秒）。l1・l2・l3 = それぞれのロゴが始まる時刻
+  var SP = { l1: 22, len1: 158, gap: 14, len2: 168, len3: 200, tail: 14 };
+  SP.l2 = SP.l1 + SP.len1 + SP.gap; SP.l3 = SP.l2 + SP.len2 + SP.gap; SP.total = SP.l3 + SP.len3 + SP.tail;
   R.SPLASH_LEN = SP.total;
   var SANS = '"Segoe UI","Yu Gothic UI","Meiryo",sans-serif', JADE = '#4be8c0', JADE_L = '#c8fff2', embC = null;
 
@@ -426,11 +428,283 @@
     g.restore();
   }
 
+  // ---- ロゴ 3: presents By KONOMI ----
+  // 二人が左右から走ってきてすれ違い（紅蒼交錯）、通ったあとに文字がぽんぽんと生える。振り返って、跳んで、決めポーズ。
+  // 文字はフォントに頼らず、丸い線で描く（どの環境でも同じ形になり、1 文字ずつ弾ませられる）。
+  //   1 文字 = [字送り, 線…]。座標は、大文字の上端 y=0・小文字の上端 y=40・ベースライン y=100
+  //   'M' x y = 始点、'L' x y = 直線、'C' … = 曲線、'E' cx cy rx ry = だ円
+  var GLY = {
+    K: [78, 'M', 10, 0, 'L', 10, 100, 'M', 66, 0, 'L', 12, 58, 'M', 32, 40, 'L', 70, 100],
+    O: [92, 'E', 46, 50, 36, 50],
+    N: [88, 'M', 10, 100, 'L', 10, 0, 'L', 78, 100, 'L', 78, 0],
+    M: [104, 'M', 10, 100, 'L', 10, 0, 'L', 52, 64, 'L', 94, 0, 'L', 94, 100],
+    I: [28, 'M', 14, 0, 'L', 14, 100],
+    B: [68, 'M', 10, 0, 'L', 10, 100, 'M', 10, 0, 'L', 30, 0, 'C', 58, 0, 58, 46, 30, 46, 'L', 10, 46, 'M', 30, 46, 'C', 64, 46, 64, 100, 30, 100, 'L', 10, 100],
+    y: [52, 'M', 6, 42, 'L', 26, 96, 'M', 46, 42, 'L', 22, 108, 'C', 18, 120, 12, 130, 2, 126],
+    p: [62, 'M', 10, 42, 'L', 10, 130, 'E', 31, 70, 21, 28],
+    r: [42, 'M', 10, 42, 'L', 10, 100, 'M', 10, 62, 'C', 12, 48, 24, 40, 36, 44],
+    e: [56, 'M', 8, 70, 'L', 48, 70, 'C', 48, 34, 8, 34, 8, 70, 'C', 8, 102, 36, 106, 46, 90],
+    s: [46, 'M', 38, 50, 'C', 30, 38, 8, 40, 9, 56, 'C', 10, 70, 38, 68, 38, 84, 'C', 38, 100, 14, 104, 6, 92],
+    n: [56, 'M', 10, 42, 'L', 10, 100, 'M', 10, 62, 'C', 12, 42, 46, 36, 46, 62, 'L', 46, 100],
+    t: [40, 'M', 16, 18, 'L', 16, 84, 'C', 16, 98, 26, 102, 34, 96, 'M', 4, 44, 'L', 32, 44]
+  };
+  function glyph(g, d) {
+    g.beginPath();
+    for (var i = 1; i < d.length;) {
+      var c = d[i];
+      if (c === 'M') { g.moveTo(d[i + 1], d[i + 2]); i += 3; }
+      else if (c === 'L') { g.lineTo(d[i + 1], d[i + 2]); i += 3; }
+      else if (c === 'C') { g.bezierCurveTo(d[i + 1], d[i + 2], d[i + 3], d[i + 4], d[i + 5], d[i + 6]); i += 7; }
+      else { g.moveTo(d[i + 1] + d[i + 3], d[i + 2]); g.ellipse(d[i + 1], d[i + 2], d[i + 3], d[i + 4], 0, 0, PI * 2); i += 5; }
+    }
+  }
+  // 各文字の左端（文字の座標）。.w = 全体の幅
+  function wordLayout(s, gap) {
+    var x = 0, a = [], i;
+    for (i = 0; i < s.length; i++) { a.push(x); x += GLY[s[i]][0] + gap; }
+    a.w = x - gap; return a;
+  }
+  // ぽんっと出る大きさ: 0 から始まり、少し行きすぎてから 1 に落ち着く
+  function boing(v) { return v <= 0 ? 0 : 1 - Math.exp(-v * 0.32) * Math.cos(v * 0.55); }
+  function rnd(i) { var s = Math.sin(i * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
+  // 細い丸線の文字（presents / By）。中央ぞろえ。pop(i) = i 文字目の大きさ
+  function lineWord(g, s, cx, base, sc, gap, lw, col, glow, pop) {
+    var L = wordLayout(s, gap), x = cx - L.w * sc / 2, i, k, d;
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    for (i = 0; i < s.length; i++) {
+      k = pop(i); if (k <= 0) continue;
+      d = GLY[s[i]];
+      g.save(); g.translate(x + (L[i] + d[0] / 2) * sc, base); g.scale(sc * k, sc * k); g.translate(-d[0] / 2, -100);
+      glyph(g, d);
+      g.strokeStyle = glow; g.lineWidth = lw * 2.6; g.globalAlpha = 0.3; g.stroke();
+      g.strokeStyle = col; g.lineWidth = lw; g.globalAlpha = 1; g.stroke();
+      g.restore();
+    }
+  }
+  // あめ玉のような太い文字（KONOMI）。w = 線の太さ（文字の座標で）、col = [地の色, 上のほうの明るい色]
+  //   halo = true なら、まわりににじむ光だけを描く（となりの文字に光がかぶらないよう、先に全部の光を描く）
+  function candy(g, d, w, col, halo) {
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    glyph(g, d);
+    if (halo) {
+      g.strokeStyle = col[0]; g.globalAlpha = 0.1; g.lineWidth = w + 30; g.stroke(); g.globalAlpha = 0.13; g.lineWidth = w + 20; g.stroke(); g.globalAlpha = 0.16; g.lineWidth = w + 12; g.stroke();
+      g.globalAlpha = 1; return;
+    }
+    g.globalAlpha = 1; g.strokeStyle = '#ffffff'; g.lineWidth = w + 6; g.stroke();         // 白いふち
+    var gr = g.createLinearGradient(0, -8, 0, 108); gr.addColorStop(0, col[1]); gr.addColorStop(0.55, col[0]); gr.addColorStop(1, col[0]);
+    g.strokeStyle = gr; g.lineWidth = w; g.stroke();
+    g.save(); g.beginPath(); g.rect(-40, -40, 240, 92); g.clip();                           // つや（上半分だけ）
+    g.translate(-w * 0.15, -w * 0.17); glyph(g, d);
+    g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = w * 0.2; g.stroke(); g.restore();
+  }
+  // O の中の顔。mood: 0 = ふつう、1 = にっこり、2 = まばたき。look = 目線（-1 = 左、1 = 右）
+  function oFace(g, col, mood, look) {
+    var i, x;
+    g.fillStyle = col[0]; g.globalAlpha = 0.16; g.beginPath(); g.ellipse(46, 50, 27, 41, 0, 0, PI * 2); g.fill();
+    g.globalAlpha = 1; g.fillStyle = '#ffffff'; g.strokeStyle = '#ffffff'; g.lineWidth = 2.6; g.lineCap = 'round';
+    for (i = -1; i <= 1; i += 2) {
+      x = 46 + i * 11 + look * 1.6; g.beginPath();
+      if (mood === 1) { g.arc(x, 49, 4.6, PI * 1.12, PI * 1.88); g.stroke(); }
+      else if (mood === 2) { g.moveTo(x - 4, 46); g.lineTo(x + 4, 46); g.stroke(); }
+      else { g.arc(x, 46, 3.9, 0, PI * 2); g.fill(); }
+    }
+    g.beginPath(); g.arc(46, 53, mood === 1 ? 6.5 : 5, PI * 0.12, PI * 0.88); g.stroke();      // 口
+    g.fillStyle = '#ff9ac6'; g.globalAlpha = 0.8;                                               // ほっぺ
+    g.beginPath(); g.ellipse(27, 58, 5.2, 3.2, 0, 0, PI * 2); g.fill();
+    g.beginPath(); g.ellipse(65, 58, 5.2, 3.2, 0, 0, PI * 2); g.fill();
+    g.globalAlpha = 1;
+  }
+  function heart(g, x, y, s, rot) {
+    g.save(); g.translate(x, y); g.rotate(rot || 0); g.scale(s, s); g.beginPath(); g.moveTo(0, 0.9);
+    g.bezierCurveTo(-1.5, -0.2, -0.75, -1.25, 0, -0.45); g.bezierCurveTo(0.75, -1.25, 1.5, -0.2, 0, 0.9); g.closePath(); g.fill(); g.restore();
+  }
+  // きらめき（4 つの角がとがった星）。thin = くびれの細さ（小さいほど、細い光の筋になる）
+  function spark(g, x, y, r, rot, thin) {
+    var q = r * (thin || 0.14);
+    g.save(); g.translate(x, y); g.rotate(rot || 0); g.beginPath(); g.moveTo(r, 0);
+    for (var i = 1; i <= 4; i++) { var a = i * PI / 2, m = a - PI / 4; g.quadraticCurveTo(Math.cos(m) * q, Math.sin(m) * q, Math.cos(a) * r, Math.sin(a) * r); }
+    g.closePath(); g.fill(); g.restore();
+  }
+  // 光の筋 1 本（細長いひし形）
+  function ray(g, x, y, r, w, rot) {
+    g.save(); g.translate(x, y); g.rotate(rot); g.beginPath(); g.moveTo(r, 0); g.lineTo(0, w); g.lineTo(-r, 0); g.lineTo(0, -w); g.closePath(); g.fill(); g.restore();
+  }
+  // ぱっと光る（やわらかい光の玉 + 細い十字の筋）
+  function flare(g, x, y, r, al) {
+    if (r <= 1 || al <= 0) return;
+    var rg = g.createRadialGradient(x, y, 0, x, y, r * 0.62);
+    rg.addColorStop(0, 'rgba(255,255,255,' + 0.9 * al + ')'); rg.addColorStop(0.16, 'rgba(255,236,250,' + 0.55 * al + ')'); rg.addColorStop(0.45, 'rgba(255,190,235,' + 0.16 * al + ')'); rg.addColorStop(1, 'rgba(190,170,255,0)');
+    g.globalAlpha = 1; g.fillStyle = rg; g.fillRect(x - r, y - r, r * 2, r * 2);
+    g.globalAlpha = al; g.fillStyle = '#ffffff';
+    ray(g, x, y, r, r * 0.04, 0); ray(g, x, y, r * 0.82, r * 0.04, PI / 2); ray(g, x, y, r * 0.42, r * 0.028, PI / 4); ray(g, x, y, r * 0.42, r * 0.028, -PI / 4);
+    g.globalAlpha = 1;
+  }
+  function glowSpot(g, x, y, r, rgb, al) {
+    if (al <= 0) return;
+    var rg = g.createRadialGradient(x, y, 0, x, y, r);
+    rg.addColorStop(0, 'rgba(' + rgb + ',' + al + ')'); rg.addColorStop(1, 'rgba(' + rgb + ',0)');
+    g.fillStyle = rg; g.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+
+  // 時間割（このロゴが始まってからのフレーム数）
+  //   T0 走り出す、T1 止まりはじめる、T2 止まる、T3 跳ぶ（蒼は wait だけ遅れる）、JD・JH = ジャンプの長さと高さ、H2 = 2 回目の小さなジャンプ
+  //   FLOOR = 床の高さ、S = KONOMI の大きさ、W = 線の太さ、GAP = 字間
+  var KN = { T0: 8, T1: 46, T2: 60, T3: 70, JD: 26, JH: 132, H2: 142, HD: 18, FLOOR: 756, S: 1.5, W: 17.4, GAP: 20, BURST: 36 };
+  var ACT = {
+    kurenai: { x0: -160, x1: 1620, dir: 1, rate: 0.55, wait: 0, idle: 1 },
+    aoi: { x0: 2080, x1: 300, dir: -1, rate: 0.5, wait: 6, idle: 0 }
+  };
+  var KCOL = [['#55ccff', '#c8f0ff'], ['#7ab2ff', '#d3e4ff'], ['#a79aff', '#e0dbff'], ['#d48ef2', '#f3dafc'], ['#ff84cc', '#ffd6ee'], ['#ff6c9c', '#ffcbdd']];
+  // またたく星: [x, 床からの高さ, 大きさ, またたきのずれ, 色]
+  var KTW = [[742, 246, 13, 0, '#ffffff'], [1184, 264, 16, 1.7, '#ffd9ef'], [640, 324, 10, 3.1, '#bfe9ff'], [1312, 218, 11, 4.4, '#ffffff'], [872, 364, 9, 2.2, '#ffe9a8'], [1060, 360, 8, 5.3, '#bfe9ff'],
+    [452, 150, 9, 0.9, '#ffd9ef'], [1470, 156, 10, 3.8, '#bfe9ff'], [960, -84, 9, 1.2, '#ffe9a8'], [706, -90, 7, 2.9, '#ffffff'], [1226, -96, 8, 4.9, '#ffd9ef']];
+  var kPop = null;
+  // 走ってくる位置: 一定の速さで来て、T1 からだんだん遅くなり、T2 で止まる
+  function runX(A, u) {
+    var v0 = Math.abs(A.x1 - A.x0) / (KN.T1 - KN.T0 + (KN.T2 - KN.T1) / 2), v;
+    if (u <= KN.T0) return A.x0;
+    if (u < KN.T1) return A.x0 + A.dir * v0 * (u - KN.T0);
+    v = Math.min(1, (u - KN.T1) / (KN.T2 - KN.T1));
+    return A.x0 + A.dir * v0 * (KN.T1 - KN.T0 + (KN.T2 - KN.T1) * (v - v * v / 2));
+  }
+  // 文字が生える時刻: その場所を、走っている子が通りすぎた少しあと（真ん中から外へ順に出る）
+  function konomiPops(L) {
+    var a = [], i, cx, u, A;
+    for (i = 0; i < 6; i++) {
+      cx = 960 + (L[i] + GLY['KONOMI'[i]][0] / 2 - L.w / 2) * KN.S;
+      A = cx >= 960 ? ACT.kurenai : ACT.aoi;
+      for (u = KN.T0; u < KN.T2; u += 0.25) if ((runX(A, u) - cx) * A.dir >= 0) break;
+      a.push({ cx: cx, t: u + 4 });
+    }
+    return a;
+  }
+  // 着地の時刻と、どちら側か（1 = 右の紅、-1 = 左の蒼）、文字の跳ねる高さ
+  function landings() {
+    var k = KN.T3 + KN.JD, a = k + ACT.aoi.wait, h = KN.H2 + KN.HD;
+    return [[k, 1, 20], [a, -1, 20], [h, 1, 11], [h + ACT.aoi.wait, -1, 11]];
+  }
+  // 二人が着地するたび、近い文字から順に小さく跳ねる。そのあとは、ゆるく波うつ
+  function letterHop(u, i) {
+    var y = 0, E = landings(), n, v;
+    for (n = 0; n < E.length; n++) {
+      v = u - E[n][0] - 2 - (E[n][1] > 0 ? 5 - i : i) * 2.2;
+      if (v > 0 && v < 12) y -= E[n][2] * Math.sin(PI * v / 12);
+    }
+    if (u > 114) y -= 5 * Math.pow(Math.max(0, Math.sin(u * 0.105 - i * 0.8)), 2) * Math.min(1, (u - 114) / 20);
+    return y;
+  }
+  // 主人公のコマを、ロゴ画面の大きさ（シートの 1 ドット = 4）で描く。位置は 4 の倍数にそろえて、ドットをくずさない
+  function chibi(g, f, x, y, face, sx, sy) {
+    g.save(); g.translate(Math.round(x / 4) * 4, Math.round(y / 4) * 4); g.scale(face * 4 * sx, 4 * sy);
+    g.imageSmoothingEnabled = false; g.drawImage(f.c, -f.ox, -f.oy); g.restore();
+  }
+  function actor(g, who, u) {
+    if (u < KN.T0 || !R.SPR[who]) return;
+    var A = ACT[who], x = runX(A, u), y = KN.FLOOR, face = A.dir, sx = 1, sy = 1, f, v;
+    var J0 = KN.T3 + A.wait, L0 = J0 + KN.JD, H0 = KN.H2 + A.wait;
+    if (u < KN.T1) f = R.frame(who, 'run', Math.floor((u - KN.T0) * A.rate) % R.SPR[who].run.length);      // 走ってくる
+    else if (u < KN.T2 - 4) f = R.frame(who, 'slide', 1);                                                     // 砂ぼこりを上げて止まる
+    else if (u < KN.T2 + 1) f = R.frame(who, 'stop', 0);
+    else {
+      face = -A.dir;                                                                                           // 振り返って、文字のほうを見る
+      if (u < J0 - 3) { f = R.frame(who, 'idle', A.idle); v = (u - KN.T2 - 1) / 5; if (v < 1) y -= 16 * Math.sin(PI * v); }
+      else if (u < J0) { f = R.frame(who, 'idle', A.idle); sx = 1.07; sy = 0.9; }                             // ぐっと沈んで
+      else if (u < L0) {                                                                                       // 跳ぶ
+        v = (u - J0) / KN.JD; y -= KN.JH * 4 * v * (1 - v);
+        f = R.frame(who, 'jump', v < 0.3 ? 2 : v < 0.62 ? 3 : 4);
+        if (v < 0.2) { sx = 0.94; sy = 1.08; }
+      }
+      else if (u < L0 + 6) f = R.frame(who, 'land', 1);                                                       // 着地
+      else {                                                                                                   // 決めポーズ（きらきら付き）
+        f = R.frame(who, 'event', 1); v = u - L0 - 6;
+        if (v < 7) { sx = 1 - 0.06 * (1 - v / 7); sy = 1 + 0.09 * (1 - v / 7); }
+        v = (u - H0) / KN.HD; if (v > 0 && v < 1) y -= 46 * 4 * v * (1 - v);                                   // もう一度、小さく跳ねる
+      }
+    }
+    chibi(g, f, x, y, face, sx, sy);
+  }
+
+  function logoKonomi(g, u, len) {
+    var a = Math.min(1, u / 14) * Math.min(1, (len - u) / 24), FL = KN.FLOOR, i, v, k, d;
+    if (a <= 0) return;
+    var L = wordLayout('KONOMI', KN.GAP), E = landings();
+    if (!kPop) kPop = konomiPops(L);
+    g.save();
+    // 奥の明かり（左 = 蒼の色、右 = 紅の色）
+    var ga = R.ease(clamp((u - 30) / 40, 0, 1));
+    glowSpot(g, 300, FL - 120, 560, '85,204,255', 0.2 * ga); glowSpot(g, 1620, FL - 120, 560, '255,108,156', 0.2 * ga); glowSpot(g, 960, FL - 60, 640, '167,154,255', 0.12 * ga);
+    // 床の線（二人がすれ違ったところから、左右へ伸びる）
+    var fw = 830 * R.ease(clamp((u - KN.BURST) / 22, 0, 1));
+    if (fw > 0) {
+      var lg = g.createLinearGradient(130, 0, 1790, 0);
+      lg.addColorStop(0, 'rgba(85,204,255,0)'); lg.addColorStop(0.12, '#55ccff'); lg.addColorStop(0.5, '#b7a0ff'); lg.addColorStop(0.88, '#ff6c9c'); lg.addColorStop(1, 'rgba(255,108,156,0)');
+      g.fillStyle = lg; g.fillRect(960 - fw, FL + 3, fw * 2, 4);
+    }
+    // すれ違った瞬間の光（文字と二人の後ろで光る）
+    var bx = 960, by = FL - 128, bv = u - KN.BURST;
+    if (bv >= 0 && bv < 18) { g.globalAlpha = 0.85 * (1 - bv / 18); g.strokeStyle = '#e8dcff'; g.lineWidth = 7 * (1 - bv / 18) + 1; g.beginPath(); g.arc(bx, by, 24 + 190 * R.ease(bv / 18), 0, PI * 2); g.stroke(); }
+    if (bv >= 0 && bv < 16) flare(g, bx, by, 230 * Math.sin(PI * bv / 16), Math.min(1, (16 - bv) / 7));
+    g.globalAlpha = 1;
+    // presents（1 文字ずつ、ぽんぽんと出る）
+    lineWord(g, 'presents', 960, FL - 286, 0.66, 9, 10, '#fff0f8', '#ff7ac8', function (n) { return boing(u - 6 - n * 2.6); });
+    // By（K の左上に、少しかたむけて）
+    v = u - 53;
+    if (v > 0) {
+      g.save(); g.translate(538, FL - 232); g.rotate(-0.12 + 0.12 * Math.exp(-v * 0.2) * Math.sin(v * 0.7));
+      lineWord(g, 'By', 0, 0, 0.62, 6, 11, '#ffffff', '#a79aff', function () { return boing(v); }); g.restore();
+    }
+    // KONOMI（先に全部の文字の光、そのあと文字）
+    var happy = (u >= E[0][0] - 24 && u < E[1][0] + 14) || (u >= KN.H2 + 2 && u < E[3][0] + 6);
+    var mood = happy ? 1 : ((u + 22) % 72 >= 66 ? 2 : 0), pass;
+    for (pass = 0; pass < 2; pass++) for (i = 0; i < 6; i++) {
+      v = u - kPop[i].t; if (v <= 0) continue;
+      k = boing(v); d = GLY['KONOMI'[i]];
+      g.save(); g.translate(kPop[i].cx, FL - 15 + letterHop(u, i)); g.rotate(0.16 * Math.exp(-v * 0.22) * Math.sin(v * 0.7)); g.scale(KN.S * k, KN.S * k); g.translate(-d[0] / 2, -100);
+      candy(g, d, KN.W, KCOL[i], pass === 0);
+      if (pass && d === GLY.O) oFace(g, KCOL[i], mood, i === 1 ? 1 : -1);
+      g.restore();
+    }
+    // 二人
+    actor(g, 'aoi', u); actor(g, 'kurenai', u);
+    // すれ違った瞬間に飛びちる、ハートと星
+    v = bv;
+    if (v >= 0 && v < 46) {
+      for (i = 0; i < 16; i++) {
+        var an = i / 16 * PI * 2 + rnd(i) * 0.5, sp = 9 + rnd(i + 20) * 9, life = 30 + rnd(i + 40) * 14;
+        if (v >= life) continue;
+        var dist = sp * (1 - Math.exp(-v * 0.09)) / 0.09, px = bx + Math.cos(an) * dist, py = by + Math.sin(an) * dist * 0.8 + 0.09 * v * v, sz = (10 + rnd(i + 60) * 8) * Math.min(1, v / 4);
+        g.globalAlpha = Math.min(1, (life - v) / 10);
+        if (i % 3 === 0) { g.fillStyle = i % 2 ? '#7fd4ff' : '#ff7fb5'; heart(g, px, py, sz, (rnd(i + 80) - 0.5) * 0.8); }
+        else if (i % 3 === 1) { g.fillStyle = i % 2 ? '#ffe9a0' : '#ffffff'; spark(g, px, py, sz * 1.2, v * 0.08); }
+        else { g.fillStyle = '#c9b8ff'; g.beginPath(); g.arc(px, py, sz * 0.4, 0, PI * 2); g.fill(); }
+      }
+    }
+    // まわりで、またたく星
+    for (i = 0; i < KTW.length; i++) {
+      var tw = KTW[i], ta = clamp((u - 44 - i * 3) / 14, 0, 1), ts = 0.5 + 0.5 * Math.sin(u * 0.17 + tw[3]);
+      if (ta <= 0) continue;
+      g.globalAlpha = ta * (0.3 + 0.7 * ts); g.fillStyle = tw[4]; spark(g, tw[0], FL - tw[1], tw[2] * (0.6 + 0.5 * ts), 0);
+    }
+    // 決めポーズのあと、ハートがふわふわ昇る
+    [['kurenai', '#ff7fb5'], ['aoi', '#8fd6ff']].forEach(function (h) {
+      var A = ACT[h[0]], s0 = KN.T3 + A.wait + KN.JD + 8, j, t, hx, hy;
+      for (j = 0; j < 3; j++) {
+        t = u - s0 - j * 15; if (t < 0) continue;
+        t %= 46; hx = A.x1 + (j - 1) * 34 + 10 * Math.sin(t * 0.2 + j * 2); hy = FL - 300 - t * 1.8;
+        g.globalAlpha = Math.sin(PI * t / 46) * 0.95; g.fillStyle = h[1]; heart(g, hx, hy, 11 + j * 2 + t * 0.08, 0.2 * Math.sin(t * 0.15 + j));
+      }
+    });
+    // 入りと終わりは、黒をかぶせてフェード
+    g.globalAlpha = 1 - a; g.fillStyle = '#000000'; g.fillRect(0, 0, 1920, 1080);
+    g.restore();
+  }
+
   R.drawSplash = function (g) {
     var t = G.stateT;
     g.fillStyle = '#000000'; g.fillRect(0, 0, 1920, 1080);
     if (t >= SP.l1 && t < SP.l1 + SP.len1) logoGyokuryu(g, t - SP.l1, SP.len1);
     else if (t >= SP.l2 && t < SP.l2 + SP.len2) logoPhoto(g, t - SP.l2, SP.len2);
+    else if (t >= SP.l3 && t < SP.l3 + SP.len3) logoKonomi(g, t - SP.l3, SP.len3);
   };
 
   R.drawTitle = function (g) {
@@ -454,9 +728,9 @@
     g.imageSmoothingEnabled = false;
     R.drawFrame(g, R.frame('kurenai', 'run', Math.floor(t / 5) % R.SPR.kurenai.run.length), 1190, 880, 3, 1); R.drawFrame(g, R.frame('aoi', 'run', (Math.floor(t / 4) + 2) % R.SPR.aoi.run.length), 1510, 880, 3, 1);
     g.fillStyle = '#ffe2ff'; g.fillRect(920, 880, 900, 4); g.fillStyle = 'rgba(200,150,240,.5)'; g.fillRect(920, 884, 900, 4);
-    var rows = [['←→ / A D', '移動'], ['Space / W', 'ジャンプ（二段で宙返り）'], ['J / Z', '攻撃（連打でコンボ）'], ['↓ + 攻撃', '斬り上げ / 空中で急降下'], ['L / Shift', 'ダッシュ（空中でも可）'], ['K / X', '特技（SP 消費）'], ['Q / E', 'キャラチェンジ'], ['F', '合体技「紅蒼交錯」']];
+    var rows = [['←→ / A D', '移動'], ['Space / W', 'ジャンプ（二段で宙返り）'], ['J / Z', '攻撃（連打でコンボ）'], ['U / G', '遠距離攻撃（空中でも可）'], ['↓ + 攻撃', '斬り上げ / 空中で急降下'], ['L / Shift', 'ダッシュ（空中でも可）'], ['K / X', '特技（SP 消費）'], ['Q / E', 'キャラチェンジ'], ['F', '合体技「紅蒼交錯」']];
     for (i = 0; i < rows.length; i++) {
-      var cx = 930 + (i % 2) * 470, cy = 930 + (i >> 1) * 36;
+      var cx = 930 + (i % 2) * 470, cy = 920 + (i >> 1) * 30;
       T(g, rows[i][0], cx + 150, cy, 24, '#7af3ff', 'right', UI, '#120a30', 5); T(g, rows[i][1], cx + 168, cy, 24, '#ffffff', 'left', UI, '#120a30', 5);
     }
     T(g, 'キャラクターデザイン：このみ　／　ゲームパッド対応（LB・RB で切り替え）　／　M：音のオン・オフ', 1900, 1070, 18, '#a898e8', 'right', UI);
@@ -490,8 +764,10 @@
     dim(g, 0.62);
     T(g, 'PAUSE', 960, 270, 96, '#ffffff', 'center', SERIF, PINK, 10);
     helpPanel(g, 1);
-    var rows = [['紅 / 蒼', '紅: 大鎌の重い大振り・ひるまない　蒼: 速い連撃・一発は軽い'], ['←→ / A D', '移動（逆を押すと切り返し）'], ['Space / W / ↑', 'ジャンプ　空中でもう一度押すと宙返り'], ['J / Z', '攻撃（連打でコンボ・空中でも続く）'], ['↓ + 攻撃', '地上: 斬り上げて追いかける　空中: 急降下'], ['L / C / Shift', 'ダッシュ（空中は紅 1 回・蒼 2 回）　ぎりぎりでかわすとスロー'], ['ダッシュ中に攻撃', 'ダッシュ斬り'], ['攻撃が当たった後', 'ジャンプ・ダッシュで動きを打ち切れる'], ['Q / E', 'キャラチェンジ（斬り込みながら交代）'], ['攻撃を当てた直後に交代', 'チェイン: 登場攻撃が強くなる'], ['K / X', '特技（SP 30）　紅: 紅蓮砕　蒼: 蒼刃閃'], ['F / V', '合体技「紅蒼交錯」（ゲージ満タン）'], ['1 / 2　　M / B', '薬 / 結晶　　音 / 光のにじみ']];
-    for (var i = 0; i < rows.length; i++) { T(g, rows[i][0], 800, 332 + i * 40, 27, i ? '#7af3ff' : '#ffe04a', 'right', UI, '#120a30', 6); T(g, rows[i][1], 828, 332 + i * 40, 27, '#ffffff', 'left', UI, '#120a30', 6); }
+    var rows = [['紅 / 蒼', '紅: 大鎌の重い大振り・ひるまない　蒼: 速い連撃・一発は軽い'], ['←→ / A D', '移動（逆を押すと切り返し）'], ['Space / W / ↑', 'ジャンプ　空中でもう一度押すと宙返り'], ['J / Z', '攻撃（連打でコンボ・空中でも続く）'], ['↓ + 攻撃', '地上: 斬り上げて追いかける　空中: 急降下'],
+      ['U / G', '遠距離　紅: 鎖鎌を投げて敵を引き寄せる　蒼: 飛ぶ斬撃を 3 連射'], ['空中で U / G', '紅: 鎌を打ち込んで叩きつける　蒼: 空中から撃つ（↓で斜め下）'],
+      ['L / C / Shift', 'ダッシュ（空中は紅 1 回・蒼 2 回）　ぎりぎりでかわすとスロー'], ['ダッシュ中に攻撃', 'ダッシュ斬り'], ['攻撃が当たった後', 'ジャンプ・ダッシュで動きを打ち切れる'], ['Q / E', 'キャラチェンジ（斬り込みながら交代）'], ['攻撃を当てた直後に交代', 'チェイン: 登場攻撃が強くなる'], ['K / X', '特技（SP 30）　紅: 紅蓮砕　蒼: 蒼刃閃'], ['F / V', '合体技「紅蒼交錯」（ゲージ満タン）'], ['1 / 2　　M / B', '薬 / 結晶　　音 / 光のにじみ']];
+    for (var i = 0; i < rows.length; i++) { T(g, rows[i][0], 800, 322 + i * 36, 27, i ? '#7af3ff' : '#ffe04a', 'right', UI, '#120a30', 6); T(g, rows[i][1], 828, 322 + i * 36, 27, '#ffffff', 'left', UI, '#120a30', 6); }
     blinkText(g, 'Esc / P で再開', 1560, 1010, 32);
   };
   R.drawGameOver = function (g) {

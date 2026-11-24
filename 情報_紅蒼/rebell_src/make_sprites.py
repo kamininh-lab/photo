@@ -61,7 +61,7 @@ CFG = {
         'down': ('E', 'row', [(476, 554), (559, 609), (616, 657)]),
         'dodge': ('E', 'row', [(865, 941), (950, 1043)]),
         'slide': ('E', 'row', [(1065, 1147), (1149, 1218)]),
-        'event': ('F', 'row', [(884, 960), (975, 1042)]),
+        'event': ('F', 'row', [(894, 960), (975, 1042)]),      # 1 コマ目は、左端にシートの仕切り線が入るので、その内側から
     },
     'aoi': {
         'idle': ('A', 'row', [(263, 304), (324, 365), (385, 426), (446, 487)], {'anchor': 'feet'}),
@@ -204,16 +204,63 @@ def pack(frames, width=1024):
     return Image.fromarray(atlas, 'RGBA')
 
 
-def encode(im, colors):
-    """色数を減らして PNG と WebP（可逆）にし、小さいほうを返す。colors=0 なら非可逆 WebP（確認用の軽い版）"""
+def nearest(px, pal):
+    """各色（px）にいちばん近いパレットの番号と、その距離（2 乗）"""
+    idx = np.zeros(len(px), np.int32); dist = np.zeros(len(px), np.int64)
+    for s in range(0, len(px), 20000):
+        d = px[s:s + 20000, None, :] - pal[None, :, :]
+        d = (d * d).sum(-1)
+        idx[s:s + 20000] = d.argmin(1); dist[s:s + 20000] = d.min(1)
+    return idx, dist
+
+
+def reduce_colors(im, colors):
+    """色数を colors 色まで減らす。返すのは、色番号の画像（透明なところは 0）と、パレット（r, g, b を並べたリスト）。
+    中央値分割だけだと、数は少ないが目立つ色（決めポーズの金色のきらきらなど）が近くの色に化ける（蒼では金色が薄いピンクになった）。
+    そこで、3/4 を中央値分割で決めたあと、パレットからいちばん外れている色を順に足し、
+    最後に、それぞれの色を受け持つ画素の平均でならす"""
+    rgb = np.asarray(im.convert('RGB')).astype(np.int64)
+    al = np.asarray(im.getchannel('A')) > 0
+    px = rgb[al]
+    uq, inv, cnt = np.unique(px, axis=0, return_inverse=True, return_counts=True)      # 同じ色はまとめて数える
+    inv = inv.reshape(-1)
+    base = colors - colors // 4
+    q = Image.fromarray(px.reshape(1, -1, 3).astype(np.uint8), 'RGB').quantize(colors=base, method=Image.MEDIANCUT, dither=Image.NONE)
+    pal = np.unique(np.array((q.getpalette() or [])[:base * 3], np.int64).reshape(-1, 3), axis=0)
+    idx, dist = nearest(uq, pal)
+    while len(pal) < colors:
+        j = int(dist.argmax())
+        if dist[j] == 0:
+            break
+        pal = np.vstack([pal, uq[j:j + 1]])
+        d = ((uq - uq[j]) ** 2).sum(-1); upd = d < dist
+        idx[upd] = len(pal) - 1; dist[upd] = d[upd]
+    for _ in range(6):
+        idx, dist = nearest(uq, pal)
+        w = np.bincount(idx, weights=cnt, minlength=len(pal)); ok = w > 0
+        for c in range(3):
+            s = np.bincount(idx, weights=uq[:, c] * cnt, minlength=len(pal))
+            pal[ok, c] = np.round(s[ok] / w[ok]).astype(np.int64)
+    idx, dist = nearest(uq, pal)
+    out = np.zeros(rgb.shape[:2], np.uint8); out[al] = idx[inv]
+    return out, [int(v) for v in pal.reshape(-1)]
+
+
+def encode(im, colors, rare=False):
+    """色数を減らして PNG と WebP（可逆）にし、小さいほうを返す。colors=0 なら非可逆 WebP（確認用の軽い版）。
+    rare=True なら、数の少ない色も残す減らし方（reduce_colors）を使う"""
     al = np.asarray(im.getchannel('A')) > 0
     if not colors:
         arr = np.asarray(im).copy(); arr[~al] = 0
         b = io.BytesIO(); Image.fromarray(arr, 'RGBA').save(b, 'WEBP', quality=58, alpha_quality=100, method=6)
         return 'data:image/webp;base64,' + base64.b64encode(b.getvalue()).decode('ascii'), len(b.getvalue()), 'webp-lossy'
-    q = im.convert('RGB').quantize(colors=colors - 1, method=Image.MEDIANCUT, dither=Image.NONE)
-    pal = q.getpalette()[:(colors - 1) * 3]; pal += [0] * ((colors - 1) * 3 - len(pal)) + [0, 0, 0]
-    data = np.asarray(q).copy(); data[~al] = colors - 1
+    if rare:
+        data, pal = reduce_colors(im, colors - 1)
+    else:
+        q = im.convert('RGB').quantize(colors=colors - 1, method=Image.MEDIANCUT, dither=Image.NONE)
+        pal = q.getpalette()[:(colors - 1) * 3]; data = np.asarray(q).copy()
+    pal += [0] * ((colors - 1) * 3 - len(pal)) + [0, 0, 0]
+    data[~al] = colors - 1
     p = Image.fromarray(data, 'P'); p.putpalette(pal)
     b1 = io.BytesIO(); p.save(b1, 'PNG', optimize=True, transparency=colors - 1)
     rgba = p.convert('RGBA'); arr = np.asarray(rgba).copy(); arr[~al] = 0
@@ -266,8 +313,9 @@ def main():
         frames = extract(who)
         atlas = pack(frames)
         table = ', '.join('%s: [%s]' % (n, ', '.join('[%d,%d,%d,%d,%d,%d]' % (f['x'], f['y'], f['img'].shape[1], f['img'].shape[0], f['ox'], f['oy']) for f in fs)) for n, fs in frames.items())
-        for lst, colors in ((out, 192), (dev, 40)):      # dev = アプリ内プレビュー用（色数を落として軽くした版）
-            uri, size, kind = encode(atlas, colors)
+        # dev = アプリ内プレビュー用（色数を落として軽くした版。大きさを抑えるため、減らし方は元のまま）
+        for lst, colors, rare in ((out, 256, True), (dev, 40, False)):
+            uri, size, kind = encode(atlas, colors, rare)
             lst.append('  %s: {\n    img: "%s",\n    frames: { %s }\n  }' % (who, uri, table))
             print(who, 'frames', sum(len(v) for v in frames.values()), 'atlas', atlas.size, colors, 'colors', kind, size // 1024, 'KB')
         if dbg:
