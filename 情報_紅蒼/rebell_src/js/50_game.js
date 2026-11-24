@@ -777,9 +777,10 @@
     }
     else if (p.coyote > 0) p.coyote--;
     if (p.flipT > 0 && p.flipT % 4 === 0) ghost(p, 9);
-    if (p.y > R.H + 60) {      // 落下
-      p.x = p.safeX; p.y = floorAt(p.safeX) || GY; p.vx = 0; p.vy = 0; p.st = 'free'; p.flipT = 0;
-      var keep = p.inv; p.inv = 0; if (!hurtPlayer(14, 0, false)) p.inv = keep; p.vx = 0; p.vy = 0; p.inv = Math.max(p.inv, 90);
+    if (p.y > R.H + 60 && G.state === 'play') {      // ステージから落ちたら、その場でゲームオーバー（つづきは、最後に記録した端末から）
+      p.vx = 0; p.vy = 0; p.st = 'free'; p.flipT = 0; G.combo = 0; G.cross = null;
+      toast('落下…', '#ff9db8'); R.snd('hurt');
+      G.state = 'gameover'; G.stateT = 0; R.bgm('gameover');
     }
   }
   function onPlat(p) { var P = G.S.platRects; for (var i = 0; i < P.length; i++) if (Math.abs(p.y - P[i].y) < 1 && p.x > P[i].x - 6 && p.x < P[i].x + P[i].w + 6) return true; return false; }
