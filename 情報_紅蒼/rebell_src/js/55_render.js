@@ -284,7 +284,7 @@
   // (1) 背景。bg = 480x270 の背景用キャンバス
   R.renderBack = function (bg) {
     var S = G.S, sh = G.cam.shake;
-    cam = Math.round(clamp(G.cam.x + (sh > 0.4 ? rand(-1, 1) * sh : 0), 0, S.len - R.W)); oy = sh > 0.4 ? Math.round(rand(-1, 1) * sh * 0.5) : 0;
+    cam = Math.round(clamp(G.cam.x + (sh > 0.4 ? rand(-1, 1) * sh : 0), 0, S.len - R.W)); oy = (sh > 0.4 ? Math.round(rand(-1, 1) * sh * 0.5) : 0) + Math.round(G.cam.y || 0);      // 画面ゆれ + 高い所でのカメラの上向き
     R.viewCam = cam; R.viewOy = oy;
     R.drawBackdrop(bg, S, cam, G.t, G.rage);
     bg.drawImage(S.layer, cam, 0, R.W, R.H, 0, oy, R.W, R.H);
@@ -305,6 +305,26 @@
     fg.save(); fg.translate(0, oy);
     // 端末
     for (i = 0; i < G.terminals.length; i++) { var tm = G.terminals[i]; fg.drawImage(I.terminal[tm.on ? ((G.t >> 4) % 2) : 0], Math.round(tm.x - cam - 17), GY - 56); if (!tm.on && (G.t >> 4) % 2) { fg.fillStyle = '#7af3ff'; fg.fillRect(Math.round(tm.x - cam) - 1, GY - 66, 2, 5); fg.fillRect(Math.round(tm.x - cam) - 3, GY - 62, 6, 1); } }
+    // 動く足場（水色に光る板。下に噴射の光）
+    var MV = G.movers || [], SPG = G.springs || [], mx, my, k;
+    for (i = 0; i < MV.length; i++) {
+      mx = Math.round(MV[i].x - cam); my = Math.round(MV[i].y); k = MV[i].w;
+      if (mx > R.W + 10 || mx + k < -10) continue;
+      fg.fillStyle = '#2f2b55'; fg.fillRect(mx, my, k, 7);
+      fg.fillStyle = '#7af3ff'; fg.fillRect(mx, my, k, 1); fg.fillStyle = '#37e6ff'; fg.fillRect(mx, my + 1, k, 1);
+      fg.fillStyle = '#655e9e'; fg.fillRect(mx + 1, my + 2, k - 2, 3);
+      fg.fillStyle = '#ff7ad1'; fg.fillRect(mx + 3, my + 4, 2, 1); fg.fillRect(mx + k - 5, my + 4, 2, 1);
+      fg.fillStyle = (G.t >> 2) % 2 ? '#7af3ff' : '#37e6ff'; fg.fillRect(mx + 5, my + 7, 3, 2 + (G.t >> 2) % 2); fg.fillRect(mx + k - 8, my + 7, 3, 2 + (G.t >> 2) % 2);
+    }
+    // バネ（黄色い台。踏むと縮んで跳ね上げる）
+    for (i = 0; i < SPG.length; i++) {
+      mx = Math.round(SPG[i].x - cam); my = Math.round(SPG[i].y); k = SPG[i].t > 6 ? 3 : SPG[i].t > 0 ? 9 : 6;      // 台の高さ
+      if (mx > R.W + 12 || mx < -12) continue;
+      fg.fillStyle = '#24213f'; fg.fillRect(mx - 8, my - 2, 16, 2);
+      fg.fillStyle = '#b49cff'; fg.fillRect(mx - 3, my - k, 2, k - 1); fg.fillRect(mx + 1, my - k, 2, k - 1);
+      fg.fillStyle = '#c07818'; fg.fillRect(mx - 8, my - k - 3, 16, 3); fg.fillStyle = '#ffd36a'; fg.fillRect(mx - 8, my - k - 3, 16, 2); fg.fillStyle = '#fff3b0'; fg.fillRect(mx - 7, my - k - 3, 14, 1);
+      if ((G.t + i * 9) % 50 < 8) { fg.fillStyle = '#ffffff'; fg.fillRect(mx - 1, my - k - 9 - ((G.t + i * 9) % 50 >> 1), 2, 3); }
+    }
     // アイテム
     for (i = 0; i < G.items.length; i++) {
       var it = G.items[i], ix = Math.round(it.x - cam);

@@ -234,7 +234,7 @@
     // 文字（ダメージ数字）
     for (i = 0; i < G.texts.length; i++) {
       var t = G.texts[i], a = Math.min(1, (1 - t.t / t.life) * 2.2);
-      g.globalAlpha = a; T(g, t.str, (t.x - R.viewCam) * 4, t.y * 4, t.big ? 46 : 32, t.col, 'center', UI, '#1a0a30', 7);
+      g.globalAlpha = a; T(g, t.str, (t.x - R.viewCam) * 4, (t.y + (G.cam.y || 0)) * 4, t.big ? 46 : 32, t.col, 'center', UI, '#1a0a30', 7);
     }
     g.globalAlpha = 1;
     // 左上: 二人の状態
@@ -758,7 +758,7 @@
     g.imageSmoothingEnabled = false;
     R.drawFrame(g, R.frame('kurenai', 'run', Math.floor(t / 5) % R.SPR.kurenai.run.length), 1190, 880, 3, 1); R.drawFrame(g, R.frame('aoi', 'run', (Math.floor(t / 4) + 2) % R.SPR.aoi.run.length), 1510, 880, 3, 1);
     g.fillStyle = '#ffe2ff'; g.fillRect(920, 880, 900, 4); g.fillStyle = 'rgba(200,150,240,.5)'; g.fillRect(920, 884, 900, 4);
-    var rows = [['←→ / A D', '移動'], ['Space / W', 'ジャンプ（二段で宙返り）'], ['J / Z', '攻撃（連打でコンボ）'], ['U / G', '遠距離攻撃（空中でも可）'], ['↓ + 攻撃', '斬り上げ / 空中で急降下'], ['L / Shift', 'ダッシュ（空中でも可）'], ['K / X', '特技（SP 消費）'], ['Q / E', 'キャラチェンジ'], ['F', '合体技「紅蒼交錯」']];
+    var rows = [['←→ / A D', '移動'], ['Space / W', 'ジャンプ（二段・壁でキック）'], ['J / Z', '攻撃（連打でコンボ）'], ['U / G', '遠距離攻撃（空中でも可）'], ['↓ + 攻撃', '斬り上げ / 空中で急降下'], ['L / Shift', 'ダッシュ（空中でも可）'], ['K / X', '特技（SP 消費）'], ['Q / E', 'キャラチェンジ'], ['F', '合体技「紅蒼交錯」']];
     for (i = 0; i < rows.length; i++) {
       var cx = 930 + (i % 2) * 470, cy = 920 + (i >> 1) * 30;
       T(g, rows[i][0], cx + 150, cy, 24, '#7af3ff', 'right', UI, '#120a30', 5); T(g, rows[i][1], cx + 168, cy, 24, '#ffffff', 'left', UI, '#120a30', 5);

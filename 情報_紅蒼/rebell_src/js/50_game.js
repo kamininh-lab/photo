@@ -112,6 +112,7 @@
   function box(b) { return { x: b.x - b.w / 2, y: b.y - b.h, w: b.w, h: b.h }; }
   function onScreen(x, m) { return x > G.cam.x - (m || 40) && x < G.cam.x + R.W + (m || 40); }
   function groundAt(x) { var g = G.S.ground; for (var i = 0; i < g.length; i++) if (x >= g[i][0] && x <= g[i][1]) return true; return false; }
+  function inBlock(x, y) { var B = G.S.blockRects || [], i; for (i = 0; i < B.length; i++) if (x >= B[i].x && x <= B[i].x + B[i].w && y >= B[i].y) return true; return false; }
   // その x で立てる高さ（地面か、石の段のいちばん上）。穴の上なら null
   function floorAt(x) {
     var y = groundAt(x) ? GY : null, B = G.S.blockRects || [], i;
@@ -136,6 +137,7 @@
       s = S[i];
       if (R.overlap(bb, s) && b.y > s.y + 2) {
         if (b.vx > 0) b.x = s.x - b.w / 2; else if (b.vx < 0) b.x = s.x + s.w + b.w / 2;
+        if (b.vx) b.wallSide = b.vx > 0 ? 1 : -1;      // どちら側の壁に当たったか（壁キック用）
         b.vx = 0; b.hitWall = true; bb = box(b);
       }
     }
@@ -145,10 +147,10 @@
       if (R.overlap(bb, s)) { if (b.vy >= 0 && py <= s.y + 6) { b.y = s.y; b.vy = 0; b.ground = true; } bb = box(b); }
     }
     if (b.vy >= 0 && !(b.drop > 0)) {
-      var P = G.S.platRects;
+      var P = G.plats || G.S.platRects;      // 動く足場も含む
       for (i = 0; i < P.length; i++) {
         s = P[i];
-        if (b.x + b.w / 2 > s.x && b.x - b.w / 2 < s.x + s.w && py <= s.y + 0.01 && b.y >= s.y) { b.y = s.y; b.vy = 0; b.ground = true; }
+        if (b.x + b.w / 2 > s.x && b.x - b.w / 2 < s.x + s.w && py <= (s.py === undefined ? s.y : Math.max(s.py, s.y)) + 0.01 && b.y >= s.y) { b.y = s.y; b.vy = 0; b.ground = true; }      // py = 動く足場の、前のフレームの上面
       }
     }
   }
@@ -441,6 +443,14 @@
       burst(p.x, p.y - 4, 6, K ? ['#ff7ad1', '#ffffff'] : ['#7af3ff', '#ffffff'], 1.8, 14);
     }
   }
+  // 壁キック: 壁を蹴って、反対側へ跳ぶ（何度でも。向かい合う壁を交互に蹴れば登れる）
+  function wallKick(p) {
+    var d = p.wallDir, K = p.who === 'kurenai';
+    p.vy = -7.0; p.vx = -d * 3.4; p.face = -d; p.wallT = 0; p.kickT = 14; p.hitWall = false; p.flipT = FLIP; p.rose = false; p.stretchT = 0;
+    R.snd('djump');
+    fx({ type: 'ring', x: p.x + d * 5, y: p.y - 12, life: 10, r: 14, col: K ? '#ff7ad1' : '#7af3ff' });
+    burst(p.x + d * 5, p.y - 10, 6, K ? ['#ff7ad1', '#ffffff'] : ['#7af3ff', '#ffffff'], 2, 12);
+  }
   function canDash(p) { return p.dashCd <= 0 && (p.ground || p.airDashed < BASE[p.who].airDash); }
   function startDash(move) {
     var p = G.pl; if (move) p.face = move;
@@ -613,7 +623,7 @@
     var move = (I.down.right ? 1 : 0) - (I.down.left ? 1 : 0), speed = B.speed;
     var jumpHit = I.hit.jump || I.hit.up, jumpHeld = I.down.jump || I.down.up, wasGround = p.ground, grav = 0.45;
     p.animT++;
-    ['inv', 'dashCd', 'switchCd', 'drop', 'hurtFlash', 'flipT', 'landT', 'stretchT', 'dashWin', 'justCd', 'battleT', 'angerT', 'hurtFaceT', 'joyT', 'stopT'].forEach(function (k) { if (p[k] > 0) p[k]--; });
+    ['inv', 'dashCd', 'switchCd', 'drop', 'hurtFlash', 'flipT', 'landT', 'stretchT', 'dashWin', 'justCd', 'battleT', 'angerT', 'hurtFaceT', 'joyT', 'stopT', 'wallT', 'kickT'].forEach(function (k) { if (p[k] > 0) p[k]--; });
     if (p.st !== 'free') p.running = false;
     // 待機中の回復
     ['kurenai', 'aoi'].forEach(function (k) { var q = p.chars[k]; if (q.down) return; q.sp = Math.min(q.maxsp, q.sp + (k === p.who ? 0.03 : 0.07)); if (k !== p.who) q.hp = Math.min(q.max, q.hp + 0.025); });
@@ -622,7 +632,14 @@
       var acc = p.ground ? (K ? 0.5 : 0.8) : 0.36;
       if (p.ground && move && Math.abs(p.vx) > 1.5 && move !== R.sign(p.vx)) { if (p.skidT <= 0) dust(p.x, p.y, 4); p.skidT = 7; acc = 0.8; }      // 切り返し
       else if (p.skidT > 0) p.skidT--;
-      p.vx += clamp(move * speed - p.vx, -acc, acc); if (move) p.face = move;
+      // 壁ずり: 空中で壁に体を預けている間は、落ちるのがゆっくりになる。そこでジャンプを押すと壁キック
+      if (!p.ground && p.hitWall && p.wallSide) {
+        p.wallT = 8; p.wallDir = p.wallSide;
+        if (p.vy > 1.3) { p.vy = 1.3; if (G.t % 5 === 0) part(p.x + p.wallDir * 5, p.y - 8, -p.wallDir * rand(0.2, 0.8), rand(-0.6, 0.1), 12, '#a39bd0', 2, 0.02); }
+      }
+      var mv = p.kickT > 0 && move === p.wallDir ? 0 : move;      // 蹴った直後は、同じ壁へは戻れない
+      if (!(p.kickT > 0 && !p.ground)) p.vx += clamp(mv * speed - p.vx, -acc, acc);      // 蹴り出した勢いは、しばらく保つ（反対の壁まで届くように）
+      if (mv) p.face = mv;
       if (p.ground && Math.abs(p.vx) > 0.3) {
         var RN = RUN[p.who], ph0 = Math.floor(p.runPh);
         if (!p.running) { p.running = true; p.stopT = 0; p.runPh = ph0 = RN.start; }      // 走り出しは、地面を蹴る姿勢から
@@ -636,7 +653,7 @@
         if (p.running && p.ground && !move && p.skidT <= 0) p.stopT = 7;                  // 止まるときは、足をそろえる 1 歩をはさむ
         p.running = false;
       }
-      if (jumpHit) { if (I.down.down && p.ground && onPlat(p)) { p.drop = 10; p.y += 2; } else doJump(p); }
+      if (jumpHit) { if (I.down.down && p.ground && onPlat(p)) { p.drop = 10; p.y += 2; } else if (!p.ground && p.coyote <= 0 && p.wallT > 0) wallKick(p); else doJump(p); }
       if (!jumpHeld && p.vy < -3 && !p.rose) p.vy = -3;
       if (I.hit.attack) {
         if (I.down.down) startAttack(p.ground ? T.up : T.dive);              // ↓+攻撃: 斬り上げ / 急降下
@@ -783,7 +800,7 @@
       G.state = 'gameover'; G.stateT = 0; R.bgm('gameover');
     }
   }
-  function onPlat(p) { var P = G.S.platRects; for (var i = 0; i < P.length; i++) if (Math.abs(p.y - P[i].y) < 1 && p.x > P[i].x - 6 && p.x < P[i].x + P[i].w + 6) return true; return false; }
+  function onPlat(p) { var P = G.plats || G.S.platRects; for (var i = 0; i < P.length; i++) if (Math.abs(p.y - P[i].y) < 1 && p.x > P[i].x - 6 && p.x < P[i].x + P[i].w + 6) return true; return false; }
   function dust(x, y, n) { for (var i = 0; i < n; i++) part(x + rand(-6, 6), y - 1, rand(-1.2, 1.2), rand(-1.2, -0.2), rand(12, 22), i % 2 ? '#a39bd0' : '#655e9e', 2, 0.02); }
 
   // ---- 敵 ----
@@ -1003,7 +1020,7 @@
           if (R.overlap({ x: s.x - 24, y: GY - 36, w: 48, h: 40 }, pb)) hurtPlayer(s.dmg, R.sign(p.x - s.x), false);
         }
         if (s.type === 'fireball' && s.t % 2 === 0) part(s.x, s.y, rand(-0.4, 0.4), rand(-0.4, 0.4), 14, s.t % 4 ? '#ff8a3a' : '#ffd36a', 2, 0, true);
-        if (s.type === 'bullet' && s.y > GY && groundAt(s.x)) s.dead = true;
+        if (s.type === 'bullet' && ((s.y > GY && groundAt(s.x)) || inBlock(s.x, s.y))) { s.dead = true; hit = false; }      // 地面と石の段で消える
       } else if (s.type === 'shock') {
         hit = R.overlap({ x: s.x - s.w / 2, y: s.y - s.h, w: s.w, h: s.h }, pb);
         if (!groundAt(s.x)) s.dead = true;
@@ -1023,7 +1040,8 @@
       it = G.items[i]; it.t++;
       if (it.loose) {
         it.vy += 0.25; it.x += it.vx; it.y += it.vy;
-        var fy = floorAt(it.x);      // 石の段の上にも乗る
+        var fy = floorAt(it.x), PL = G.S.platRects, pi;      // 石の段の上にも、足場の上にも乗る
+        for (pi = 0; pi < PL.length; pi++) if (it.vy >= 0 && it.x > PL[pi].x && it.x < PL[pi].x + PL[pi].w && it.y - it.vy + 12 <= PL[pi].y + 0.01 && it.y + 12 >= PL[pi].y && (fy === null || PL[pi].y < fy)) fy = PL[pi].y;
         if (fy !== null && it.vy >= 0 && it.y >= fy - 12) { it.y = fy - 12; it.vy = 0; it.vx = 0; it.loose = false; }
         if (it.y > R.H + 30) it.dead = true;
       }
@@ -1096,6 +1114,9 @@
     S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });
     S.items.forEach(function (q) { G.items.push({ type: q[0], x: q[1], y: q[2], t: 0, open: false }); });
     G.terminals = S.checkpoints.map(function (x) { return { x: x, on: false }; });
+    G.movers = (S.movers || []).map(function (q, n) { return { x0: q[0], y0: q[1], x: q[0], y: q[1], w: q[2], dx: q[3], dy: q[4], per: q[5], ph: n * 37 }; });
+    G.plats = S.platRects.concat(G.movers);
+    G.springs = (S.springs || []).map(function (x) { var y = floorAt(x); return { x: x, y: y === null ? GY : y, t: 0 }; });
     var sx = 70;
     if (fromCheckpoint && G.respawn && G.respawn.stage === idx) {
       sx = G.respawn.x;
@@ -1103,7 +1124,7 @@
       G.enemies = G.enemies.filter(function (e) { return e.x > sx + 200; });
     } else { G.respawn = { x: 70, stage: idx }; }
     p.x = sx; p.y = GY; p.vx = 0; p.vy = 0; p.st = 'free'; p.inv = 60; p.face = 1; p.safeX = sx; p.ground = true; p.slammed = false; p.entry = false; p.flipT = 0; p.landT = 0; p.skidT = 0; p.airAtk = 0; p.airDashed = 0; p.landAnim = null; p.battleT = 0; p.angerT = 0; p.hurtFaceT = 0; p.joyT = 0; p.running = false; p.stopT = 0;
-    G.cam.x = clamp(sx - 180, 0, S.len - R.W);
+    G.cam.x = clamp(sx - 180, 0, S.len - R.W); G.cam.y = 0;
     G.card = null; G.talk = null;
     G.state = 'play'; G.stateT = 0; G.fade = 1; G.fadeDir = -1;
     if (talk && R.TALKS && R.TALKS[talk]) R.beginTalk(talk); else R.openStage();
@@ -1143,6 +1164,28 @@
     }
   }
 
+  // 動く足場: 2 点の間を、ゆっくり往復する。乗っていれば一緒に運ばれる
+  function updMovers() {
+    var M = G.movers || [], p = G.pl, i, m, ox, oy, u;
+    for (i = 0; i < M.length; i++) {
+      m = M[i]; ox = m.x; oy = m.y; m.py = oy;
+      u = 0.5 - 0.5 * Math.cos((G.time + m.ph) / m.per * PI * 2);
+      m.x = m.x0 + m.dx * u; m.y = m.y0 + m.dy * u;
+      if (p.ground && !(p.drop > 0) && Math.abs(p.y - oy) < 1.6 && p.x + p.w / 2 > ox && p.x - p.w / 2 < ox + m.w) { p.x += m.x - ox; p.y = m.y; }
+    }
+  }
+  // バネ: 踏むと高く跳ね上がる（二段ジャンプと空中ダッシュも戻る）
+  function updSprings() {
+    var K = G.springs || [], p = G.pl, i, s;
+    for (i = 0; i < K.length; i++) {
+      s = K[i]; if (s.t > 0) s.t--;
+      if (p.ground && Math.abs(p.x - s.x) < 11 && Math.abs(p.y - s.y) < 3 && (p.st === 'free' || p.st === 'dash' || (p.st === 'attack' && !p.atk.dive && !(p.atk.kusari && p.atk.kusari.pull)))) {
+        p.st = 'free'; p.entry = false; p.vy = -11; p.ground = false; p.coyote = 0; p.jumps = 1; p.airDashed = 0; p.airAtk = 0; p.airShot = 0; p.rose = true; p.landT = 0; p.stretchT = 6;
+        s.t = 12; R.snd('djump'); dust(s.x, s.y, 5);
+        fx({ type: 'ring', x: s.x, y: s.y - 4, life: 12, r: 20, col: '#ffe04a', flat: true });
+      }
+    }
+  }
   // トゲ: 地面に立っていると刺さる（跳び越えるか、ダッシュで駆け抜ける）
   function updSpikes() {
     var p = G.pl, K = G.S.spikes || [], i;
@@ -1167,7 +1210,7 @@
     }
     G.time++;
     if (G.comboT > 0) { G.comboT--; if (G.comboT === 0) G.combo = 0; }
-    updPlayer(); updPShots();
+    updMovers(); updPlayer(); updSprings(); updPShots();
     if (G.slow > 0) G.slow--;
     if (G.cross) updCross(); else if (!(G.slow > 0) || G.t % 3 === 0) { updEnemies(); updShots(); }
     if (!G.cross) updTouch();
@@ -1177,6 +1220,8 @@
     if (G.arena) { lo = G.arena[0]; hi = G.arena[1] - R.W; }
     G.cam.x += (clamp(tx, lo, hi) - G.cam.x) * 0.1;
     if (G.cam.x < lo) G.cam.x += Math.min(4, lo - G.cam.x); if (G.cam.x > hi) G.cam.x -= Math.min(4, G.cam.x - hi);
+    // 高い所に上がると、カメラが少し上を向く（塔の上から跳んでも、自分が画面の外へ消えない）
+    G.cam.y = (G.cam.y || 0) + ((G.arena ? 0 : clamp(104 - p.y, 0, 84)) - (G.cam.y || 0)) * 0.1;
   };
   // 中ボスを退けたあと: 道が開き、ステージの曲に戻る（52_karate.js から呼ばれる）
   R.midBossDone = function (e) {

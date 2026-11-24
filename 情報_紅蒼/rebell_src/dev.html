@@ -1376,20 +1376,22 @@ R.STAGES = [
 {
 id: 'city', title: '第一章　ネオン廃都の水道橋', sub: 'STAGE 1  -  NEON RUINS AQUEDUCT', bgm: 'city', len: 3840,
 ground: [[0, 880], [990, 1480], [1600, 2290], [2390, 3840]],
-blocks: [[300, 48, 24], [348, 44, 48], [640, 60, 36], [780, 56, 44],
-[1060, 60, 40], [1120, 72, 72], [1372, 52, 48],
-[1730, 56, 32], [1786, 56, 64], [1842, 72, 96], [2196, 48, 44],
-[2470, 64, 48], [2760, 84, 56]],
-spikes: [[708, 44], [1300, 48], [1930, 56], [2100, 48], [2852, 44]],
-plats: [[906, 156, 60], [1218, 96, 60], [1500, 152, 40], [1552, 128, 40], [1940, 122, 56], [2030, 96, 56], [2318, 142, 46],
-[2560, 112, 56], [2650, 84, 56], [3180, 138, 64], [3560, 138, 64]],
-enemies: [['robot', 560], ['robot', 668], ['drone', 730, 96], ['robot', 770], ['drone', 935, 100],
-['drone', 1100, 70], ['robot', 1156], ['robot', 1260], ['drone', 1330, 100], ['robot', 1440], ['drone', 1540, 84],
-['robot', 1700], ['robot', 1878], ['drone', 1970, 70], ['robot', 2040], ['robot', 2170], ['drone', 2250, 96], ['drone', 2340, 104],
-['robot', 2440], ['drone', 2600, 60], ['robot', 2700], ['robot', 2800], ['drone', 2700, 50], ['robot', 2910]],
-items: [['crystal', 370, 126], ['crystal', 808, 130], ['crystal', 935, 134], ['crystal', 1156, 100], ['chest', 1248, 96],
-['crystal', 1520, 132], ['crystal', 1572, 108], ['crystal', 1878, 76], ['crystal', 1968, 102], ['chest', 2058, 96],
-['crystal', 2341, 122], ['crystal', 2588, 92], ['crystal', 2678, 64], ['potion', 2802, 122], ['potion', 2980, 176]],
+blocks: [[300, 54, 32], [354, 62, 68], [1008, 52, 36], [1060, 60, 76], [1172, 64, 130], [1830, 58, 32], [2050, 58, 40], [2620, 56, 32]],
+spikes: [[626, 36], [1318, 36], [1920, 36], [2140, 30], [2716, 36]],
+springs: [478, 1730, 2460],
+movers: [[596, 96, 64, 56, -16, 120], [1900, 100, 68, 68, -24, 144]],
+plats: [[444, 112, 64], [534, 88, 58], [724, 104, 64], [908, 168, 54],
+[1120, 150, 30], [1142, 108, 30], [1256, 80, 76], [1350, 116, 52], [1510, 168, 58],
+[1786, 88, 84], [2048, 88, 72], [2144, 120, 60], [2316, 168, 52],
+[2516, 88, 80], [2620, 76, 82], [2730, 100, 62], [2810, 136, 54], [3180, 138, 64], [3560, 138, 64]],
+enemies: [['robot', 260], ['robot', 386], ['robot', 562], ['robot', 692], ['drone', 704, 60], ['robot', 794],
+['robot', 1032], ['drone', 1262, 104], ['robot', 1280], ['robot', 1380], ['drone', 1394, 86],
+['robot', 1802], ['robot', 1858], ['drone', 1890, 128], ['robot', 1992], ['drone', 2050, 56], ['robot', 2080],
+['robot', 2190], ['robot', 2530], ['drone', 2560, 124], ['robot', 2648], ['robot', 2790], ['drone', 2804, 82], ['robot', 2836]],
+items: [['crystal', 328, 140], ['crystal', 391, 102], ['crystal', 494, 103], ['crystal', 522, 52], ['crystal', 566, 68], ['crystal', 750, 82], ['crystal', 934, 148],
+['crystal', 1132, 130], ['crystal', 1160, 88], ['crystal', 1202, 44], ['chest', 1294, 80], ['crystal', 1538, 148],
+['crystal', 1746, 103], ['crystal', 1774, 52], ['crystal', 1820, 68], ['crystal', 2076, 66], ['crystal', 2342, 148],
+['crystal', 2476, 103], ['crystal', 2504, 52], ['crystal', 2550, 68], ['chest', 2660, 76], ['crystal', 2762, 80], ['potion', 2980, 176]],
 checkpoints: [150, 1650, 2920],
 ruins: [[24, 3], [1610, 2], [2880, 2], [3700, 1]],
 boss: { type: 'guard', x: 3560, arena: [3040, 3800], trigger: 3130, name: '重機兵ガーディアン', sub: 'HEAVY GUARDIAN' }
@@ -1397,15 +1399,19 @@ boss: { type: 'guard', x: 3560, arena: [3040, 3800], trigger: 3130, name: '重�
 {
 id: 'school', title: '第二章　玉龍学園　紅い月の下で', sub: 'STAGE 2  -  GYOKURYU ACADEMY', bgm: 'school', len: 3360,
 ground: [[0, 1080], [1190, 1990], [2090, 3360]],
-blocks: [[420, 56, 28], [476, 56, 56], [690, 64, 44], [840, 48, 36], [888, 52, 72],
-[1250, 44, 40], [1580, 60, 56], [1640, 72, 92], [1896, 44, 40]],
-spikes: [[560, 48], [980, 56], [1716, 52], [1810, 52]],
-plats: [[610, 120, 50], [1112, 152, 52], [1300, 150, 56], [1400, 114, 64], [1490, 84, 56], [1740, 94, 56], [1836, 122, 56],
-[2018, 150, 50], [2790, 136, 60], [2930, 136, 60]],
-enemies: [['robot', 380], ['robot', 504], ['drone', 620, 80], ['robot', 722], ['robot', 800], ['drone', 780, 96], ['robot', 914], ['drone', 1010, 84], ['drone', 1135, 100],
-['robot', 1310], ['drone', 1440, 60], ['robot', 1460], ['robot', 1540], ['robot', 1676], ['drone', 1700, 50], ['drone', 1790, 76], ['robot', 1880], ['drone', 1960, 90], ['drone', 2040, 100]],
-items: [['crystal', 504, 114], ['crystal', 635, 98], ['crystal', 914, 98], ['crystal', 1138, 130], ['crystal', 1328, 128], ['chest', 1432, 114], ['crystal', 1518, 62],
-['crystal', 1676, 78], ['chest', 1768, 94], ['crystal', 1864, 100], ['crystal', 2043, 128], ['crystal', 2820, 114], ['crystal', 2960, 114]],
+blocks: [[408, 52, 32], [460, 58, 68], [850, 60, 36], [1230, 52, 36], [1282, 62, 76], [1400, 68, 130], [1790, 56, 32]],
+spikes: [[716, 36], [956, 30], [1520, 36], [1860, 36]],
+springs: [568, 1640],
+movers: [[688, 96, 64, 60, -16, 120], [1748, 96, 60, 56, -20, 132]],
+plats: [[540, 112, 62], [624, 88, 60], [826, 94, 72], [924, 124, 56], [1108, 168, 54],
+[1344, 150, 32], [1368, 108, 32], [1486, 88, 62], [1564, 124, 48],
+[1696, 88, 50], [1872, 100, 52], [2016, 168, 50], [2790, 136, 60], [2930, 136, 60]],
+enemies: [['robot', 392], ['robot', 488], ['robot', 646], ['drone', 692, 126], ['robot', 774], ['drone', 822, 62],
+['robot', 878], ['robot', 934], ['drone', 970, 90], ['robot', 1256], ['robot', 1310], ['drone', 1490, 114],
+['robot', 1496], ['robot', 1582], ['robot', 1704], ['drone', 1760, 126], ['robot', 1818], ['drone', 1850, 58], ['robot', 1920]],
+items: [['crystal', 432, 140], ['crystal', 484, 104], ['crystal', 584, 103], ['crystal', 612, 52], ['crystal', 654, 68], ['chest', 862, 94], ['crystal', 1135, 148],
+['crystal', 1356, 130], ['crystal', 1388, 88], ['crystal', 1434, 44], ['chest', 1516, 88],
+['crystal', 1656, 103], ['crystal', 1684, 52], ['crystal', 1720, 68], ['crystal', 1898, 80], ['crystal', 2042, 148], ['crystal', 2820, 114], ['crystal', 2960, 114]],
 checkpoints: [340, 2150, 2704],
 sakura: [96, 1240, 2170, 2600],
 gate: 196,
@@ -1699,6 +1705,7 @@ function shake(n) { G.cam.shake = Math.max(G.cam.shake, n); }
 function box(b) { return { x: b.x - b.w / 2, y: b.y - b.h, w: b.w, h: b.h }; }
 function onScreen(x, m) { return x > G.cam.x - (m || 40) && x < G.cam.x + R.W + (m || 40); }
 function groundAt(x) { var g = G.S.ground; for (var i = 0; i < g.length; i++) if (x >= g[i][0] && x <= g[i][1]) return true; return false; }
+function inBlock(x, y) { var B = G.S.blockRects || [], i; for (i = 0; i < B.length; i++) if (x >= B[i].x && x <= B[i].x + B[i].w && y >= B[i].y) return true; return false; }
 function floorAt(x) {
 var y = groundAt(x) ? GY : null, B = G.S.blockRects || [], i;
 for (i = 0; i < B.length; i++) if (x >= B[i].x && x <= B[i].x + B[i].w && (y === null || B[i].y < y)) y = B[i].y;
@@ -1720,6 +1727,7 @@ for (i = 0; i < S.length; i++) {
 s = S[i];
 if (R.overlap(bb, s) && b.y > s.y + 2) {
 if (b.vx > 0) b.x = s.x - b.w / 2; else if (b.vx < 0) b.x = s.x + s.w + b.w / 2;
+if (b.vx) b.wallSide = b.vx > 0 ? 1 : -1;
 b.vx = 0; b.hitWall = true; bb = box(b);
 }
 }
@@ -1729,10 +1737,10 @@ s = S[i];
 if (R.overlap(bb, s)) { if (b.vy >= 0 && py <= s.y + 6) { b.y = s.y; b.vy = 0; b.ground = true; } bb = box(b); }
 }
 if (b.vy >= 0 && !(b.drop > 0)) {
-var P = G.S.platRects;
+var P = G.plats || G.S.platRects;
 for (i = 0; i < P.length; i++) {
 s = P[i];
-if (b.x + b.w / 2 > s.x && b.x - b.w / 2 < s.x + s.w && py <= s.y + 0.01 && b.y >= s.y) { b.y = s.y; b.vy = 0; b.ground = true; }
+if (b.x + b.w / 2 > s.x && b.x - b.w / 2 < s.x + s.w && py <= (s.py === undefined ? s.y : Math.max(s.py, s.y)) + 0.01 && b.y >= s.y) { b.y = s.y; b.vy = 0; b.ground = true; }
 }
 }
 }
@@ -2007,6 +2015,13 @@ fx({ type: 'ring', x: p.x, y: p.y, life: 12, r: 16, col: K ? '#ff7ad1' : '#7af3f
 burst(p.x, p.y - 4, 6, K ? ['#ff7ad1', '#ffffff'] : ['#7af3ff', '#ffffff'], 1.8, 14);
 }
 }
+function wallKick(p) {
+var d = p.wallDir, K = p.who === 'kurenai';
+p.vy = -7.0; p.vx = -d * 3.4; p.face = -d; p.wallT = 0; p.kickT = 14; p.hitWall = false; p.flipT = FLIP; p.rose = false; p.stretchT = 0;
+R.snd('djump');
+fx({ type: 'ring', x: p.x + d * 5, y: p.y - 12, life: 10, r: 14, col: K ? '#ff7ad1' : '#7af3ff' });
+burst(p.x + d * 5, p.y - 10, 6, K ? ['#ff7ad1', '#ffffff'] : ['#7af3ff', '#ffffff'], 2, 12);
+}
 function canDash(p) { return p.dashCd <= 0 && (p.ground || p.airDashed < BASE[p.who].airDash); }
 function startDash(move) {
 var p = G.pl; if (move) p.face = move;
@@ -2164,14 +2179,20 @@ var p = G.pl, I = R.input, K = p.who === 'kurenai', T = ATK[p.who], B = BASE[p.w
 var move = (I.down.right ? 1 : 0) - (I.down.left ? 1 : 0), speed = B.speed;
 var jumpHit = I.hit.jump || I.hit.up, jumpHeld = I.down.jump || I.down.up, wasGround = p.ground, grav = 0.45;
 p.animT++;
-['inv', 'dashCd', 'switchCd', 'drop', 'hurtFlash', 'flipT', 'landT', 'stretchT', 'dashWin', 'justCd', 'battleT', 'angerT', 'hurtFaceT', 'joyT', 'stopT'].forEach(function (k) { if (p[k] > 0) p[k]--; });
+['inv', 'dashCd', 'switchCd', 'drop', 'hurtFlash', 'flipT', 'landT', 'stretchT', 'dashWin', 'justCd', 'battleT', 'angerT', 'hurtFaceT', 'joyT', 'stopT', 'wallT', 'kickT'].forEach(function (k) { if (p[k] > 0) p[k]--; });
 if (p.st !== 'free') p.running = false;
 ['kurenai', 'aoi'].forEach(function (k) { var q = p.chars[k]; if (q.down) return; q.sp = Math.min(q.maxsp, q.sp + (k === p.who ? 0.03 : 0.07)); if (k !== p.who) q.hp = Math.min(q.max, q.hp + 0.025); });
 if (p.st === 'free') {
 var acc = p.ground ? (K ? 0.5 : 0.8) : 0.36;
 if (p.ground && move && Math.abs(p.vx) > 1.5 && move !== R.sign(p.vx)) { if (p.skidT <= 0) dust(p.x, p.y, 4); p.skidT = 7; acc = 0.8; }
 else if (p.skidT > 0) p.skidT--;
-p.vx += clamp(move * speed - p.vx, -acc, acc); if (move) p.face = move;
+if (!p.ground && p.hitWall && p.wallSide) {
+p.wallT = 8; p.wallDir = p.wallSide;
+if (p.vy > 1.3) { p.vy = 1.3; if (G.t % 5 === 0) part(p.x + p.wallDir * 5, p.y - 8, -p.wallDir * rand(0.2, 0.8), rand(-0.6, 0.1), 12, '#a39bd0', 2, 0.02); }
+}
+var mv = p.kickT > 0 && move === p.wallDir ? 0 : move;
+if (!(p.kickT > 0 && !p.ground)) p.vx += clamp(mv * speed - p.vx, -acc, acc);
+if (mv) p.face = mv;
 if (p.ground && Math.abs(p.vx) > 0.3) {
 var RN = RUN[p.who], ph0 = Math.floor(p.runPh);
 if (!p.running) { p.running = true; p.stopT = 0; p.runPh = ph0 = RN.start; }
@@ -2185,7 +2206,7 @@ if (!K && Math.abs(p.vx) > 2.6 && G.t % 5 === 0) ghost(p, 7, { faint: true });
 if (p.running && p.ground && !move && p.skidT <= 0) p.stopT = 7;
 p.running = false;
 }
-if (jumpHit) { if (I.down.down && p.ground && onPlat(p)) { p.drop = 10; p.y += 2; } else doJump(p); }
+if (jumpHit) { if (I.down.down && p.ground && onPlat(p)) { p.drop = 10; p.y += 2; } else if (!p.ground && p.coyote <= 0 && p.wallT > 0) wallKick(p); else doJump(p); }
 if (!jumpHeld && p.vy < -3 && !p.rose) p.vy = -3;
 if (I.hit.attack) {
 if (I.down.down) startAttack(p.ground ? T.up : T.dive);
@@ -2331,7 +2352,7 @@ toast('落下…', '#ff9db8'); R.snd('hurt');
 G.state = 'gameover'; G.stateT = 0; R.bgm('gameover');
 }
 }
-function onPlat(p) { var P = G.S.platRects; for (var i = 0; i < P.length; i++) if (Math.abs(p.y - P[i].y) < 1 && p.x > P[i].x - 6 && p.x < P[i].x + P[i].w + 6) return true; return false; }
+function onPlat(p) { var P = G.plats || G.S.platRects; for (var i = 0; i < P.length; i++) if (Math.abs(p.y - P[i].y) < 1 && p.x > P[i].x - 6 && p.x < P[i].x + P[i].w + 6) return true; return false; }
 function dust(x, y, n) { for (var i = 0; i < n; i++) part(x + rand(-6, 6), y - 1, rand(-1.2, 1.2), rand(-1.2, -0.2), rand(12, 22), i % 2 ? '#a39bd0' : '#655e9e', 2, 0.02); }
 function spawn(type, x, y) {
 var e = { type: type, x: x, y: y == null ? (floorAt(x) || GY) : y, vx: 0, vy: 0, face: -1, st: 'idle', stT: 0, flash: 0, cd: rand(30, 90), animT: rand(0, 60), dead: false, ground: true, invul: 0 };
@@ -2544,7 +2565,7 @@ s.dead = true; fx({ type: 'boom', x: s.x, y: GY - 8, life: 16, r: 24 }); R.snd('
 if (R.overlap({ x: s.x - 24, y: GY - 36, w: 48, h: 40 }, pb)) hurtPlayer(s.dmg, R.sign(p.x - s.x), false);
 }
 if (s.type === 'fireball' && s.t % 2 === 0) part(s.x, s.y, rand(-0.4, 0.4), rand(-0.4, 0.4), 14, s.t % 4 ? '#ff8a3a' : '#ffd36a', 2, 0, true);
-if (s.type === 'bullet' && s.y > GY && groundAt(s.x)) s.dead = true;
+if (s.type === 'bullet' && ((s.y > GY && groundAt(s.x)) || inBlock(s.x, s.y))) { s.dead = true; hit = false; }
 } else if (s.type === 'shock') {
 hit = R.overlap({ x: s.x - s.w / 2, y: s.y - s.h, w: s.w, h: s.h }, pb);
 if (!groundAt(s.x)) s.dead = true;
@@ -2564,7 +2585,8 @@ for (i = 0; i < G.items.length; i++) {
 it = G.items[i]; it.t++;
 if (it.loose) {
 it.vy += 0.25; it.x += it.vx; it.y += it.vy;
-var fy = floorAt(it.x);
+var fy = floorAt(it.x), PL = G.S.platRects, pi;
+for (pi = 0; pi < PL.length; pi++) if (it.vy >= 0 && it.x > PL[pi].x && it.x < PL[pi].x + PL[pi].w && it.y - it.vy + 12 <= PL[pi].y + 0.01 && it.y + 12 >= PL[pi].y && (fy === null || PL[pi].y < fy)) fy = PL[pi].y;
 if (fy !== null && it.vy >= 0 && it.y >= fy - 12) { it.y = fy - 12; it.vy = 0; it.vx = 0; it.loose = false; }
 if (it.y > R.H + 30) it.dead = true;
 }
@@ -2631,6 +2653,9 @@ if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; }
 S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });
 S.items.forEach(function (q) { G.items.push({ type: q[0], x: q[1], y: q[2], t: 0, open: false }); });
 G.terminals = S.checkpoints.map(function (x) { return { x: x, on: false }; });
+G.movers = (S.movers || []).map(function (q, n) { return { x0: q[0], y0: q[1], x: q[0], y: q[1], w: q[2], dx: q[3], dy: q[4], per: q[5], ph: n * 37 }; });
+G.plats = S.platRects.concat(G.movers);
+G.springs = (S.springs || []).map(function (x) { var y = floorAt(x); return { x: x, y: y === null ? GY : y, t: 0 }; });
 var sx = 70;
 if (fromCheckpoint && G.respawn && G.respawn.stage === idx) {
 sx = G.respawn.x;
@@ -2638,7 +2663,7 @@ G.terminals.forEach(function (tm) { if (tm.x <= sx) tm.on = true; });
 G.enemies = G.enemies.filter(function (e) { return e.x > sx + 200; });
 } else { G.respawn = { x: 70, stage: idx }; }
 p.x = sx; p.y = GY; p.vx = 0; p.vy = 0; p.st = 'free'; p.inv = 60; p.face = 1; p.safeX = sx; p.ground = true; p.slammed = false; p.entry = false; p.flipT = 0; p.landT = 0; p.skidT = 0; p.airAtk = 0; p.airDashed = 0; p.landAnim = null; p.battleT = 0; p.angerT = 0; p.hurtFaceT = 0; p.joyT = 0; p.running = false; p.stopT = 0;
-G.cam.x = clamp(sx - 180, 0, S.len - R.W);
+G.cam.x = clamp(sx - 180, 0, S.len - R.W); G.cam.y = 0;
 G.card = null; G.talk = null;
 G.state = 'play'; G.stateT = 0; G.fade = 1; G.fadeDir = -1;
 if (talk && R.TALKS && R.TALKS[talk]) R.beginTalk(talk); else R.openStage();
@@ -2675,6 +2700,26 @@ G.stateT++;
 if (G.stateT === 70) { G.arena = null; R.bgm('clear'); G.state = 'clear'; G.stateT = 0; }
 }
 }
+function updMovers() {
+var M = G.movers || [], p = G.pl, i, m, ox, oy, u;
+for (i = 0; i < M.length; i++) {
+m = M[i]; ox = m.x; oy = m.y; m.py = oy;
+u = 0.5 - 0.5 * Math.cos((G.time + m.ph) / m.per * PI * 2);
+m.x = m.x0 + m.dx * u; m.y = m.y0 + m.dy * u;
+if (p.ground && !(p.drop > 0) && Math.abs(p.y - oy) < 1.6 && p.x + p.w / 2 > ox && p.x - p.w / 2 < ox + m.w) { p.x += m.x - ox; p.y = m.y; }
+}
+}
+function updSprings() {
+var K = G.springs || [], p = G.pl, i, s;
+for (i = 0; i < K.length; i++) {
+s = K[i]; if (s.t > 0) s.t--;
+if (p.ground && Math.abs(p.x - s.x) < 11 && Math.abs(p.y - s.y) < 3 && (p.st === 'free' || p.st === 'dash' || (p.st === 'attack' && !p.atk.dive && !(p.atk.kusari && p.atk.kusari.pull)))) {
+p.st = 'free'; p.entry = false; p.vy = -11; p.ground = false; p.coyote = 0; p.jumps = 1; p.airDashed = 0; p.airAtk = 0; p.airShot = 0; p.rose = true; p.landT = 0; p.stretchT = 6;
+s.t = 12; R.snd('djump'); dust(s.x, s.y, 5);
+fx({ type: 'ring', x: s.x, y: s.y - 4, life: 12, r: 20, col: '#ffe04a', flat: true });
+}
+}
+}
 function updSpikes() {
 var p = G.pl, K = G.S.spikes || [], i;
 if (!p.ground || p.y < GY - 1 || p.inv > 0 || p.st === 'dash' || p.st === 'special' || p.st === 'cross') return;
@@ -2698,7 +2743,7 @@ return;
 }
 G.time++;
 if (G.comboT > 0) { G.comboT--; if (G.comboT === 0) G.combo = 0; }
-updPlayer(); updPShots();
+updMovers(); updPlayer(); updSprings(); updPShots();
 if (G.slow > 0) G.slow--;
 if (G.cross) updCross(); else if (!(G.slow > 0) || G.t % 3 === 0) { updEnemies(); updShots(); }
 if (!G.cross) updTouch();
@@ -2707,6 +2752,7 @@ var p = G.pl, tx = p.x - R.W * 0.42 + p.face * 26, lo = 0, hi = G.S.len - R.W;
 if (G.arena) { lo = G.arena[0]; hi = G.arena[1] - R.W; }
 G.cam.x += (clamp(tx, lo, hi) - G.cam.x) * 0.1;
 if (G.cam.x < lo) G.cam.x += Math.min(4, lo - G.cam.x); if (G.cam.x > hi) G.cam.x -= Math.min(4, G.cam.x - hi);
+G.cam.y = (G.cam.y || 0) + ((G.arena ? 0 : clamp(104 - p.y, 0, 84)) - (G.cam.y || 0)) * 0.1;
 };
 R.midBossDone = function (e) {
 e.dead = true; e.gone = true;
@@ -3581,7 +3627,7 @@ g.restore();
 var cam = 0, oy = 0;
 R.renderBack = function (bg) {
 var S = G.S, sh = G.cam.shake;
-cam = Math.round(clamp(G.cam.x + (sh > 0.4 ? rand(-1, 1) * sh : 0), 0, S.len - R.W)); oy = sh > 0.4 ? Math.round(rand(-1, 1) * sh * 0.5) : 0;
+cam = Math.round(clamp(G.cam.x + (sh > 0.4 ? rand(-1, 1) * sh : 0), 0, S.len - R.W)); oy = (sh > 0.4 ? Math.round(rand(-1, 1) * sh * 0.5) : 0) + Math.round(G.cam.y || 0);
 R.viewCam = cam; R.viewOy = oy;
 R.drawBackdrop(bg, S, cam, G.t, G.rage);
 bg.drawImage(S.layer, cam, 0, R.W, R.H, 0, oy, R.W, R.H);
@@ -3599,6 +3645,24 @@ var I = R.SPR.items, i, e;
 fg.clearRect(0, 0, R.W, R.H); fg.imageSmoothingEnabled = false;
 fg.save(); fg.translate(0, oy);
 for (i = 0; i < G.terminals.length; i++) { var tm = G.terminals[i]; fg.drawImage(I.terminal[tm.on ? ((G.t >> 4) % 2) : 0], Math.round(tm.x - cam - 17), GY - 56); if (!tm.on && (G.t >> 4) % 2) { fg.fillStyle = '#7af3ff'; fg.fillRect(Math.round(tm.x - cam) - 1, GY - 66, 2, 5); fg.fillRect(Math.round(tm.x - cam) - 3, GY - 62, 6, 1); } }
+var MV = G.movers || [], SPG = G.springs || [], mx, my, k;
+for (i = 0; i < MV.length; i++) {
+mx = Math.round(MV[i].x - cam); my = Math.round(MV[i].y); k = MV[i].w;
+if (mx > R.W + 10 || mx + k < -10) continue;
+fg.fillStyle = '#2f2b55'; fg.fillRect(mx, my, k, 7);
+fg.fillStyle = '#7af3ff'; fg.fillRect(mx, my, k, 1); fg.fillStyle = '#37e6ff'; fg.fillRect(mx, my + 1, k, 1);
+fg.fillStyle = '#655e9e'; fg.fillRect(mx + 1, my + 2, k - 2, 3);
+fg.fillStyle = '#ff7ad1'; fg.fillRect(mx + 3, my + 4, 2, 1); fg.fillRect(mx + k - 5, my + 4, 2, 1);
+fg.fillStyle = (G.t >> 2) % 2 ? '#7af3ff' : '#37e6ff'; fg.fillRect(mx + 5, my + 7, 3, 2 + (G.t >> 2) % 2); fg.fillRect(mx + k - 8, my + 7, 3, 2 + (G.t >> 2) % 2);
+}
+for (i = 0; i < SPG.length; i++) {
+mx = Math.round(SPG[i].x - cam); my = Math.round(SPG[i].y); k = SPG[i].t > 6 ? 3 : SPG[i].t > 0 ? 9 : 6;
+if (mx > R.W + 12 || mx < -12) continue;
+fg.fillStyle = '#24213f'; fg.fillRect(mx - 8, my - 2, 16, 2);
+fg.fillStyle = '#b49cff'; fg.fillRect(mx - 3, my - k, 2, k - 1); fg.fillRect(mx + 1, my - k, 2, k - 1);
+fg.fillStyle = '#c07818'; fg.fillRect(mx - 8, my - k - 3, 16, 3); fg.fillStyle = '#ffd36a'; fg.fillRect(mx - 8, my - k - 3, 16, 2); fg.fillStyle = '#fff3b0'; fg.fillRect(mx - 7, my - k - 3, 14, 1);
+if ((G.t + i * 9) % 50 < 8) { fg.fillStyle = '#ffffff'; fg.fillRect(mx - 1, my - k - 9 - ((G.t + i * 9) % 50 >> 1), 2, 3); }
+}
 for (i = 0; i < G.items.length; i++) {
 var it = G.items[i], ix = Math.round(it.x - cam);
 if (ix < -30 || ix > R.W + 30) continue;
@@ -3891,7 +3955,7 @@ R.drawHUD = function (g) {
 var p = G.pl, i;
 for (i = 0; i < G.texts.length; i++) {
 var t = G.texts[i], a = Math.min(1, (1 - t.t / t.life) * 2.2);
-g.globalAlpha = a; T(g, t.str, (t.x - R.viewCam) * 4, t.y * 4, t.big ? 46 : 32, t.col, 'center', UI, '#1a0a30', 7);
+g.globalAlpha = a; T(g, t.str, (t.x - R.viewCam) * 4, (t.y + (G.cam.y || 0)) * 4, t.big ? 46 : 32, t.col, 'center', UI, '#1a0a30', 7);
 }
 g.globalAlpha = 1;
 charBlock(g, 'kurenai', 18, p.who === 'kurenai');
@@ -4345,7 +4409,7 @@ blinkText(g, 'PRESS  ENTER  /  SPACE', 1370, 640, 46);
 g.imageSmoothingEnabled = false;
 R.drawFrame(g, R.frame('kurenai', 'run', Math.floor(t / 5) % R.SPR.kurenai.run.length), 1190, 880, 3, 1); R.drawFrame(g, R.frame('aoi', 'run', (Math.floor(t / 4) + 2) % R.SPR.aoi.run.length), 1510, 880, 3, 1);
 g.fillStyle = '#ffe2ff'; g.fillRect(920, 880, 900, 4); g.fillStyle = 'rgba(200,150,240,.5)'; g.fillRect(920, 884, 900, 4);
-var rows = [['←→ / A D', '移動'], ['Space / W', 'ジャンプ（二段で宙返り）'], ['J / Z', '攻撃（連打でコンボ）'], ['U / G', '遠距離攻撃（空中でも可）'], ['↓ + 攻撃', '斬り上げ / 空中で急降下'], ['L / Shift', 'ダッシュ（空中でも可）'], ['K / X', '特技（SP 消費）'], ['Q / E', 'キャラチェンジ'], ['F', '合体技「紅蒼交錯」']];
+var rows = [['←→ / A D', '移動'], ['Space / W', 'ジャンプ（二段・壁でキック）'], ['J / Z', '攻撃（連打でコンボ）'], ['U / G', '遠距離攻撃（空中でも可）'], ['↓ + 攻撃', '斬り上げ / 空中で急降下'], ['L / Shift', 'ダッシュ（空中でも可）'], ['K / X', '特技（SP 消費）'], ['Q / E', 'キャラチェンジ'], ['F', '合体技「紅蒼交錯」']];
 for (i = 0; i < rows.length; i++) {
 var cx = 930 + (i % 2) * 470, cy = 920 + (i >> 1) * 30;
 T(g, rows[i][0], cx + 150, cy, 24, '#7af3ff', 'right', UI, '#120a30', 5); T(g, rows[i][1], cx + 168, cy, 24, '#ffffff', 'left', UI, '#120a30', 5);
