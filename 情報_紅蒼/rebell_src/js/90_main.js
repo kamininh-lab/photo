@@ -117,8 +117,7 @@
         if (G.stateT > 60 && ok) {
           R.snd('select');
           if (G.stageIdx + 1 < R.STAGES.length) {
-            ['kurenai', 'aoi'].forEach(function (k) { var c = G.pl.chars[k]; c.down = false; c.hp = Math.min(c.max, Math.max(c.hp, 0) + Math.round(c.max * 0.6)); });
-            R.startStage(G.stageIdx + 1, false);
+            R.startStage(G.stageIdx + 1, false);      // HP と SP は、前のステージを終えたときのまま持ち越す（回復しない）
           } else { G.state = 'ending'; G.stateT = 0; R.bgm('title'); }
         }
         break;

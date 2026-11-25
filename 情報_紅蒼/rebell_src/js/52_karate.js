@@ -476,9 +476,9 @@
     else if (t < 196) e.fr = F('camera', t < 180 ? 1 : 2);
     else e.fr = F('camera', 3);
     if (t === 150) faceTo(e, p);
-    if (t === 84) X.toast('黒瀬「……いい腕だ。二人で、ひとつか」', '#d9b8ff');
+    if (t === 84) X.toast(p.chars.kurenai.down || p.chars.aoi.down ? '黒瀬「……いい腕だ。その覚悟、見せてもらった」' : '黒瀬「……いい腕だ。二人で、ひとつか」', '#d9b8ff');
     if (t === 170) R.snd('select');
-    if (t === 196) { R.snd('shutter'); G.flash = 1; e.expr = 'laugh'; X.toast('黒瀬「いい顔だ、撮らせてもらった。――行け。龍は、紅い月の下だ」', '#d9b8ff'); }
+    if (t === 196) { R.snd('shutter'); G.flash = 1; e.expr = 'laugh'; X.toast('黒瀬「いい顔だ、撮らせてもらった。――行け。姫は、龍の足もとだ」', '#d9b8ff'); }
     if (t >= 204) {      // 薬と結晶を置いていく
       for (i = 0; i < 5; i++) X.dropItem('crystal', e.x + rand(-30, 30), e.y - 30);
       X.dropItem('potion', e.x, e.y - 40);

@@ -14,22 +14,22 @@
   R.TALKS = {
     stage1: [
       { who: 'kurenai', face: 'normal', text: ['うわ、機械兵だらけ……。', 'ねえ蒼、まとめて薙ぎ払っちゃっていい？'] },
-      { who: 'aoi', face: 'normal', text: ['待って、紅。まずは流れを読ませて。', '数と動きが分かれば、半分の手数で済むから。'] },
-      { who: 'kurenai', face: 'anger', text: ['そんなの待ってたら、月がもっと紅くなっちゃうよ！', '《龍》は、もう目を覚ましてるんだから！'] },
-      { who: 'aoi', face: 'normal', text: ['だから急ぐの。この水道橋を抜ければ、玉龍学園。', 'あなたが道をこじ開けて、私がその隙を縫う。'] },
-      { who: 'kurenai', face: 'joy', text: ['へへっ、いつもどおりだね。', '結局、あたしが先頭じゃん！'] },
+      { who: 'aoi', face: 'normal', text: ['待って、紅。まずは流れを読ませて。', '姫さまを助ける前に、こちらが倒れたら意味がないから。'] },
+      { who: 'kurenai', face: 'anger', text: ['そんなの待ってたら、月がもっと紅くなっちゃうよ！', '姫さまは、あの《龍》に捕まってるんだから！'] },
+      { who: 'aoi', face: 'normal', text: ['だから急ぐの。この水道橋を抜ければ、玉龍学園。', '姫さまは、龍のいるいちばん奥に囚われている。'] },
+      { who: 'kurenai', face: 'joy', text: ['へへっ、いつもどおりだね。', 'あたしが道をこじ開けて、蒼がその隙を縫う！'] },
       { who: 'aoi', face: 'joy', text: ['重くて強い大鎌と、軽くて速い刀。', '正反対だから、噛み合うんだよ。'] },
       { who: 'kurenai', face: 'normal', text: ['疲れたら、すぐ呼んでよ。', '魔法陣がつながってる限り、いつでも入れ替われるんだから。'] },
       { who: 'aoi', face: 'normal', text: ['うん。力が満ちたら、二人で重ねよう。', '――『紅蒼交錯』を。'] },
-      { who: 'kurenai', face: 'anger', pose: 'event', text: ['よーし、行くよ、蒼！', 'あたしたち『REBELL』の出番だ！'] },
+      { who: 'kurenai', face: 'anger', pose: 'event', text: ['よーし、行くよ、蒼！', '待ってて、姫さま。いま助けに行く！'] },
       { who: 'aoi', face: 'joy', pose: 'stance', text: ['ええ、紅。背中は任せて。'] }
     ],
     // 中ボス「黒瀬 龍士」と初めて会ったとき（52_karate.js の enter から）。
     // シートの説明に沿わせてある: カメラを手にする異色の武闘家。正体と目的は謎。卓越した空手の技術で立ちはだかる
     kurose: [
       { who: 'kurose', text: ['――そこまでだ。', 'いい月、いい顔だ。一枚、撮らせてもらう。'] },
-      { who: 'kurenai', face: 'anger', text: ['誰！？　こっちは急いでるの！', '《龍》は、もう目を覚ましてるんだから！'] },
-      { who: 'kurose', text: ['知っている。だから、ここで確かめる。', '龍の前に立てるだけの腕が、あるのかどうかをな。'] },
+      { who: 'kurenai', face: 'anger', text: ['誰！？　こっちは急いでるの！', '姫さまが、あの《龍》に捕まってるんだから！'] },
+      { who: 'kurose', text: ['知っている。だから、ここで確かめる。', '姫を取り戻せるだけの腕が、あるのかどうかをな。'] },
       { who: 'aoi', face: 'normal', text: ['……紅、気をつけて。この人、流れが読めない。', '構えは空手。でも、あのカメラ……何かある。'] },
       { who: 'kurose', text: ['黒瀬 龍士。通りすがりの、ただの空手使いだ。', 'さあ――二人まとめて、かかってこい。'] },
       { who: 'kurenai', face: 'anger', pose: 'stance', text: ['言ったね！　行くよ、蒼！'] }
@@ -50,7 +50,8 @@
   //   inT = 入りの演出、outT = 終わりの演出（-1 = まだ）、full = 台詞を全部出したか、prev = すべり出ていく前のカットイン
   //   opt.vs = 向かい合っている相手（中ボス）。ステージの途中の会話で、終わったらそのまま戦いに戻る
   R.beginTalk = function (key, opt) {
-    G.talk = { key: key, lines: R.TALKS[key], i: 0, t: 0, T: 0, inT: 0, outT: -1, full: false, prev: null, vs: (opt && opt.vs) || null };
+    var C = G.pl.chars, lines = R.TALKS[key].filter(function (ln) { return !(C[ln.who] && C[ln.who].down); });      // 戦闘不能の子の台詞は飛ばす
+    G.talk = { key: key, lines: lines, i: 0, t: 0, T: 0, inT: 0, outT: -1, full: false, prev: null, vs: (opt && opt.vs) || null };
     G.state = 'talk'; G.stateT = 0;
   };
   function leave(tk) { tk.outT = 0; tk.prev = null; R.snd('switch'); }
@@ -102,7 +103,7 @@
     }
     if (tk.vs) {      // 中ボスと向かい合う: いま操作している子が前、相棒はその後ろに控える
       var fc = tk.vs.x >= kx ? 1 : -1, act = p.who, par = act === 'kurenai' ? 'aoi' : 'kurenai';
-      actor(par, kx - fc * 30, fc, 40, fc * 44);
+      if (!p.chars[par].down) actor(par, kx - fc * 30, fc, 40, fc * 44);      // 倒れている相棒は、立たせない
       actor(act, kx, fc, 0, 0);
       return;
     }

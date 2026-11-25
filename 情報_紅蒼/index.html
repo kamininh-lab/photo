@@ -4454,9 +4454,9 @@ window.REBELL_MIDBOSS = {
     else if (t < 196) e.fr = F('camera', t < 180 ? 1 : 2);
     else e.fr = F('camera', 3);
     if (t === 150) faceTo(e, p);
-    if (t === 84) X.toast('黒瀬「……いい腕だ。二人で、ひとつか」', '#d9b8ff');
+    if (t === 84) X.toast(p.chars.kurenai.down || p.chars.aoi.down ? '黒瀬「……いい腕だ。その覚悟、見せてもらった」' : '黒瀬「……いい腕だ。二人で、ひとつか」', '#d9b8ff');
     if (t === 170) R.snd('select');
-    if (t === 196) { R.snd('shutter'); G.flash = 1; e.expr = 'laugh'; X.toast('黒瀬「いい顔だ、撮らせてもらった。――行け。龍は、紅い月の下だ」', '#d9b8ff'); }
+    if (t === 196) { R.snd('shutter'); G.flash = 1; e.expr = 'laugh'; X.toast('黒瀬「いい顔だ、撮らせてもらった。――行け。姫は、龍の足もとだ」', '#d9b8ff'); }
     if (t >= 204) {      // 薬と結晶を置いていく
       for (i = 0; i < 5; i++) X.dropItem('crystal', e.x + rand(-30, 30), e.y - 30);
       X.dropItem('potion', e.x, e.y - 40);
@@ -5317,7 +5317,7 @@ window.REBELL_MIDBOSS = {
     panel(g, 766, 160, 244, 30, 6, '#15122e', full ? ((G.t >> 3) % 2 ? '#ffffff' : PINK) : '#ffffff', 4);
     cw = 232 * p.cross / 100;
     if (cw > 1) { var cg = g.createLinearGradient(772, 0, 1004, 0); cg.addColorStop(0, '#ff4fb0'); cg.addColorStop(0.5, '#ffffff'); cg.addColorStop(1, '#37e6ff'); g.fillStyle = cg; g.fillRect(772, 166, cw, 18); }
-    if (full) T(g, '[F] 紅蒼交錯！', 766, 222, 24, (G.t >> 3) % 2 ? '#ffffff' : '#ffe04a', 'left', UI, '#120a30', 6);
+    if (full && !p.chars.kurenai.down && !p.chars.aoi.down) T(g, '[F] 紅蒼交錯！', 766, 222, 24, (G.t >> 3) % 2 ? '#ffffff' : '#ffe04a', 'left', UI, '#120a30', 6);
     logo(g, 1296, 100, 0.86);
     minimap(g);
     // コンボ
@@ -5344,7 +5344,7 @@ window.REBELL_MIDBOSS = {
         g.globalAlpha = ia; g.fillStyle = 'rgba(8,2,24,.6)'; g.fillRect(0, 430, 1920, 200);
         g.fillStyle = mid ? '#a050ff' : '#ff2e60'; g.fillRect(0, 430, 1920, 5); g.fillRect(0, 625, 1920, 5);
         if (mid) T(g, 'MID BOSS　―　空手使い', 960, 500, 40, (G.t >> 3) % 2 ? '#c98bff' : '#f0e0ff', 'center', UI, '#1e0a3c', 8);
-        else T(g, 'WARNING', 960, 500, 44, (G.t >> 3) % 2 ? '#ff5a6a' : '#ffd0d6', 'center', SERIF, '#2a0818', 8);
+        else T(g, b.type === 'dragon' ? '囚われの姫を救え！' : 'WARNING', 960, 500, 44, (G.t >> 3) % 2 ? '#ff5a6a' : '#ffd0d6', 'center', SERIF, '#2a0818', 8);
         T(g, b.name, 960, 584, 78, '#ffffff', 'center', MIN, mid ? '#5a1ea8' : '#a8183c', 10); g.globalAlpha = 1;
       }
     }
@@ -5834,7 +5834,8 @@ window.REBELL_MIDBOSS = {
     g.restore();
   };
 
-  var STORY = ['紅い月が昇る夜。', 'ネオンの廃都に、機械仕掛けの兵があふれ出した。', '', '「反逆者（REBELL）」と呼ばれる二人――', '大鎌を振るう 紅（くれない）。刀を閃かせる 蒼（あおい）。', '', '交わる運命、ぶつかる色。', '二人は、月の下で目覚めた《龍》を追う。'];
+  // あらすじ: 龍にさらわれた姫を、二人が救いに行く（7 行目だけ大きく、桃色で出る）
+  var STORY = ['紅い月が昇る夜。', '目覚めた《龍》が、玉龍の姫をさらっていった。', '', '「反逆者（REBELL）」と呼ばれる二人――', '大鎌を振るう 紅（くれない）。刀を閃かせる 蒼（あおい）。', '', '囚われの姫を、取り戻せ。', '二人は、龍の待つ玉龍学園へ走る。'];
   R.drawIntro = function (g) {
     var t = G.stateT, i;
     g.imageSmoothingEnabled = false; g.drawImage(R.BG.sky, 0, 0, 1920, 1080); g.globalAlpha = 0.85; g.drawImage(R.BG.far, -((t * 0.8) % 3840), 120, 3840, 1080); g.drawImage(R.BG.far, 3840 - ((t * 0.8) % 3840), 120, 3840, 1080); g.globalAlpha = 1;
@@ -5873,7 +5874,10 @@ window.REBELL_MIDBOSS = {
   }
   R.drawClear = function (g) {
     var a = Math.min(1, G.stateT / 30); dim(g, 0.6 * a); g.globalAlpha = a;
-    faceFrame(g, 'kurenai', 'joy', 636, 96, 300, 204, PINK, true, null); faceFrame(g, 'aoi', 'joy', 984, 96, 300, 204, CYAN, true, null);
+    ['kurenai', 'aoi'].forEach(function (who, i) {      // 戦闘不能のままクリアした子は、笑顔にしない（HP は次のステージへ持ち越す）
+      var down = G.pl.chars[who].down;
+      portrait(g, who, 636 + i * 348, 96, 300, 204, !down, down);
+    });
     T(g, 'STAGE CLEAR', 960, 430, 120, '#ffffff', 'center', SERIF, PINK, 12);
     g.fillStyle = CYAN; g.fillRect(480, 462, 960, 4);
     stats(g, 540);
@@ -5891,8 +5895,8 @@ window.REBELL_MIDBOSS = {
     g.restore();
     T(g, 'Original Illustration by このみ', px + pw / 2, py + ph + 40, 24, '#c8b8ff', 'center', SERIF);
     logo(g, 1380, 200, 1.2);
-    T(g, '月は沈み、街に朝の色が戻る。', 1380, 380, 40, '#ffffff', 'center', MIN, '#1a0c40', 8);
-    T(g, '交わる運命、ぶつかる色。', 1380, 440, 40, '#ffd0ec', 'center', MIN, '#1a0c40', 8);
+    T(g, '龍は倒れ、囚われの姫は解き放たれた。', 1380, 380, 40, '#ffd0ec', 'center', MIN, '#1a0c40', 8);
+    T(g, '月は沈み、街に朝の色が戻る。', 1380, 440, 40, '#ffffff', 'center', MIN, '#1a0c40', 8);
     T(g, '――ふたりの反逆は、まだ始まったばかり。', 1380, 500, 34, '#ffffff', 'center', MIN, '#1a0c40', 8);
     g.save(); g.translate(420, 60); stats(g, 560); g.restore();
     T(g, 'キャラクターデザイン・原案　このみ', 1380, 850, 28, '#ffffff', 'center', UI, '#120a30', 6);
@@ -5921,22 +5925,22 @@ window.REBELL_MIDBOSS = {
   R.TALKS = {
     stage1: [
       { who: 'kurenai', face: 'normal', text: ['うわ、機械兵だらけ……。', 'ねえ蒼、まとめて薙ぎ払っちゃっていい？'] },
-      { who: 'aoi', face: 'normal', text: ['待って、紅。まずは流れを読ませて。', '数と動きが分かれば、半分の手数で済むから。'] },
-      { who: 'kurenai', face: 'anger', text: ['そんなの待ってたら、月がもっと紅くなっちゃうよ！', '《龍》は、もう目を覚ましてるんだから！'] },
-      { who: 'aoi', face: 'normal', text: ['だから急ぐの。この水道橋を抜ければ、玉龍学園。', 'あなたが道をこじ開けて、私がその隙を縫う。'] },
-      { who: 'kurenai', face: 'joy', text: ['へへっ、いつもどおりだね。', '結局、あたしが先頭じゃん！'] },
+      { who: 'aoi', face: 'normal', text: ['待って、紅。まずは流れを読ませて。', '姫さまを助ける前に、こちらが倒れたら意味がないから。'] },
+      { who: 'kurenai', face: 'anger', text: ['そんなの待ってたら、月がもっと紅くなっちゃうよ！', '姫さまは、あの《龍》に捕まってるんだから！'] },
+      { who: 'aoi', face: 'normal', text: ['だから急ぐの。この水道橋を抜ければ、玉龍学園。', '姫さまは、龍のいるいちばん奥に囚われている。'] },
+      { who: 'kurenai', face: 'joy', text: ['へへっ、いつもどおりだね。', 'あたしが道をこじ開けて、蒼がその隙を縫う！'] },
       { who: 'aoi', face: 'joy', text: ['重くて強い大鎌と、軽くて速い刀。', '正反対だから、噛み合うんだよ。'] },
       { who: 'kurenai', face: 'normal', text: ['疲れたら、すぐ呼んでよ。', '魔法陣がつながってる限り、いつでも入れ替われるんだから。'] },
       { who: 'aoi', face: 'normal', text: ['うん。力が満ちたら、二人で重ねよう。', '――『紅蒼交錯』を。'] },
-      { who: 'kurenai', face: 'anger', pose: 'event', text: ['よーし、行くよ、蒼！', 'あたしたち『REBELL』の出番だ！'] },
+      { who: 'kurenai', face: 'anger', pose: 'event', text: ['よーし、行くよ、蒼！', '待ってて、姫さま。いま助けに行く！'] },
       { who: 'aoi', face: 'joy', pose: 'stance', text: ['ええ、紅。背中は任せて。'] }
     ],
     // 中ボス「黒瀬 龍士」と初めて会ったとき（52_karate.js の enter から）。
     // シートの説明に沿わせてある: カメラを手にする異色の武闘家。正体と目的は謎。卓越した空手の技術で立ちはだかる
     kurose: [
       { who: 'kurose', text: ['――そこまでだ。', 'いい月、いい顔だ。一枚、撮らせてもらう。'] },
-      { who: 'kurenai', face: 'anger', text: ['誰！？　こっちは急いでるの！', '《龍》は、もう目を覚ましてるんだから！'] },
-      { who: 'kurose', text: ['知っている。だから、ここで確かめる。', '龍の前に立てるだけの腕が、あるのかどうかをな。'] },
+      { who: 'kurenai', face: 'anger', text: ['誰！？　こっちは急いでるの！', '姫さまが、あの《龍》に捕まってるんだから！'] },
+      { who: 'kurose', text: ['知っている。だから、ここで確かめる。', '姫を取り戻せるだけの腕が、あるのかどうかをな。'] },
       { who: 'aoi', face: 'normal', text: ['……紅、気をつけて。この人、流れが読めない。', '構えは空手。でも、あのカメラ……何かある。'] },
       { who: 'kurose', text: ['黒瀬 龍士。通りすがりの、ただの空手使いだ。', 'さあ――二人まとめて、かかってこい。'] },
       { who: 'kurenai', face: 'anger', pose: 'stance', text: ['言ったね！　行くよ、蒼！'] }
@@ -5957,7 +5961,8 @@ window.REBELL_MIDBOSS = {
   //   inT = 入りの演出、outT = 終わりの演出（-1 = まだ）、full = 台詞を全部出したか、prev = すべり出ていく前のカットイン
   //   opt.vs = 向かい合っている相手（中ボス）。ステージの途中の会話で、終わったらそのまま戦いに戻る
   R.beginTalk = function (key, opt) {
-    G.talk = { key: key, lines: R.TALKS[key], i: 0, t: 0, T: 0, inT: 0, outT: -1, full: false, prev: null, vs: (opt && opt.vs) || null };
+    var C = G.pl.chars, lines = R.TALKS[key].filter(function (ln) { return !(C[ln.who] && C[ln.who].down); });      // 戦闘不能の子の台詞は飛ばす
+    G.talk = { key: key, lines: lines, i: 0, t: 0, T: 0, inT: 0, outT: -1, full: false, prev: null, vs: (opt && opt.vs) || null };
     G.state = 'talk'; G.stateT = 0;
   };
   function leave(tk) { tk.outT = 0; tk.prev = null; R.snd('switch'); }
@@ -6009,7 +6014,7 @@ window.REBELL_MIDBOSS = {
     }
     if (tk.vs) {      // 中ボスと向かい合う: いま操作している子が前、相棒はその後ろに控える
       var fc = tk.vs.x >= kx ? 1 : -1, act = p.who, par = act === 'kurenai' ? 'aoi' : 'kurenai';
-      actor(par, kx - fc * 30, fc, 40, fc * 44);
+      if (!p.chars[par].down) actor(par, kx - fc * 30, fc, 40, fc * 44);      // 倒れている相棒は、立たせない
       actor(act, kx, fc, 0, 0);
       return;
     }
@@ -6232,8 +6237,7 @@ window.REBELL_MIDBOSS = {
         if (G.stateT > 60 && ok) {
           R.snd('select');
           if (G.stageIdx + 1 < R.STAGES.length) {
-            ['kurenai', 'aoi'].forEach(function (k) { var c = G.pl.chars[k]; c.down = false; c.hp = Math.min(c.max, Math.max(c.hp, 0) + Math.round(c.max * 0.6)); });
-            R.startStage(G.stageIdx + 1, false);
+            R.startStage(G.stageIdx + 1, false);      // HP と SP は、前のステージを終えたときのまま持ち越す（回復しない）
           } else { G.state = 'ending'; G.stateT = 0; R.bgm('title'); }
         }
         break;

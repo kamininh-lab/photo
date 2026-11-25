@@ -257,7 +257,7 @@
     panel(g, 766, 160, 244, 30, 6, '#15122e', full ? ((G.t >> 3) % 2 ? '#ffffff' : PINK) : '#ffffff', 4);
     cw = 232 * p.cross / 100;
     if (cw > 1) { var cg = g.createLinearGradient(772, 0, 1004, 0); cg.addColorStop(0, '#ff4fb0'); cg.addColorStop(0.5, '#ffffff'); cg.addColorStop(1, '#37e6ff'); g.fillStyle = cg; g.fillRect(772, 166, cw, 18); }
-    if (full) T(g, '[F] 紅蒼交錯！', 766, 222, 24, (G.t >> 3) % 2 ? '#ffffff' : '#ffe04a', 'left', UI, '#120a30', 6);
+    if (full && !p.chars.kurenai.down && !p.chars.aoi.down) T(g, '[F] 紅蒼交錯！', 766, 222, 24, (G.t >> 3) % 2 ? '#ffffff' : '#ffe04a', 'left', UI, '#120a30', 6);
     logo(g, 1296, 100, 0.86);
     minimap(g);
     // コンボ
@@ -284,7 +284,7 @@
         g.globalAlpha = ia; g.fillStyle = 'rgba(8,2,24,.6)'; g.fillRect(0, 430, 1920, 200);
         g.fillStyle = mid ? '#a050ff' : '#ff2e60'; g.fillRect(0, 430, 1920, 5); g.fillRect(0, 625, 1920, 5);
         if (mid) T(g, 'MID BOSS　―　空手使い', 960, 500, 40, (G.t >> 3) % 2 ? '#c98bff' : '#f0e0ff', 'center', UI, '#1e0a3c', 8);
-        else T(g, 'WARNING', 960, 500, 44, (G.t >> 3) % 2 ? '#ff5a6a' : '#ffd0d6', 'center', SERIF, '#2a0818', 8);
+        else T(g, b.type === 'dragon' ? '囚われの姫を救え！' : 'WARNING', 960, 500, 44, (G.t >> 3) % 2 ? '#ff5a6a' : '#ffd0d6', 'center', SERIF, '#2a0818', 8);
         T(g, b.name, 960, 584, 78, '#ffffff', 'center', MIN, mid ? '#5a1ea8' : '#a8183c', 10); g.globalAlpha = 1;
       }
     }
@@ -774,7 +774,8 @@
     g.restore();
   };
 
-  var STORY = ['紅い月が昇る夜。', 'ネオンの廃都に、機械仕掛けの兵があふれ出した。', '', '「反逆者（REBELL）」と呼ばれる二人――', '大鎌を振るう 紅（くれない）。刀を閃かせる 蒼（あおい）。', '', '交わる運命、ぶつかる色。', '二人は、月の下で目覚めた《龍》を追う。'];
+  // あらすじ: 龍にさらわれた姫を、二人が救いに行く（7 行目だけ大きく、桃色で出る）
+  var STORY = ['紅い月が昇る夜。', '目覚めた《龍》が、玉龍の姫をさらっていった。', '', '「反逆者（REBELL）」と呼ばれる二人――', '大鎌を振るう 紅（くれない）。刀を閃かせる 蒼（あおい）。', '', '囚われの姫を、取り戻せ。', '二人は、龍の待つ玉龍学園へ走る。'];
   R.drawIntro = function (g) {
     var t = G.stateT, i;
     g.imageSmoothingEnabled = false; g.drawImage(R.BG.sky, 0, 0, 1920, 1080); g.globalAlpha = 0.85; g.drawImage(R.BG.far, -((t * 0.8) % 3840), 120, 3840, 1080); g.drawImage(R.BG.far, 3840 - ((t * 0.8) % 3840), 120, 3840, 1080); g.globalAlpha = 1;
@@ -813,7 +814,10 @@
   }
   R.drawClear = function (g) {
     var a = Math.min(1, G.stateT / 30); dim(g, 0.6 * a); g.globalAlpha = a;
-    faceFrame(g, 'kurenai', 'joy', 636, 96, 300, 204, PINK, true, null); faceFrame(g, 'aoi', 'joy', 984, 96, 300, 204, CYAN, true, null);
+    ['kurenai', 'aoi'].forEach(function (who, i) {      // 戦闘不能のままクリアした子は、笑顔にしない（HP は次のステージへ持ち越す）
+      var down = G.pl.chars[who].down;
+      portrait(g, who, 636 + i * 348, 96, 300, 204, !down, down);
+    });
     T(g, 'STAGE CLEAR', 960, 430, 120, '#ffffff', 'center', SERIF, PINK, 12);
     g.fillStyle = CYAN; g.fillRect(480, 462, 960, 4);
     stats(g, 540);
@@ -831,8 +835,8 @@
     g.restore();
     T(g, 'Original Illustration by このみ', px + pw / 2, py + ph + 40, 24, '#c8b8ff', 'center', SERIF);
     logo(g, 1380, 200, 1.2);
-    T(g, '月は沈み、街に朝の色が戻る。', 1380, 380, 40, '#ffffff', 'center', MIN, '#1a0c40', 8);
-    T(g, '交わる運命、ぶつかる色。', 1380, 440, 40, '#ffd0ec', 'center', MIN, '#1a0c40', 8);
+    T(g, '龍は倒れ、囚われの姫は解き放たれた。', 1380, 380, 40, '#ffd0ec', 'center', MIN, '#1a0c40', 8);
+    T(g, '月は沈み、街に朝の色が戻る。', 1380, 440, 40, '#ffffff', 'center', MIN, '#1a0c40', 8);
     T(g, '――ふたりの反逆は、まだ始まったばかり。', 1380, 500, 34, '#ffffff', 'center', MIN, '#1a0c40', 8);
     g.save(); g.translate(420, 60); stats(g, 560); g.restore();
     T(g, 'キャラクターデザイン・原案　このみ', 1380, 850, 28, '#ffffff', 'center', UI, '#120a30', 6);
