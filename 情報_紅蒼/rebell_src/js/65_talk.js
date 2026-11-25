@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   var R = window.REBELL, G = R.game, U = R.UI, T = U.T, panel = U.panel, PI = Math.PI;
-  var PINK = '#ff4fb0', CYAN = '#37e6ff';
+  var PINK = '#ff4fb0', CYAN = '#37e6ff', PICS = {};
   var IN = 30, OUT = 34, SPEED = 0.55, GAP = 50;      // IN = 会話が始まるまでの間、OUT = 終わりの演出の長さ、SPEED = 1 フレームに出る文字数、GAP = 二人の間隔
 
   // 台本。who = 話す子、face = 表情（normal / anger / joy / damage）、
@@ -12,17 +12,23 @@
   //   性格も戦い方も正反対の二人が、ひとつの魔法陣を介して共に戦う。違うからこそ噛み合う。
   //   紅 = 大鎌を手に、荒々しく踏み込む。蒼 = 静かな微笑みのまま刀を構え、流れを読む。
   R.TALKS = {
+    // 四角 明宏（しかく あきひろ）= 二人の武器を作ったメカニック。通信で二人を支える（その場にはいないので、立ち姿は出ない）。
+    //   四角の face は smile / serious / shout（シートの大きな絵と、カットインの絵）。台詞の中身はシートの説明と決め台詞に沿わせた
     stage1: [
       { who: 'kurenai', face: 'normal', text: ['うわ、機械兵だらけ……。', 'ねえ蒼、まとめて薙ぎ払っちゃっていい？'] },
       { who: 'aoi', face: 'normal', text: ['待って、紅。まずは流れを読ませて。', '姫さまを助ける前に、こちらが倒れたら意味がないから。'] },
-      { who: 'kurenai', face: 'anger', text: ['そんなの待ってたら、月がもっと紅くなっちゃうよ！', '姫さまは、あの《龍》に捕まってるんだから！'] },
-      { who: 'aoi', face: 'normal', text: ['だから急ぐの。この水道橋を抜ければ、玉龍学園。', '姫さまは、龍のいるいちばん奥に囚われている。'] },
-      { who: 'kurenai', face: 'joy', text: ['へへっ、いつもどおりだね。', 'あたしが道をこじ開けて、蒼がその隙を縫う！'] },
+      { who: 'shikaku', face: 'smile', text: ['――二人とも、聞こえる？　こちら四角。', '解析が終わった。ここからは、ぼくも通信で手伝うよ。'] },
+      { who: 'kurenai', face: 'joy', text: ['四角！　いいところに！', 'この大鎌、今日もすっごく調子いいよ！'] },
+      { who: 'shikaku', face: 'smile', text: ['当然。その大鎌も、蒼の刀も、ぼくが作ったんだから。', '壊れたら、直せばいい。……あ、もっといいものに改良しよう。'] },
+      { who: 'aoi', face: 'joy', text: ['ふふ、頼りにしてる。', 'それで四角、姫さまの居場所は？'] },
+      { who: 'shikaku', face: 'serious', text: ['この水道橋を抜けた先、玉龍学園のいちばん奥。', '姫さまは、あの《龍》に囚われている。'] },
+      { who: 'kurenai', face: 'anger', text: ['だったら急がなきゃ！', '月がもっと紅くなる前に、助け出すんだから！'] },
+      { who: 'kurenai', face: 'joy', text: ['へへっ、やることは、いつもどおりだね。', 'あたしが道をこじ開けて、蒼がその隙を縫う！'] },
       { who: 'aoi', face: 'joy', text: ['重くて強い大鎌と、軽くて速い刀。', '正反対だから、噛み合うんだよ。'] },
-      { who: 'kurenai', face: 'normal', text: ['疲れたら、すぐ呼んでよ。', '魔法陣がつながってる限り、いつでも入れ替われるんだから。'] },
-      { who: 'aoi', face: 'normal', text: ['うん。力が満ちたら、二人で重ねよう。', '――『紅蒼交錯』を。'] },
+      { who: 'shikaku', face: 'serious', text: ['武器は魔法陣でつないである。疲れたら、すぐ交代して。', '力が満ちたら、重ねるんだ。――『紅蒼交錯』を。'] },
+      { who: 'shikaku', face: 'shout', text: ['機械兵、来るよ！　道案内と解析は、ぼくに任せて。', '行って、二人とも！'] },
       { who: 'kurenai', face: 'anger', pose: 'event', text: ['よーし、行くよ、蒼！', '待ってて、姫さま。いま助けに行く！'] },
-      { who: 'aoi', face: 'joy', pose: 'stance', text: ['ええ、紅。背中は任せて。'] }
+      { who: 'aoi', face: 'joy', pose: 'stance', text: ['ええ、紅。背中は任せて。', '四角、案内をお願い。'] }
     ],
     // 中ボス「黒瀬 龍士」と初めて会ったとき（52_karate.js の enter から）。
     // シートの説明に沿わせてある: カメラを手にする異色の武闘家。正体と目的は謎。卓越した空手の技術で立ちはだかる
@@ -39,8 +45,15 @@
   var WHO = {
     kurenai: { side: -1, col: PINK, dark: '#40103c', lite: '#8a2062', mid: '#6a1a58', plate: '#5a1650', name: '紅', kana: 'くれない', en: 'KURENAI', icon: 'iconKurenai' },
     aoi: { side: 1, col: CYAN, dark: '#0c1450', lite: '#1a36a8', mid: '#152a80', plate: '#12246e', name: '蒼', kana: 'あおい', en: 'AOI', icon: 'iconAoi' },
-    kurose: { side: 1, col: '#c98bff', dark: '#170a30', lite: '#4a2890', mid: '#2e1960', plate: '#2a1650', name: '黒瀬', kana: 'くろせ', en: 'KUROSE RYUJI', icon: null, portrait: true }
+    kurose: { side: 1, col: '#c98bff', dark: '#170a30', lite: '#4a2890', mid: '#2e1960', plate: '#2a1650', name: '黒瀬', kana: 'くろせ', en: 'KUROSE RYUJI', icon: null, portrait: true },
+    // 四角: 通信で話す。pics = 表情ごとの絵（09_shikaku_art.js）、tag = 帯に出す小さな札
+    shikaku: { side: 1, col: '#ffc84a', dark: '#07122e', lite: '#1c4a86', mid: '#123260', plate: '#143058', name: '四角', kana: 'しかく', en: 'SHIKAKU AKIHIRO', icon: null, pics: true, tag: '通信中  ‐  SUPPORT' }
   };
+  // 四角の絵を読み込んでおく（会話が始まるまでに間に合う）
+  (function () {
+    var D = window.REBELL_SHIKAKU || {}, k, im;
+    for (k in D) { im = new Image(); im.src = D[k]; PICS['shikaku_' + k] = im; }
+  })();
 
   function count(ln) { var n = 0, i; for (i = 0; i < ln.text.length; i++) n += ln.text[i].length; return n; }
   function shownOf(tk) { return tk.full ? 999 : Math.max(0, Math.floor((tk.t - 6) * SPEED)); }
@@ -136,7 +149,8 @@
     // 顔（出た瞬間は少し大きく、すぐ戻る）
     var fw = 450, fh = 306, fx = K ? x0 + 150 : x0 + w + sk - 150 - fw, pop = 1 + 0.07 * Math.max(0, 1 - pt / 9);
     g.save(); g.translate(fx + fw / 2, y + h / 2); g.scale(pop, pop);
-    if (W.portrait) drawPortrait(g, -fw / 2, -fh / 2, fw, fh); else U.drawFace(g, who, expr, 'hud', -fw / 2, -fh / 2, fw, fh);
+    if (W.pics) { im = PICS[who + '_' + expr] || PICS[who + '_smile']; if (im && im.complete && im.naturalWidth) { g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(im, -fw / 2, -fh / 2, fw, fh); } }
+    else if (W.portrait) drawPortrait(g, -fw / 2, -fh / 2, fw, fh); else U.drawFace(g, who, expr, 'hud', -fw / 2, -fh / 2, fw, fh);
     g.restore();
     // 顔の両端を、帯の色になじませる
     gr = g.createLinearGradient(K ? fx + fw - 150 : fx, 0, K ? fx + fw : fx + 150, 0);
@@ -159,6 +173,11 @@
     var nx = K ? x0 + w - 200 : x0 + sk + 216;
     T(g, W.name, nx, y + (W.name.length > 1 ? 184 : 190), W.name.length > 1 ? 140 : 168, col, 'center', U.MIN, '#ffffff', 9);
     T(g, W.en, nx, y + 246, 30, '#ffffff', 'center', U.font, '#120a30', 6);
+    if (W.tag) {      // 通信の札（点が明滅する）
+      panel(g, nx - 150, y + 24, 300, 40, 8, 'rgba(6,14,40,.8)', col, 3);
+      g.fillStyle = (tt >> 4) % 2 ? '#ff5a6a' : '#7a2030'; g.beginPath(); g.arc(nx - 126, y + 44, 7, 0, PI * 2); g.fill();
+      T(g, W.tag, nx + 12, y + 53, 24, '#ffffff', 'center', U.font, '#120a30', 5);
+    }
     g.restore();
   }
 
