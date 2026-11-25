@@ -84,6 +84,39 @@
     if (!T.asd) T.asd = T.as;
     T.as.nextS = null; T.asd.nextS = null; T.as.nextA = T.g[0]; T.asd.nextA = T.g[0];
   });
+  // ---- チャージ攻撃（攻撃ボタンを押しっぱなしにして、離すと出る）----
+  // 押した瞬間は、いつもどおりの攻撃が出る。そのまま押し続けると力がたまり（CH1 で 1 段目、CH2 で最大）、離した瞬間に大技を放つ。
+  //   紅「紅月旋」= 大鎌を振り回しながら踏み込む回転斬り（5 回当たる）。最後に地面を叩き割る。振っている間はひるまない
+  //   蒼「蒼月一閃」= 居合いで敵の中を斬り抜け（その間は無敵）、三日月の大きな刃を飛ばす
+  //   rehits = この時刻ごとに、もう一度当たる / shockAt = 地面を叩き割る時刻
+  var CH1 = 30, CH2 = 72;
+  var CHG = {
+    kurenai: {
+      name: '紅月旋', seq: [[0, 'awaken', 2], [5, 'atk', 3], [8, 'senpu', 0], [11, 'senpu', 1], [14, 'senpu', 2], [17, 'senpu', 3], [20, 'senpu', 0], [23, 'senpu', 1], [26, 'senpu', 2], [29, 'moon', 1], [35, 'moon', 2], [44, 'atk', 0]],
+      dur: 52, h0: 8, h1: 34, rehits: [14, 20, 26, 32], dmg: 14, box: [-42, -60, 110, 66], kb: 1.4, slide: 3.4,
+      fxs: [[8, -2.9, 1.3, 52], [14, 1.7, -2.6, 52], [20, -2.9, 1.3, 54], [26, 1.7, -2.6, 54], [32, -2.6, 1.2, 62]], wd: 1.3,
+      snd: 'slash_red3', sndAt: 6, cancel: 99, stop: 4, heavy: true, fin: true, shock: true, shockAt: 33, quake: 4
+    },
+    aoi: {
+      name: '蒼月一閃', seq: [[0, 'iai', 0], [8, 'iai', 1], [16, 'flash', 2], [24, 'moon', 2], [30, 'atk', 3]],
+      dur: 38, h0: 8, h1: 18, rehits: [13], dmg: 16, box: [-30, -46, 112, 50], kb: 3, slide: 10.5, thrust: 160,
+      shot: { at: 18, vx: 8.2, vy: 0, dmg: 12, r: 22, life: 34, pierce: 8, dx: 30, y: -22, big: true },
+      snd: 'slash_blue4', sndAt: 6, cancel: 99, stop: 3, heavyLast: true
+    }
+  };
+  var chgCache = {};
+  // lv = 1（1 段目）/ 2（最大。威力 1.6 倍、刃も大きい）
+  function chgAtk(who, lv) {
+    var key = who + lv, a = chgCache[key], k;
+    if (a) return a;
+    a = {}; for (k in CHG[who]) a[k] = CHG[who][k];
+    a.charge = lv;
+    if (lv === 2) {
+      a.dmg = Math.round(a.dmg * 1.6); a.kb = a.kb * 1.4; if (a.quake) a.quake = 5;
+      if (a.shot) { a.shot = Object.assign({}, a.shot, { dmg: Math.round(a.shot.dmg * 1.6), r: 30, life: 40 }); }
+    }
+    return (chgCache[key] = a);
+  }
   var AOI_FIN = { dmg: 14, box: [-24, -50, 80, 56], kb: 4, heavy: true, stop: 4 };      // 蒼刃閃の締めの一太刀
   // 紅は重く、蒼は速い（走る速さ・ダッシュの速さと間隔・空中ダッシュの回数）
   var BASE = {
@@ -162,6 +195,7 @@
       who: 'kurenai', st: 'free', stT: 0, atk: null, buf: false, hitSet: [], inv: 0, dashCd: 0, switchCd: 0, animT: 0,
       flipT: 0, landT: 0, skidT: 0, stretchT: 0, dashWin: 0, justCd: 0, runPh: 0, running: false, stopT: 0, airAtk: 0, airDashed: 0, rose: false,
       airShot: 0, kusari: null,      // 空中で遠距離攻撃を出した回数 / 紅の鎖鎌のようす
+      chT: 0, chLv: 0, chQ: 0, chQT: 0,      // チャージ: 押している時間 / たまった段 / 放つのを待っている段と、待つ残り時間
       battleT: 0, angerT: 0, hurtFaceT: 0, joyT: 0, joyAll: false, hurtBig: false, landAnim: null,      // 構えを続ける時間 / 顔グラフィックの表情
       chars: { kurenai: { hp: BASE.kurenai.hp, max: BASE.kurenai.hp, sp: 60, maxsp: 100, down: false }, aoi: { hp: BASE.aoi.hp, max: BASE.aoi.hp, sp: 60, maxsp: 100, down: false } },
       lv: 1, exp: 0, potions: 3, crystals: 0, cross: 0, safeX: 80, hurtFlash: 0, spHits: {}
@@ -334,6 +368,7 @@
     if (p.chars[o].down) { R.snd('deny'); toast(R.NAMES[o] + ' は戦闘不能（端末か薬で復帰）', '#ff9db8'); p.switchCd = 20; return; }
     var chain = p.st === 'attack' && p.hitSet.length > 0, col = blue ? '#37e6ff' : '#ff4fb0';
     ghost(p, 26, { leave: true, vx: -p.face * 2.4, vy: -3.6, f: R.frame(p.who, 'djump', 1) });
+    p.chT = 0; p.chLv = 0; p.chQ = 0;      // ためた力は、交代で消える
     p.who = o; p.switchCd = 28; p.inv = Math.max(p.inv, 24); p.flipT = 0;
     R.snd('switch'); G.cutin = { who: o, t: 0 };
     fx({ type: 'ring', x: p.x, y: p.y - MID, life: 18, r: 40, col: col });
@@ -455,6 +490,37 @@
     if (!p.ground) p.airDashed++; else dust(p.x, p.y, 6);
     R.snd('dash');
     fx({ type: 'thrust', x: p.x + p.face * 4, y: p.y - MID + 2, face: -p.face, life: 10, col: p.who === 'kurenai' ? 'red' : 'blue', len: 40 });
+  }
+  // チャージ: 攻撃ボタンを押している間、力をためる。光が体に集まり、段が上がるたびに音と光の輪
+  function chargeUp(p, K) {
+    p.chT++;
+    var col = K ? '#ff7ad1' : '#7af3ff', lv = p.chT >= CH2 ? 2 : p.chT >= CH1 ? 1 : 0, an, r;
+    if (p.chT > 10 && p.chT % (lv ? 2 : 4) === 0) {
+      an = rand(0, PI * 2); r = lv === 2 ? 28 : 22;
+      part(p.x + Math.cos(an) * r, p.y - MID + Math.sin(an) * r, -Math.cos(an) * r / 11, -Math.sin(an) * r / 11, 11, lv === 2 && p.chT % 4 ? '#ffffff' : col, lv ? 2 : 1, 0, true);
+    }
+    if (lv > p.chLv) {
+      p.chLv = lv; R.snd(lv === 2 ? 'checkpoint' : 'select');
+      fx({ type: 'ring', x: p.x, y: p.y - MID, life: 14, r: lv === 2 ? 34 : 24, col: lv === 2 ? '#ffffff' : col });
+      if (lv === 2) burst(p.x, p.y - MID, 10, [col, '#ffffff'], 2.2, 16);
+    }
+    if (lv === 2 && p.chT % 16 === 0) fx({ type: 'ring', x: p.x, y: p.y - 1, life: 12, r: 18, col: col, flat: true });
+  }
+  // ためた力を放てるか（ふつうの攻撃の途中なら、打ち切れる時刻を過ぎていること）
+  function canCharge(p) {
+    if (p.st === 'free' || p.st === 'dash') return true;
+    var a = p.atk;
+    return p.st === 'attack' && !a.dive && !a.kusari && !a.charge && p.stT >= Math.min(a.cancel, a.h1 + 2);
+  }
+  function startCharge(p, lv) {
+    var K = p.who === 'kurenai', col = K ? '#ff7ad1' : '#7af3ff', a = chgAtk(p.who, lv);
+    var move = (R.input.down.right ? 1 : 0) - (R.input.down.left ? 1 : 0);
+    if (move) p.face = move;
+    startAttack(a); p.entry = false;
+    if (!K) p.inv = Math.max(p.inv, 20);      // 蒼は、斬り抜ける間は無敵
+    fx({ type: 'xflash', x: p.x, y: p.y - MID, life: 12, col: K ? 'red' : 'blue' });
+    fx({ type: 'ring', x: p.x, y: p.y - MID, life: 16, r: lv === 2 ? 44 : 30, col: col });
+    if (lv === 2) { R.snd(K ? 'special_red' : 'special_blue'); text(p.x, p.y - 48, a.name + '！', K ? '#ff9ad8' : '#7af3ff', true); G.hitstop = Math.max(G.hitstop, 3); G.flash = Math.max(G.flash, 0.18); }
   }
   // いま出せる遠距離攻撃（地上 / 空中 / 空中で↓）。空中では、一度の滞空で撃てる回数に限りがある
   function shotOf(p, down) {
@@ -624,6 +690,11 @@
     if (p.st !== 'free') p.running = false;
     // 待機中の回復
     ['kurenai', 'aoi'].forEach(function (k) { var q = p.chars[k]; if (q.down) return; q.sp = Math.min(q.maxsp, q.sp + (k === p.who ? 0.03 : 0.07)); if (k !== p.who) q.hp = Math.min(q.max, q.hp + 0.025); });
+    // チャージ: ふつうに動いている間・攻撃の途中・ダッシュ中に、攻撃ボタンを押し続けるとたまる。
+    //   離したら放つ（すぐ出せないときは、少しの間だけ待って出す）。やられ・技・交代などで押したままのときは、消える
+    if (I.down.attack && (p.st === 'free' || p.st === 'dash' || (p.st === 'attack' && !p.atk.charge))) chargeUp(p, K);
+    else if (p.chT > 0) { if (p.chLv > 0 && !I.down.attack) { p.chQ = p.chLv; p.chQT = 24; } p.chT = 0; p.chLv = 0; }
+    if (p.chQ > 0) { if (canCharge(p)) { startCharge(p, p.chQ); p.chQ = 0; } else if (--p.chQT <= 0) p.chQ = 0; }
 
     if (p.st === 'free') {
       var acc = p.ground ? (K ? 0.5 : 0.8) : 0.36;
@@ -693,8 +764,9 @@
         if (a.fxs) for (var fi = 0; fi < a.fxs.length; fi++) if (p.stT === a.fxs[fi][0]) slashFx(p, a, p.entry, a.fxs[fi].slice(1));
         if (a.rise && p.stT === a.h0) { p.vy = a.rise; p.jumps = Math.max(p.jumps, 1); p.rose = true; dust(p.x, p.y, 5); }
         if (a.rehit && p.stT === a.rehit) p.hitSet = [];
+        if (a.rehits && a.rehits.indexOf(p.stT) >= 0) p.hitSet = [];      // チャージ攻撃: 何度も当たる
         if (a.box && open && p.stT <= a.h1) hitEnemies(p, a, mult);
-        if (a.shock && p.stT === a.h0 + 1 && p.ground) {
+        if (a.shock && p.stT === (a.shockAt || a.h0 + 1) && p.ground) {
           shake(a.fin ? 8 : 5); dust(p.x + p.face * 30, p.y, 12); R.snd('slam_red'); fx({ type: 'crack', x: p.x + p.face * 32, y: p.y, life: 22 });
           if (a.quake) fx({ type: 'quake', x: p.x + p.face * 30, y: p.y, life: 24, face: p.face, n: a.quake });
         }
