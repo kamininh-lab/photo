@@ -112,10 +112,10 @@
     if (c.sp >= 30 && active && !c.down) { g.fillStyle = '#ffffff'; g.fillRect(396 + 6 + 250 * 0.3, y + 79, 2, 22); }
   }
 
-  // 縦のステージの地図の代わり: 高さ計（左がふもと、右がてっぺん。塔の高さは 120m として数える）
+  // 縦のステージの地図の代わり: 高さ計（左がふもと、右がてっぺん。S.pxPerM ドットを 1 m として数える）
   function altimeter(g, S, x, y, w, h) {
     var y0 = R.GY, y1 = S.goal[1], bx = x + 24, bw = w - 70, by = y + 92, f = function (wy) { return bx + clamp((y0 - wy) / (y0 - y1), 0, 1) * bw; };
-    var m = Math.max(0, Math.round((y0 - G.pl.y) / (y0 - y1) * 120));
+    var pm = S.pxPerM || 14, top = Math.round((y0 - y1) / pm), m = Math.max(0, Math.round((y0 - G.pl.y) / pm));
     T(g, 'ALTITUDE', x + 24, y + 46, 26, '#c8b8ff', 'left', UI, '#120a30', 5);
     T(g, m + ' m', x + w - 24, y + 50, 40, '#ffffff', 'right', UI, '#120a30', 6);
     g.fillStyle = '#2a2266'; g.fillRect(bx, by, bw, 14);
@@ -127,7 +127,7 @@
     var px = f(G.pl.y), py = by + 7, r = 11 + ((G.t >> 4) % 2);
     g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(px, py - r - 3); g.lineTo(px + r + 3, py); g.lineTo(px, py + r + 3); g.lineTo(px - r - 3, py); g.fill();
     g.fillStyle = '#ff2e48'; g.beginPath(); g.moveTo(px, py - r); g.lineTo(px + r, py); g.lineTo(px, py + r); g.lineTo(px - r, py); g.fill();
-    T(g, 'TOP 120 m', x + w - 24, y + 132, 20, '#8a7ac8', 'right', UI, '#120a30', 4);
+    T(g, 'TOP ' + top + ' m', x + w - 24, y + 132, 20, '#8a7ac8', 'right', UI, '#120a30', 4);
   }
   function minimap(g) {
     var S = G.S, x = 1552, y = 20, w = 343, h = 143, i;

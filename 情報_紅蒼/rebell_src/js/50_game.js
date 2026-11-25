@@ -152,7 +152,7 @@
   // その場所に、立てる床があるか（足場・動く足場・地形の上面。縦のステージの機兵が、足場から落ちないように）
   function standAt(x, y) {
     var P = G.plats || G.S.platRects, S = G.S.solids, i;
-    for (i = 0; i < P.length; i++) if (x > P[i].x && x < P[i].x + P[i].w && Math.abs(P[i].y - y) < 3) return true;
+    for (i = 0; i < P.length; i++) if (!P[i].gone && x > P[i].x && x < P[i].x + P[i].w && Math.abs(P[i].y - y) < 3) return true;
     for (i = 0; i < S.length; i++) if (x > S[i].x && x < S[i].x + S[i].w && Math.abs(S[i].y - y) < 3) return true;
     return false;
   }
@@ -198,7 +198,7 @@
     if (b.vy >= 0 && !(b.drop > 0)) {
       var P = G.plats || G.S.platRects;      // 動く足場も含む
       for (i = 0; i < P.length; i++) {
-        s = P[i];
+        s = P[i]; if (s.gone) continue;      // 崩れて消えている足場
         if (b.x + b.w / 2 > s.x && b.x - b.w / 2 < s.x + s.w && py <= (s.py === undefined ? s.y : Math.max(s.py, s.y)) + 0.01 && b.y >= s.y) { b.y = s.y; b.vy = 0; b.ground = true; }      // py = 動く足場の、前のフレームの上面
       }
     }
@@ -613,8 +613,53 @@
   // 空中（pull）では、地面か敵に打ち込んだら、鎖をたぐってそこへ落ちる（着地は急降下と同じ衝撃波）。
   // p.kusari = { st: 'out' / 'hold' / 'back' / 'reel' / 'done', t, len: いまの長さ, hits: 当てた敵, spin: 鎌の回転, ax・ay: 打ち込んだ所 }
   // 戻り値 = このフレームの重力
+  // ---- 縦のステージの仕掛け ----
+  // 鎖の楔: 紅の鎖鎌を引っかけて、たぐり寄せる輪。RANGE = 届く距離、HANG = 着いたときの足と楔の高さの差、POP = 着いて跳ね上がる速さ
+  var RING_RANGE = 170, RING_HANG = 22, RING_POP = -6.8, RING_PULL = 9;
+  function ringFor(p) {
+    var L = G.rings || [], best = null, bd = RING_RANGE, i, r, dx, dy, d;
+    if (p.who !== 'kurenai') return null;
+    for (i = 0; i < L.length; i++) {
+      r = L[i]; dx = r.x - p.x; dy = r.y - (p.y - 20); d = Math.sqrt(dx * dx + dy * dy);
+      if (r.y < p.y - 24 && dx * p.face >= -24 && d < bd) { bd = d; best = r; }
+    }
+    return best;
+  }
+  R.ringFor = function () { return G.pl ? ringFor(G.pl) : null; };      // 描画用: いま投げたら引っかかる楔（光らせる）
+  // 上昇気流・崩れる足場・レーザー柵（毎フレーム）
+  function updGimmicks() {
+    var p = G.pl, i, f, c, L, on, ph, pb = box(p);
+    // 初めて画面に入った仕掛けは、1 度だけ使い方を出す
+    if (!G.tHint) G.tHint = {};
+    [['wall', G.S.walls && G.S.walls.map(function (w) { return { x: w[0], y: w[1] + w[3] - 20 }; }), '縦穴 ― 壁に寄って、ジャンプで壁キック！'],
+      ['crumble', G.crumbles, '崩れる足場 ― 乗ったら、すぐ次へ！'], ['fan', G.fans, '上昇気流 ― 入ると体が浮く。出口へ寄せて降りよう'],
+      ['ring', G.rings, '鎖の楔 ― 紅の鎖鎌（遠距離）で引っかけて、たぐり寄せる'], ['laser', G.lasers, 'レーザー柵 ― 点滅したら、まもなく点く']].forEach(function (h) {
+      if (G.tHint[h[0]] || !h[1]) return;
+      if (h[1].some(function (o) { return onScreen(o.x, -20, o.y) && o.y + G.cam.y > 20; })) { G.tHint[h[0]] = true; toast(h[2], '#ffe04a'); }
+    });
+    for (i = 0; i < (G.fans || []).length; i++) {
+      f = G.fans[i];
+      if (p.x > f.x && p.x < f.x + f.w && p.y > f.y && p.y - 8 < f.y + f.h && p.st !== 'dash') {
+        p.vy = Math.max(FAN_MAX, p.vy - FAN_ACC); p.rose = true; if (p.ground && p.vy < 0) { p.ground = false; p.coyote = 0; }
+        if (G.t % 3 === 0) part(p.x + rand(-6, 6), p.y + 2, rand(-0.3, 0.3), rand(-2.4, -1.2), 10, '#c0f8ff', 1, 0, true);
+      }
+    }
+    for (i = 0; i < (G.crumbles || []).length; i++) {
+      c = G.crumbles[i];
+      if (c.gone > 0) { if (--c.gone === 0) { c.t = 0; c.y = c.y0; burst(c.x + c.w / 2, c.y, 6, ['#ffd36a', '#ffffff'], 1.4, 12); } continue; }
+      if (c.t > 0) { if (++c.t > CRUMBLE_T) { c.gone = CRUMBLE_BACK; R.snd('hit_heavy'); for (var k = 0; k < 8; k++) part(c.x + rand(0, c.w), c.y + rand(0, 6), rand(-0.6, 0.6), rand(0.5, 2), 30, k % 2 ? '#8a6040' : '#c89060', 2, 0.25); } }
+      else if (p.ground && Math.abs(p.y - c.y) < 1.5 && p.x + p.w / 2 > c.x && p.x - p.w / 2 < c.x + c.w) { c.t = 1; R.snd('land'); }
+    }
+    for (i = 0; i < (G.lasers || []).length; i++) {
+      L = G.lasers[i]; ph = (G.time + L.off) % L.per; on = ph >= L.per * 0.5;
+      L.warn = !on && ph >= L.per * 0.5 - 20; L.on = on;
+      if (on && p.inv <= 0 && R.overlap(pb, { x: L.x, y: L.y - 2, w: L.w, h: 4 })) hurtPlayer(10, p.x < L.x + L.w / 2 ? -1 : 1, false);
+    }
+  }
+  var FAN_ACC = 0.85, FAN_MAX = -4.6, CRUMBLE_T = 36, CRUMBLE_BACK = 150;
   function kusariHead(p, a) {
     var k = a.kusari, q = p.kusari;
+    if (q.ring) return [q.ring.x, q.ring.y];
     if (q.st === 'reel') return [q.ax, q.ay - 4];
     return [p.x + q.face * (9 + Math.cos(k.ang) * q.len), p.y + k.hy + Math.sin(k.ang) * q.len];
   }
@@ -625,14 +670,30 @@
       if (air) { p.vx *= 0.85; p.vy = Math.min(p.vy, 0.4); return 0.1; }
       return grav;
     }
-    if (!q) q = p.kusari = { st: 'out', t: 0, age: 0, len: 0, face: p.face, hits: [], spin: 0, ax: 0, ay: 0 };
+    if (!q) {
+      q = p.kusari = { st: 'out', t: 0, age: 0, len: 0, face: p.face, hits: [], spin: 0, ax: 0, ay: 0 };
+      // 鎖の楔（縦のステージ）: 前方〜真上の近くに楔があれば、鎌を引っかけて、楔までたぐり寄せる
+      var rg = ringFor(p);
+      if (rg) {
+        q.st = 'reel'; q.t = 0; q.ring = rg; q.ax = rg.x; q.ay = rg.y + RING_HANG; rg.t = 0;
+        R.snd('hit_red'); shake(2); fx({ type: 'spark', x: rg.x, y: rg.y, life: 10, size: 16, col: 'gold' });
+        return 0;
+      }
+    }
     q.t++; q.age++;
     if (q.st === 'reel') {      // 鎖をたぐって、打ち込んだ所へ落ちる
       var dx = q.ax - p.x, dy = q.ay - p.y, d = Math.sqrt(dx * dx + dy * dy);
+      if (q.ring && (d < 14 || q.t > 50)) {      // 楔に着いた: 跳ね上がる（二段ジャンプと空中ダッシュが戻る）
+        p.kusari = null; p.st = 'free'; p.entry = false; p.buf = false; p.vy = RING_POP; p.vx = q.face * 1.2; p.jumps = 1; p.airDashed = 0; p.airShot = 0; p.airAtk = 0; p.rose = true; p.flipT = FLIP;
+        R.snd('djump'); burst(q.ring.x, q.ring.y, 10, ['#ffd36a', '#ffffff', '#ff7ad1'], 2.4, 16);
+        fx({ type: 'ring', x: q.ring.x, y: q.ring.y, life: 14, r: 22, col: '#ffd36a' });
+        return 0.45;
+      }
       if (d < 14 || q.t > 44) { p.vx *= 0.3; p.vy = 9; q.st = 'done'; return 0; }      // 着いた（空中の敵なら、そこから真下へ）
-      p.vx = dx / d * k.pull; p.vy = dy / d * k.pull; q.len = d;
+      var sp = q.ring ? RING_PULL : k.pull;
+      p.vx = dx / d * sp; p.vy = dy / d * sp; q.len = d;
       if (p.stT % 2 === 0) ghost(p, 9);
-      hitEnemies(p, a, mult);
+      if (a.box) hitEnemies(p, a, mult);      // 地上の鎖鎌（楔へたぐるとき）は、体に当たりがない
       return 0;
     }
     if (q.st === 'done') return air ? 0.45 : grav;
@@ -885,7 +946,7 @@
       G.state = 'gameover'; G.stateT = 0; R.bgm('gameover');
     }
   }
-  function onPlat(p) { var P = G.plats || G.S.platRects; for (var i = 0; i < P.length; i++) if (Math.abs(p.y - P[i].y) < 1 && p.x > P[i].x - 6 && p.x < P[i].x + P[i].w + 6) return true; return false; }
+  function onPlat(p) { var P = G.plats || G.S.platRects; for (var i = 0; i < P.length; i++) if (!P[i].gone && Math.abs(p.y - P[i].y) < 1 && p.x > P[i].x - 6 && p.x < P[i].x + P[i].w + 6) return true; return false; }
   function dust(x, y, n) { for (var i = 0; i < n; i++) part(x + rand(-6, 6), y - 1, rand(-1.2, 1.2), rand(-1.2, -0.2), rand(12, 22), i % 2 ? '#a39bd0' : '#655e9e', 2, 0.02); }
 
   // ---- 敵 ----
@@ -1115,13 +1176,17 @@
     G.stageIdx = idx; G.S = S; G.enemies = []; G.shots = []; G.pshots = []; G.items = []; G.fx = []; G.parts = []; G.texts = []; G.ghosts = [];
     G.boss = null; G.arena = null; G.cross = null; G.bossCut = null; G.bossDefeated = false; G.rage = false; G.combo = 0; G.hitstop = 0; G.slow = 0;
     G.dazzle = 0; G.bossIntro = 0;
-    if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; }      // 中ボスを倒したか・もう会ったか（やり直しても覚えておく。ステージを最初から始めるときだけ戻す）
+    if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; G.tHint = {}; }      // 中ボスを倒したか・もう会ったか（やり直しても覚えておく。ステージを最初から始めるときだけ戻す）
     S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });
     S.items.forEach(function (q) { G.items.push({ type: q[0], x: q[1], y: q[2], t: 0, open: false }); });
     // 端末・バネは、x だけ（地面の上）か、[x, y]（縦のステージの足場の上）
     G.terminals = S.checkpoints.map(function (q) { return typeof q === 'number' ? { x: q, y: GY, on: false } : { x: q[0], y: q[1], on: false }; });
     G.movers = (S.movers || []).map(function (q, n) { return { x0: q[0], y0: q[1], x: q[0], y: q[1], w: q[2], dx: q[3], dy: q[4], per: q[5], ph: n * 37 }; });
-    G.plats = S.platRects.concat(G.movers);
+    G.crumbles = (S.crumbles || []).map(function (q) { return { x: q[0], y: q[1], y0: q[1], w: q[2], t: 0, gone: 0, crumble: true }; });
+    G.rings = (S.rings || []).map(function (q) { return { x: q[0], y: q[1], t: 99 }; });
+    G.fans = (S.fans || []).map(function (q) { return { x: q[0], y: q[1], w: q[2], h: q[3] }; });
+    G.lasers = (S.lasers || []).map(function (q) { return { x: q[0], y: q[1], w: q[2], per: q[3], off: q[4] || 0, on: false, warn: false }; });
+    G.plats = S.platRects.concat(G.movers, G.crumbles);
     G.springs = (S.springs || []).map(function (q) { if (typeof q !== 'number') return { x: q[0], y: q[1], t: 0 }; var y = floorAt(q); return { x: q, y: y === null ? GY : y, t: 0 }; });
     var sx = S.startX || 70, sy = GY;
     if (fromCheckpoint && G.respawn && G.respawn.stage === idx) {
@@ -1236,7 +1301,7 @@
     }
     G.time++;
     if (G.comboT > 0) { G.comboT--; if (G.comboT === 0) G.combo = 0; }
-    updMovers(); updPlayer(); updSprings(); updPShots();
+    updMovers(); updPlayer(); updSprings(); updGimmicks(); updPShots();
     if (G.slow > 0) G.slow--;
     if (G.cross) updCross(); else if (!(G.slow > 0) || G.t % 3 === 0) { updEnemies(); updShots(); }
     if (!G.cross) updTouch();

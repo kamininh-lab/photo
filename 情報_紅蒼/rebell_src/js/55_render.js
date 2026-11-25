@@ -270,6 +270,60 @@
     g.restore();
   }
 
+  // 縦のステージの仕掛け（上昇気流・崩れる足場・レーザー柵・鎖の楔）。fg は世界の y に合わせて平行移動済み
+  function towerGimmicks(fg) {
+    var i, f, c, L, r, x, y, k, t = G.t, vis = function (yy, m) { return yy + oy > -m && yy + oy < R.H + m; };
+    // 上昇気流: 下に送風口、範囲の中を光の筋が昇っていく
+    for (i = 0; i < (G.fans || []).length; i++) {
+      f = G.fans[i]; if (!vis(f.y, f.h + 20) && !vis(f.y + f.h, 20)) continue;
+      x = Math.round(f.x - cam); y = Math.round(f.y);
+      fg.globalAlpha = 0.10; fg.fillStyle = '#7af3ff'; fg.fillRect(x, y, f.w, f.h);
+      fg.globalAlpha = 0.5;
+      for (k = 0; k < f.w / 8; k++) {
+        var sy = f.h - ((t * 2.2 + k * 37) % f.h), sx = x + 4 + ((k * 23) % Math.max(1, f.w - 8));
+        fg.fillStyle = k % 2 ? '#c0f8ff' : '#37e6ff'; fg.fillRect(sx, y + sy, 1, 7);
+      }
+      fg.globalAlpha = 1;
+      fg.fillStyle = '#24213f'; fg.fillRect(x - 2, y + f.h, f.w + 4, 6); fg.fillStyle = '#655e9e'; fg.fillRect(x - 2, y + f.h, f.w + 4, 1);
+      for (k = 0; k < f.w; k += 6) { fg.fillStyle = (t >> 1) % 2 ? '#37e6ff' : '#1aa6c8'; fg.fillRect(x + k + 1, y + f.h + 2, 3, 2); }
+    }
+    // 崩れる足場: 茶色のひび割れた板。乗ると震え、崩れたあとは点線の跡（戻ってくる場所）
+    for (i = 0; i < (G.crumbles || []).length; i++) {
+      c = G.crumbles[i]; if (!vis(c.y, 20)) continue;
+      x = Math.round(c.x - cam); y = Math.round(c.y);
+      if (c.gone > 0) { if ((t >> 3) % 2) { fg.fillStyle = 'rgba(255,200,120,.35)'; for (k = 0; k < c.w; k += 6) fg.fillRect(x + k, y, 3, 1); } continue; }
+      if (c.t > 0) x += (t % 4 < 2 ? 1 : -1) * (c.t > 14 ? 2 : 1);
+      fg.fillStyle = '#5a3a22'; fg.fillRect(x, y, c.w, 7);
+      fg.fillStyle = '#c89060'; fg.fillRect(x, y, c.w, 1); fg.fillStyle = '#8a6040'; fg.fillRect(x, y + 1, c.w, 2);
+      fg.fillStyle = '#2a1a10'; for (k = 7; k < c.w - 3; k += 11) { fg.fillRect(x + k, y + 1, 1, 3); fg.fillRect(x + k + 1, y + 3, 1, 3); }
+      if (c.t > 0) { fg.fillStyle = '#ffd36a'; fg.fillRect(x + (c.t * 3) % c.w, y + 7, 2, 2); }
+    }
+    // レーザー柵: 両端に発振器。点く前は細い線が点滅して予告
+    for (i = 0; i < (G.lasers || []).length; i++) {
+      L = G.lasers[i]; if (!vis(L.y, 20)) continue;
+      x = Math.round(L.x - cam); y = Math.round(L.y);
+      if (L.on) {
+        fg.globalAlpha = 0.35; fg.fillStyle = '#ff2e88'; fg.fillRect(x, y - 3, L.w, 6);
+        fg.globalAlpha = 1; fg.fillStyle = '#ff7ad1'; fg.fillRect(x, y - 1, L.w, 2); fg.fillStyle = '#ffffff'; fg.fillRect(x, y, L.w, 1);
+      } else if (L.warn && (t >> 2) % 2) { fg.fillStyle = 'rgba(255,90,170,.7)'; for (k = 0; k < L.w; k += 4) fg.fillRect(x + k, y, 2, 1); }
+      [x - 5, x + L.w].forEach(function (ex) { fg.fillStyle = '#24213f'; fg.fillRect(ex, y - 5, 5, 10); fg.fillStyle = L.on || L.warn ? '#ff4fb0' : '#655e9e'; fg.fillRect(ex + 1, y - 2, 3, 4); });
+    }
+    // 鎖の楔: 金色の輪。紅がいま鎖鎌を投げれば届く楔は、明るく脈打つ
+    var aim = G.pl && G.pl.who === 'kurenai' && R.ringFor ? R.ringFor() : null;
+    for (i = 0; i < (G.rings || []).length; i++) {
+      r = G.rings[i]; x = Math.round(r.x - cam); y = Math.round(r.y);
+      if (!vis(r.y, 20)) {      // 画面の上の外にある楔: 紅なら、上端に小さな印を出す
+        if (G.pl && G.pl.who === 'kurenai' && r.y + oy < 0 && r.y + oy > -140) { var my = -oy + 3; fg.fillStyle = (t >> 3) % 2 ? '#ffd36a' : '#c07818'; fg.beginPath(); fg.moveTo(x, my); fg.lineTo(x + 5, my + 6); fg.lineTo(x - 5, my + 6); fg.fill(); }
+        continue;
+      }
+      var hot = r === aim, pr = hot ? 1 + 0.5 * Math.abs(Math.sin(t * 0.2)) : 0;
+      fg.globalAlpha = hot ? 0.4 : 0.16 + 0.08 * Math.sin(t * 0.08 + i); fg.fillStyle = '#ffd36a'; fg.beginPath(); fg.arc(x + 0.5, y + 0.5, hot ? 12 + pr * 3 : 11, 0, Math.PI * 2); fg.fill(); fg.globalAlpha = 1;
+      fg.strokeStyle = '#7a4a18'; fg.lineWidth = 3.5; fg.beginPath(); fg.arc(x + 0.5, y + 0.5, 8, 0, Math.PI * 2); fg.stroke();
+      fg.strokeStyle = hot ? '#fff3b0' : '#ffc83e'; fg.lineWidth = 2; fg.beginPath(); fg.arc(x + 0.5, y + 0.5, 8, 0, Math.PI * 2); fg.stroke();
+      fg.fillStyle = '#3d3684'; fg.fillRect(x - 1, y - 12, 2, 6);      // 楔を吊る金具
+    }
+  }
+
   // ---- 1 フレームの描画。奥から順に 4 回に分けて呼ぶ ----
   var cam = 0, oy = 0;      // いまのカメラ位置と、画面ゆれの縦ずれ
 
@@ -299,6 +353,7 @@
     fg.save(); fg.translate(0, oy);
     // 端末
     for (i = 0; i < G.terminals.length; i++) { var tm = G.terminals[i], ty = tm.y; fg.drawImage(I.terminal[tm.on ? ((G.t >> 4) % 2) : 0], Math.round(tm.x - cam - 17), ty - 56); if (!tm.on && (G.t >> 4) % 2) { fg.fillStyle = '#7af3ff'; fg.fillRect(Math.round(tm.x - cam) - 1, ty - 66, 2, 5); fg.fillRect(Math.round(tm.x - cam) - 3, ty - 62, 6, 1); } }
+    if (G.S.vertical) towerGimmicks(fg);
     // 縦のステージのてっぺん: 航空灯が明滅する
     if (G.S.vertical && (G.t >> 5) % 2 === 0) { var gl = G.S.goal; fg.globalAlpha = 0.5; fg.fillStyle = '#ff2e48'; fg.fillRect(gl[0] + gl[2] / 2 - 9 - cam, gl[1] - 162, 18, 18); fg.globalAlpha = 1; }
     // 動く足場（水色に光る板。下に噴射の光）

@@ -1484,24 +1484,34 @@ boss: { type: 'guard', x: 3560, arena: [3040, 3800], trigger: 3130, name: '重�
 },
 {
 id: 'tower', title: '第二章　天を衝く鉄塔', sub: 'STAGE 2  -  SKYWARD TOWER', bgm: 'city', len: 480, vertical: true, talk: 'tower',
-top: -1720, startX: 100,
+top: -2310, startX: 100, pxPerM: 14,
 ground: [[0, 480]],
-walls: [[180, -980, 16, 180], [268, -980, 16, 180]],
-springs: [[215, -534]],
-movers: [[300, -176, 60, -220, 0, 230], [262, -268, 48, 0, -120, 210], [300, -1046, 50, 100, 0, 170], [60, -1236, 50, 0, -80, 180]],
+walls: [[176, -414, 24, 250], [272, -414, 24, 250], [176, -2040, 24, 186], [276, -2040, 24, 186]],
+springs: [[124, -696]],
+movers: [[150, -462, 64, 136, -50, 156]],
+crumbles: [[320, -556, 70], [245, -602, 60]],
+fans: [[144, -928, 64, 132], [283, -1105, 66, 141]],
+rings: [[117, -1276], [86, -1398], [258, -1510], [268, -2130]],
+lasers: [[293, -1542, 87, 180, 0], [180, -1732, 68, 160, 40], [252, -1954, 24, 144, 0]],
 plats: [
-[40, 146, 150], [170, 100, 150], [300, 54, 140], [180, 8, 140], [40, -38, 160], [170, -84, 130], [280, -130, 170],
-[30, -222, 100], [140, -268, 90], [330, -396, 110], [180, -442, 120], [40, -488, 120],
-[170, -534, 90], [150, -656, 150], [320, -702, 120], [120, -748, 220], [196, -850, 24], [244, -920, 24], [150, -1000, 180],
-[380, -1092, 80], [250, -1138, 90], [110, -1184, 110], [150, -1320, 90], [270, -1366, 90], [150, -1412, 100], [170, -1460, 200]],
-goal: [170, -1460, 200],
-enemies: [['robot', 120, -38], ['drone', 390, -10], ['drone', 380, -250], ['robot', 400, -396], ['drone', 110, -580],
-['drone', 60, -660], ['drone', 420, -720], ['robot', 150, -748], ['drone', 100, -1150], ['drone', 410, -1260], ['drone', 320, -1430]],
-items: [['crystal', 115, 130], ['crystal', 245, 84], ['crystal', 370, 38], ['crystal', 250, -8], ['crystal', 70, -54], ['crystal', 235, -100],
-['crystal', 80, -238], ['crystal', 185, -284], ['crystal', 286, -330], ['chest', 425, -396], ['crystal', 240, -458], ['crystal', 100, -504],
-['crystal', 215, -600], ['crystal', 215, -640], ['crystal', 380, -718], ['potion', 150, -764], ['crystal', 232, -880], ['crystal', 232, -950],
-['crystal', 420, -1108], ['crystal', 295, -1154], ['crystal', 165, -1200], ['crystal', 85, -1290], ['crystal', 195, -1336], ['crystal', 315, -1382]],
-checkpoints: [[60, 192], [380, -130], [300, -748]]
+[72, 145, 103], [134, 98, 110], [207, 51, 90], [160, 4, 100], [147, -78, 90], [168, -120, 135],
+[200, -190, 28], [244, -263, 28], [200, -336, 28], [152, -420, 180],
+[230, -537, 174], [162, -648, 95], [84, -696, 90], [355, -610, 103], [104, -802, 116],
+[187, -920, 110], [238, -970, 105], [238, -1097, 64], [166, -1150, 120],
+[78, -1288, 80], [61, -1407, 72],
+[344, -1228, 92], [64, -1324, 86], [259, -1410, 104], [190, -1204, 120], [176, -1500, 148],
+[324, -1476, 125], [296, -1550, 90], [292, -1628, 100], [208, -1676, 114], [114, -1656, 200], [145, -1758, 110], [168, -1810, 136],
+[200, -1902, 76], [152, -2040, 192], [156, -2100, 184]],
+goal: [156, -2100, 184],
+enemies: [['drone', 390, 10], ['robot', 414, -610], ['drone', 401, -1040]],
+items: [['crystal', 124, 129], ['crystal', 189, 82], ['crystal', 252, 35], ['crystal', 192, -94],
+['crystal', 236, -220], ['crystal', 236, -290], ['crystal', 236, -360], ['crystal', 214, -206],
+['crystal', 300, -575], ['crystal', 275, -620], ['chest', 440, -610], ['crystal', 124, -760], ['potion', 150, -818],
+['crystal', 176, -880], ['crystal', 176, -840], ['crystal', 316, -1060], ['crystal', 316, -1020],
+['crystal', 117, -1240], ['crystal', 86, -1362], ['crystal', 258, -1474], ['crystal', 390, -1244], ['crystal', 107, -1340], ['crystal', 311, -1426],
+['potion', 200, -1516], ['crystal', 336, -1566], ['crystal', 262, -1692], ['crystal', 200, -1774],
+['crystal', 238, -1918], ['crystal', 238, -1990], ['crystal', 268, -2094]],
+checkpoints: [[219, -120], [205, -420], [121, -802], [230, -1150], [305, -1500], [219, -1810]]
 },
 {
 id: 'school', title: '第三章　玉龍学園　紅い月の下で', sub: 'STAGE 3  -  GYOKURYU ACADEMY', bgm: 'school', len: 3360,
@@ -1900,7 +1910,7 @@ return x > G.cam.x - m && x < G.cam.x + R.W + m;
 }
 function standAt(x, y) {
 var P = G.plats || G.S.platRects, S = G.S.solids, i;
-for (i = 0; i < P.length; i++) if (x > P[i].x && x < P[i].x + P[i].w && Math.abs(P[i].y - y) < 3) return true;
+for (i = 0; i < P.length; i++) if (!P[i].gone && x > P[i].x && x < P[i].x + P[i].w && Math.abs(P[i].y - y) < 3) return true;
 for (i = 0; i < S.length; i++) if (x > S[i].x && x < S[i].x + S[i].w && Math.abs(S[i].y - y) < 3) return true;
 return false;
 }
@@ -1943,7 +1953,7 @@ bb = box(b);
 if (b.vy >= 0 && !(b.drop > 0)) {
 var P = G.plats || G.S.platRects;
 for (i = 0; i < P.length; i++) {
-s = P[i];
+s = P[i]; if (s.gone) continue;
 if (b.x + b.w / 2 > s.x && b.x - b.w / 2 < s.x + s.w && py <= (s.py === undefined ? s.y : Math.max(s.py, s.y)) + 0.01 && b.y >= s.y) { b.y = s.y; b.vy = 0; b.ground = true; }
 }
 }
@@ -2326,8 +2336,49 @@ if (!s.dead && s.t % 2 === 0) part(s.x - s.vx * 1.5 + rand(-2, 2), s.y + rand(-s
 }
 G.pshots = G.pshots.filter(function (q) { return !q.dead; });
 }
+var RING_RANGE = 170, RING_HANG = 22, RING_POP = -6.8, RING_PULL = 9;
+function ringFor(p) {
+var L = G.rings || [], best = null, bd = RING_RANGE, i, r, dx, dy, d;
+if (p.who !== 'kurenai') return null;
+for (i = 0; i < L.length; i++) {
+r = L[i]; dx = r.x - p.x; dy = r.y - (p.y - 20); d = Math.sqrt(dx * dx + dy * dy);
+if (r.y < p.y - 24 && dx * p.face >= -24 && d < bd) { bd = d; best = r; }
+}
+return best;
+}
+R.ringFor = function () { return G.pl ? ringFor(G.pl) : null; };
+function updGimmicks() {
+var p = G.pl, i, f, c, L, on, ph, pb = box(p);
+if (!G.tHint) G.tHint = {};
+[['wall', G.S.walls && G.S.walls.map(function (w) { return { x: w[0], y: w[1] + w[3] - 20 }; }), '縦穴 ― 壁に寄って、ジャンプで壁キック！'],
+['crumble', G.crumbles, '崩れる足場 ― 乗ったら、すぐ次へ！'], ['fan', G.fans, '上昇気流 ― 入ると体が浮く。出口へ寄せて降りよう'],
+['ring', G.rings, '鎖の楔 ― 紅の鎖鎌（遠距離）で引っかけて、たぐり寄せる'], ['laser', G.lasers, 'レーザー柵 ― 点滅したら、まもなく点く']].forEach(function (h) {
+if (G.tHint[h[0]] || !h[1]) return;
+if (h[1].some(function (o) { return onScreen(o.x, -20, o.y) && o.y + G.cam.y > 20; })) { G.tHint[h[0]] = true; toast(h[2], '#ffe04a'); }
+});
+for (i = 0; i < (G.fans || []).length; i++) {
+f = G.fans[i];
+if (p.x > f.x && p.x < f.x + f.w && p.y > f.y && p.y - 8 < f.y + f.h && p.st !== 'dash') {
+p.vy = Math.max(FAN_MAX, p.vy - FAN_ACC); p.rose = true; if (p.ground && p.vy < 0) { p.ground = false; p.coyote = 0; }
+if (G.t % 3 === 0) part(p.x + rand(-6, 6), p.y + 2, rand(-0.3, 0.3), rand(-2.4, -1.2), 10, '#c0f8ff', 1, 0, true);
+}
+}
+for (i = 0; i < (G.crumbles || []).length; i++) {
+c = G.crumbles[i];
+if (c.gone > 0) { if (--c.gone === 0) { c.t = 0; c.y = c.y0; burst(c.x + c.w / 2, c.y, 6, ['#ffd36a', '#ffffff'], 1.4, 12); } continue; }
+if (c.t > 0) { if (++c.t > CRUMBLE_T) { c.gone = CRUMBLE_BACK; R.snd('hit_heavy'); for (var k = 0; k < 8; k++) part(c.x + rand(0, c.w), c.y + rand(0, 6), rand(-0.6, 0.6), rand(0.5, 2), 30, k % 2 ? '#8a6040' : '#c89060', 2, 0.25); } }
+else if (p.ground && Math.abs(p.y - c.y) < 1.5 && p.x + p.w / 2 > c.x && p.x - p.w / 2 < c.x + c.w) { c.t = 1; R.snd('land'); }
+}
+for (i = 0; i < (G.lasers || []).length; i++) {
+L = G.lasers[i]; ph = (G.time + L.off) % L.per; on = ph >= L.per * 0.5;
+L.warn = !on && ph >= L.per * 0.5 - 20; L.on = on;
+if (on && p.inv <= 0 && R.overlap(pb, { x: L.x, y: L.y - 2, w: L.w, h: 4 })) hurtPlayer(10, p.x < L.x + L.w / 2 ? -1 : 1, false);
+}
+}
+var FAN_ACC = 0.85, FAN_MAX = -4.6, CRUMBLE_T = 36, CRUMBLE_BACK = 150;
 function kusariHead(p, a) {
 var k = a.kusari, q = p.kusari;
+if (q.ring) return [q.ring.x, q.ring.y];
 if (q.st === 'reel') return [q.ax, q.ay - 4];
 return [p.x + q.face * (9 + Math.cos(k.ang) * q.len), p.y + k.hy + Math.sin(k.ang) * q.len];
 }
@@ -2338,14 +2389,29 @@ if (p.stT < a.h0) {
 if (air) { p.vx *= 0.85; p.vy = Math.min(p.vy, 0.4); return 0.1; }
 return grav;
 }
-if (!q) q = p.kusari = { st: 'out', t: 0, age: 0, len: 0, face: p.face, hits: [], spin: 0, ax: 0, ay: 0 };
+if (!q) {
+q = p.kusari = { st: 'out', t: 0, age: 0, len: 0, face: p.face, hits: [], spin: 0, ax: 0, ay: 0 };
+var rg = ringFor(p);
+if (rg) {
+q.st = 'reel'; q.t = 0; q.ring = rg; q.ax = rg.x; q.ay = rg.y + RING_HANG; rg.t = 0;
+R.snd('hit_red'); shake(2); fx({ type: 'spark', x: rg.x, y: rg.y, life: 10, size: 16, col: 'gold' });
+return 0;
+}
+}
 q.t++; q.age++;
 if (q.st === 'reel') {
 var dx = q.ax - p.x, dy = q.ay - p.y, d = Math.sqrt(dx * dx + dy * dy);
+if (q.ring && (d < 14 || q.t > 50)) {
+p.kusari = null; p.st = 'free'; p.entry = false; p.buf = false; p.vy = RING_POP; p.vx = q.face * 1.2; p.jumps = 1; p.airDashed = 0; p.airShot = 0; p.airAtk = 0; p.rose = true; p.flipT = FLIP;
+R.snd('djump'); burst(q.ring.x, q.ring.y, 10, ['#ffd36a', '#ffffff', '#ff7ad1'], 2.4, 16);
+fx({ type: 'ring', x: q.ring.x, y: q.ring.y, life: 14, r: 22, col: '#ffd36a' });
+return 0.45;
+}
 if (d < 14 || q.t > 44) { p.vx *= 0.3; p.vy = 9; q.st = 'done'; return 0; }
-p.vx = dx / d * k.pull; p.vy = dy / d * k.pull; q.len = d;
+var sp = q.ring ? RING_PULL : k.pull;
+p.vx = dx / d * sp; p.vy = dy / d * sp; q.len = d;
 if (p.stT % 2 === 0) ghost(p, 9);
-hitEnemies(p, a, mult);
+if (a.box) hitEnemies(p, a, mult);
 return 0;
 }
 if (q.st === 'done') return air ? 0.45 : grav;
@@ -2587,7 +2653,7 @@ toast('落下…', '#ff9db8'); R.snd('hurt');
 G.state = 'gameover'; G.stateT = 0; R.bgm('gameover');
 }
 }
-function onPlat(p) { var P = G.plats || G.S.platRects; for (var i = 0; i < P.length; i++) if (Math.abs(p.y - P[i].y) < 1 && p.x > P[i].x - 6 && p.x < P[i].x + P[i].w + 6) return true; return false; }
+function onPlat(p) { var P = G.plats || G.S.platRects; for (var i = 0; i < P.length; i++) if (!P[i].gone && Math.abs(p.y - P[i].y) < 1 && p.x > P[i].x - 6 && p.x < P[i].x + P[i].w + 6) return true; return false; }
 function dust(x, y, n) { for (var i = 0; i < n; i++) part(x + rand(-6, 6), y - 1, rand(-1.2, 1.2), rand(-1.2, -0.2), rand(12, 22), i % 2 ? '#a39bd0' : '#655e9e', 2, 0.02); }
 function spawn(type, x, y) {
 var e = { type: type, x: x, y: y == null ? (floorAt(x) || GY) : y, vx: 0, vy: 0, face: -1, st: 'idle', stT: 0, flash: 0, cd: rand(30, 90), animT: rand(0, 60), dead: false, ground: true, invul: 0 };
@@ -2806,12 +2872,16 @@ var S = R.STAGES[idx], p = G.pl;
 G.stageIdx = idx; G.S = S; G.enemies = []; G.shots = []; G.pshots = []; G.items = []; G.fx = []; G.parts = []; G.texts = []; G.ghosts = [];
 G.boss = null; G.arena = null; G.cross = null; G.bossCut = null; G.bossDefeated = false; G.rage = false; G.combo = 0; G.hitstop = 0; G.slow = 0;
 G.dazzle = 0; G.bossIntro = 0;
-if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; }
+if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; G.tHint = {}; }
 S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });
 S.items.forEach(function (q) { G.items.push({ type: q[0], x: q[1], y: q[2], t: 0, open: false }); });
 G.terminals = S.checkpoints.map(function (q) { return typeof q === 'number' ? { x: q, y: GY, on: false } : { x: q[0], y: q[1], on: false }; });
 G.movers = (S.movers || []).map(function (q, n) { return { x0: q[0], y0: q[1], x: q[0], y: q[1], w: q[2], dx: q[3], dy: q[4], per: q[5], ph: n * 37 }; });
-G.plats = S.platRects.concat(G.movers);
+G.crumbles = (S.crumbles || []).map(function (q) { return { x: q[0], y: q[1], y0: q[1], w: q[2], t: 0, gone: 0, crumble: true }; });
+G.rings = (S.rings || []).map(function (q) { return { x: q[0], y: q[1], t: 99 }; });
+G.fans = (S.fans || []).map(function (q) { return { x: q[0], y: q[1], w: q[2], h: q[3] }; });
+G.lasers = (S.lasers || []).map(function (q) { return { x: q[0], y: q[1], w: q[2], per: q[3], off: q[4] || 0, on: false, warn: false }; });
+G.plats = S.platRects.concat(G.movers, G.crumbles);
 G.springs = (S.springs || []).map(function (q) { if (typeof q !== 'number') return { x: q[0], y: q[1], t: 0 }; var y = floorAt(q); return { x: q, y: y === null ? GY : y, t: 0 }; });
 var sx = S.startX || 70, sy = GY;
 if (fromCheckpoint && G.respawn && G.respawn.stage === idx) {
@@ -2918,7 +2988,7 @@ return;
 }
 G.time++;
 if (G.comboT > 0) { G.comboT--; if (G.comboT === 0) G.combo = 0; }
-updMovers(); updPlayer(); updSprings(); updPShots();
+updMovers(); updPlayer(); updSprings(); updGimmicks(); updPShots();
 if (G.slow > 0) G.slow--;
 if (G.cross) updCross(); else if (!(G.slow > 0) || G.t % 3 === 0) { updEnemies(); updShots(); }
 if (!G.cross) updTouch();
@@ -3874,6 +3944,54 @@ g.globalAlpha = 0.28; g.strokeStyle = C[1]; g.lineWidth = 2; g.beginPath(); g.ar
 }
 g.restore();
 }
+function towerGimmicks(fg) {
+var i, f, c, L, r, x, y, k, t = G.t, vis = function (yy, m) { return yy + oy > -m && yy + oy < R.H + m; };
+for (i = 0; i < (G.fans || []).length; i++) {
+f = G.fans[i]; if (!vis(f.y, f.h + 20) && !vis(f.y + f.h, 20)) continue;
+x = Math.round(f.x - cam); y = Math.round(f.y);
+fg.globalAlpha = 0.10; fg.fillStyle = '#7af3ff'; fg.fillRect(x, y, f.w, f.h);
+fg.globalAlpha = 0.5;
+for (k = 0; k < f.w / 8; k++) {
+var sy = f.h - ((t * 2.2 + k * 37) % f.h), sx = x + 4 + ((k * 23) % Math.max(1, f.w - 8));
+fg.fillStyle = k % 2 ? '#c0f8ff' : '#37e6ff'; fg.fillRect(sx, y + sy, 1, 7);
+}
+fg.globalAlpha = 1;
+fg.fillStyle = '#24213f'; fg.fillRect(x - 2, y + f.h, f.w + 4, 6); fg.fillStyle = '#655e9e'; fg.fillRect(x - 2, y + f.h, f.w + 4, 1);
+for (k = 0; k < f.w; k += 6) { fg.fillStyle = (t >> 1) % 2 ? '#37e6ff' : '#1aa6c8'; fg.fillRect(x + k + 1, y + f.h + 2, 3, 2); }
+}
+for (i = 0; i < (G.crumbles || []).length; i++) {
+c = G.crumbles[i]; if (!vis(c.y, 20)) continue;
+x = Math.round(c.x - cam); y = Math.round(c.y);
+if (c.gone > 0) { if ((t >> 3) % 2) { fg.fillStyle = 'rgba(255,200,120,.35)'; for (k = 0; k < c.w; k += 6) fg.fillRect(x + k, y, 3, 1); } continue; }
+if (c.t > 0) x += (t % 4 < 2 ? 1 : -1) * (c.t > 14 ? 2 : 1);
+fg.fillStyle = '#5a3a22'; fg.fillRect(x, y, c.w, 7);
+fg.fillStyle = '#c89060'; fg.fillRect(x, y, c.w, 1); fg.fillStyle = '#8a6040'; fg.fillRect(x, y + 1, c.w, 2);
+fg.fillStyle = '#2a1a10'; for (k = 7; k < c.w - 3; k += 11) { fg.fillRect(x + k, y + 1, 1, 3); fg.fillRect(x + k + 1, y + 3, 1, 3); }
+if (c.t > 0) { fg.fillStyle = '#ffd36a'; fg.fillRect(x + (c.t * 3) % c.w, y + 7, 2, 2); }
+}
+for (i = 0; i < (G.lasers || []).length; i++) {
+L = G.lasers[i]; if (!vis(L.y, 20)) continue;
+x = Math.round(L.x - cam); y = Math.round(L.y);
+if (L.on) {
+fg.globalAlpha = 0.35; fg.fillStyle = '#ff2e88'; fg.fillRect(x, y - 3, L.w, 6);
+fg.globalAlpha = 1; fg.fillStyle = '#ff7ad1'; fg.fillRect(x, y - 1, L.w, 2); fg.fillStyle = '#ffffff'; fg.fillRect(x, y, L.w, 1);
+} else if (L.warn && (t >> 2) % 2) { fg.fillStyle = 'rgba(255,90,170,.7)'; for (k = 0; k < L.w; k += 4) fg.fillRect(x + k, y, 2, 1); }
+[x - 5, x + L.w].forEach(function (ex) { fg.fillStyle = '#24213f'; fg.fillRect(ex, y - 5, 5, 10); fg.fillStyle = L.on || L.warn ? '#ff4fb0' : '#655e9e'; fg.fillRect(ex + 1, y - 2, 3, 4); });
+}
+var aim = G.pl && G.pl.who === 'kurenai' && R.ringFor ? R.ringFor() : null;
+for (i = 0; i < (G.rings || []).length; i++) {
+r = G.rings[i]; x = Math.round(r.x - cam); y = Math.round(r.y);
+if (!vis(r.y, 20)) {
+if (G.pl && G.pl.who === 'kurenai' && r.y + oy < 0 && r.y + oy > -140) { var my = -oy + 3; fg.fillStyle = (t >> 3) % 2 ? '#ffd36a' : '#c07818'; fg.beginPath(); fg.moveTo(x, my); fg.lineTo(x + 5, my + 6); fg.lineTo(x - 5, my + 6); fg.fill(); }
+continue;
+}
+var hot = r === aim, pr = hot ? 1 + 0.5 * Math.abs(Math.sin(t * 0.2)) : 0;
+fg.globalAlpha = hot ? 0.4 : 0.16 + 0.08 * Math.sin(t * 0.08 + i); fg.fillStyle = '#ffd36a'; fg.beginPath(); fg.arc(x + 0.5, y + 0.5, hot ? 12 + pr * 3 : 11, 0, Math.PI * 2); fg.fill(); fg.globalAlpha = 1;
+fg.strokeStyle = '#7a4a18'; fg.lineWidth = 3.5; fg.beginPath(); fg.arc(x + 0.5, y + 0.5, 8, 0, Math.PI * 2); fg.stroke();
+fg.strokeStyle = hot ? '#fff3b0' : '#ffc83e'; fg.lineWidth = 2; fg.beginPath(); fg.arc(x + 0.5, y + 0.5, 8, 0, Math.PI * 2); fg.stroke();
+fg.fillStyle = '#3d3684'; fg.fillRect(x - 1, y - 12, 2, 6);
+}
+}
 var cam = 0, oy = 0;
 R.renderBack = function (bg) {
 var S = G.S, sh = G.cam.shake;
@@ -3897,6 +4015,7 @@ var I = R.SPR.items, i, e;
 fg.clearRect(0, 0, R.W, R.H); fg.imageSmoothingEnabled = false;
 fg.save(); fg.translate(0, oy);
 for (i = 0; i < G.terminals.length; i++) { var tm = G.terminals[i], ty = tm.y; fg.drawImage(I.terminal[tm.on ? ((G.t >> 4) % 2) : 0], Math.round(tm.x - cam - 17), ty - 56); if (!tm.on && (G.t >> 4) % 2) { fg.fillStyle = '#7af3ff'; fg.fillRect(Math.round(tm.x - cam) - 1, ty - 66, 2, 5); fg.fillRect(Math.round(tm.x - cam) - 3, ty - 62, 6, 1); } }
+if (G.S.vertical) towerGimmicks(fg);
 if (G.S.vertical && (G.t >> 5) % 2 === 0) { var gl = G.S.goal; fg.globalAlpha = 0.5; fg.fillStyle = '#ff2e48'; fg.fillRect(gl[0] + gl[2] / 2 - 9 - cam, gl[1] - 162, 18, 18); fg.globalAlpha = 1; }
 var MV = G.movers || [], SPG = G.springs || [], mx, my, k;
 for (i = 0; i < MV.length; i++) {
@@ -4099,7 +4218,7 @@ if (c.sp >= 30 && active && !c.down) { g.fillStyle = '#ffffff'; g.fillRect(396 +
 }
 function altimeter(g, S, x, y, w, h) {
 var y0 = R.GY, y1 = S.goal[1], bx = x + 24, bw = w - 70, by = y + 92, f = function (wy) { return bx + clamp((y0 - wy) / (y0 - y1), 0, 1) * bw; };
-var m = Math.max(0, Math.round((y0 - G.pl.y) / (y0 - y1) * 120));
+var pm = S.pxPerM || 14, top = Math.round((y0 - y1) / pm), m = Math.max(0, Math.round((y0 - G.pl.y) / pm));
 T(g, 'ALTITUDE', x + 24, y + 46, 26, '#c8b8ff', 'left', UI, '#120a30', 5);
 T(g, m + ' m', x + w - 24, y + 50, 40, '#ffffff', 'right', UI, '#120a30', 6);
 g.fillStyle = '#2a2266'; g.fillRect(bx, by, bw, 14);
@@ -4109,7 +4228,7 @@ var gx = bx + bw + 4; g.fillStyle = '#ffffff'; g.fillRect(gx, by - 30, 3, 44); g
 var px = f(G.pl.y), py = by + 7, r = 11 + ((G.t >> 4) % 2);
 g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(px, py - r - 3); g.lineTo(px + r + 3, py); g.lineTo(px, py + r + 3); g.lineTo(px - r - 3, py); g.fill();
 g.fillStyle = '#ff2e48'; g.beginPath(); g.moveTo(px, py - r); g.lineTo(px + r, py); g.lineTo(px, py + r); g.lineTo(px - r, py); g.fill();
-T(g, 'TOP 120 m', x + w - 24, y + 132, 20, '#8a7ac8', 'right', UI, '#120a30', 4);
+T(g, 'TOP ' + top + ' m', x + w - 24, y + 132, 20, '#8a7ac8', 'right', UI, '#120a30', 4);
 }
 function minimap(g) {
 var S = G.S, x = 1552, y = 20, w = 343, h = 143, i;
