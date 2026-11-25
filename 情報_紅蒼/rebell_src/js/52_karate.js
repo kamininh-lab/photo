@@ -11,6 +11,8 @@
 //       → 光に紛れて姿を消し、背後から現れる。本気を出すと、元の場所に「写し身」（写真の残像）を残す。斬っても手応えはない
 //   ・技 … 正拳連打 / 飛び込み前蹴り / 回し蹴り（対空）/ 下段蹴り / 昇天膝（対空）/ 衝撃掌打（飛ぶ衝撃波）/ 回転蹴り / 地裂撃
 //          本気（体力が半分以下）: 連撃（ラピッドコンボ）/ 連撃ラッシュ / 衝撃掌打の 2 連発と、撃つと見せて回り込むフェイント
+//   ・覚醒（体力 2 割以下）… カットイン（「さて、もう少し本気で行くぞ！」で二人に活を入れ、二人の SP が 30 満ちる）のあと、
+//          金色の闘気をまとう。体が金色に光り、金色の残像を引き、動き全体が約 1.33 倍の速さになる（3 フレームに 1 回、もう 1 コマ進める）
 (function () {
   'use strict';
   var R = window.REBELL, G = R.game, GY = R.GY, clamp = R.clamp, rand = R.rand, sign = R.sign, PI = Math.PI;
@@ -53,7 +55,9 @@
   // ---- 小物 ----
   function F(g, i) { var a = SP[g]; return a[i < a.length ? i : a.length - 1]; }
   function seqF(seq, t) { var s = seq[0]; for (var i = 1; i < seq.length && t >= seq[i][0]; i++) s = seq[i]; return F(s[1], s[2]); }
-  function rage(e) { return e.phase === 2; }
+  function rage(e) { return e.phase >= 2; }
+  function gold(e) { return e.phase === 3; }      // 体力 2 割を切ったあとの覚醒（金色に光り、動きが速くなる）
+  var GOLD = ['#c07818', '#ffd36a', '#fff3b0'], GOLD_AT = 0.2, GOLD_SPEED = 3;      // 覚醒する体力の割合 / GOLD_SPEED フレームに 1 回、もう 1 コマ進める（約 1.33 倍の速さ）
   function go(e, st) { e.st = st; e.stT = 0; e.mv = null; e.mvName = ''; e.q = {}; }
   function faceTo(e, p) { e.face = p.x >= e.x ? 1 : -1; }
   function hbox(e, b) { return { x: e.face > 0 ? e.x + b[0] : e.x - b[0] - b[2], y: e.y + b[1], w: b[2], h: b[3] }; }
@@ -65,7 +69,7 @@
     return true;
   }
   function ghost(e, life) { if (e.fr) e.trail.push({ f: e.fr, x: e.x, y: e.y, face: e.face, t: 0, life: life || 12 }); }
-  function aura(e, n) { for (var i = 0; i < n; i++) X.part(e.x + rand(-12, 12), e.y - rand(0, 46), rand(-0.3, 0.3), rand(-1.7, -0.5), rand(12, 22), i % 2 ? PUR[1] : PUR[0], 2, 0, true); }
+  function aura(e, n) { var C = gold(e) ? GOLD : PUR; for (var i = 0; i < n; i++) X.part(e.x + rand(-12, 12), e.y - rand(0, 46), rand(-0.3, 0.3), rand(-1.7, -0.5), rand(12, 22), i % 2 ? C[1] : C[0], 2, 0, true); }
   function arena(e) { return G.arena || [e.x - 220, e.x + 220]; }
   // 仕掛けに初めて出会ったとき、対処のしかたを 1 度だけ知らせる
   function hint(key, str) { var H = G.midHint || (G.midHint = {}); if (H[key]) return; H[key] = 1; X.toast(str, '#e6ccff'); }
@@ -463,6 +467,7 @@
     e.gHits += opt.heavy ? (rage(e) ? 3 : 2) : 1; e.gT = 90; e.expr = e.hp < e.max * 0.3 ? 'n_wounded' : 'hurt'; e.exprT = 40;
     if (e.hp <= 0) return;
     if (e.phase === 1 && e.hp <= e.max * 0.5) e.pending = true;      // 次に動けるとき、本気を出す
+    if (e.phase === 2 && e.hp <= e.max * GOLD_AT) e.pending = true;   // さらに 2 割を切ったら、覚醒する
     if (e.st === 'stagger') { e.vx = dir * Math.min(1.6, kb * 0.3); return; }
     var cam = e.st === 'move' && e.mvName === 'camera' && e.stT < CAM_FLASH;
     var soft = e.st === 'idle' || e.st === 'hurt' || e.st === 'guard' || cam || (e.st === 'move' && (e.q.rec || (e.mv.rec && e.stT >= e.mv.rec)));
@@ -531,6 +536,32 @@
       if (ad < 84) { p.vx = sign(p.x - e.x) * 5.5; p.vy = Math.min(p.vy, -2.6); }
     }
     if (t >= 76) { go(e, 'idle'); e.cd = 18; e.camCd = Math.min(e.camCd, 70); e.stepCd = 0; }
+  }
+  // 覚醒（体力 2 割を切ったとき）: 構えを解いてカットイン → 金色の闘気が噴き上がる → 速くなって戻る。
+  //   カットインの台詞で、二人に活を入れる（二人の気力 = SP が少し満ちる）
+  function stAwaken(e, p, dx, ad, t) {
+    e.vx = 0; e.invul = 2; killDecoys(e);
+    e.fr = t < 70 ? F('pose', 0) : F('roar', 0);
+    if (t === 1) {
+      R.snd('shutter'); G.flash = Math.max(G.flash, 0.5); G.shots = []; e.expr = 'n_taunt'; e.exprT = 70;
+      G.bossCut = { pic: 'grin', line: '腕を上げたな、二人とも。', line2: 'さて、もう少し本気で行くぞ！', gold: true, t: 0 };
+    }
+    if (t > 20 && t < 70 && t % 4 === 0) X.part(e.x + rand(-14, 14), e.y - rand(0, 50), 0, rand(-1.2, -0.4), 16, GOLD[1], 1, 0, true);      // 闘気が、じわりと集まる
+    if (t === 70) {      // カットインが引くところで、金色に弾ける
+      e.phase = 3; e.trail = [];
+      R.snd('roar'); R.snd('special_red'); X.shake(10); G.flash = Math.max(G.flash, 0.8); G.hitstop = Math.max(G.hitstop, 6);
+      X.fx({ type: 'ring', x: e.x, y: e.y - 26, life: 24, r: 110, col: GOLD[1] }); X.fx({ type: 'ring', x: e.x, y: e.y - 26, life: 18, r: 60, col: '#ffffff' });
+      X.burst(e.x, e.y - 26, 30, GOLD.concat(['#ffffff']), 5, 30, 0.05);
+      X.toast('黒瀬が金色の闘気をまとった…！　動きが速くなる！', '#ffd36a'); e.expr = 'rage'; e.exprT = 120;
+      if (ad < 90) { p.vx = sign(p.x - e.x) * 5; p.vy = Math.min(p.vy, -2.4); }      // 闘気で押し返す（ダメージはない）
+    }
+    if (t > 70 && t % 3 === 0) { X.shake(3); aura(e, 3); }
+    if (t === 104) {      // 活を入れられた二人: 気力が満ちる
+      ['kurenai', 'aoi'].forEach(function (k) { var c = p.chars[k]; if (!c.down) c.sp = Math.min(c.maxsp, c.sp + 30); });
+      X.toast(p.who === 'kurenai' ? '紅「上等！　こっちも全力で行くよ！」　― 気力が満ちた' : '蒼「……ええ。目が覚めました」　― 気力が満ちた', p.who === 'kurenai' ? '#ff9ad8' : '#9ae8ff');
+      X.fx({ type: 'ring', x: p.x, y: p.y - 17, life: 20, r: 40, col: p.who === 'kurenai' ? '#ff7ad1' : '#7af3ff' });
+    }
+    if (t >= 112) { go(e, 'idle'); e.cd = 10; e.camCd = Math.min(e.camCd, 60); e.stepCd = 0; e.rushCd = 0; }
   }
   function onKill(e, dir) {
     e.dead = false; e.dying = true; e.hp = 0; G.kills++;
@@ -621,11 +652,16 @@
     if (m.hits) for (i = 0; i < m.hits.length; i++) { h = m.hits[i]; if (t >= h[0] && t <= h[1]) strike(e, h[2], h[3], h[4]); }
     if (m.dur && t >= m.dur) finish(e);
   }
-  var ST = { intro: stIntro, idle: stIdle, move: stMove, step: stStep, guard: stGuard, hurt: stHurt, stagger: stStagger, roar: stRoar, die: stDie };
+  var ST = { intro: stIntro, idle: stIdle, move: stMove, step: stStep, guard: stGuard, hurt: stHurt, stagger: stStagger, roar: stRoar, awaken: stAwaken, die: stDie };
 
   function update(e) {
     if (!X) X = R.GX;
     if (e.type === 'photo') { updPhoto(e); return; }
+    tick(e);
+    // 覚醒中は、ときどき 1 コマ余分に進める（技も足さばきも、まとめて速くなる）
+    if (gold(e) && e.st !== 'die' && e.st !== 'awaken' && G.state === 'play' && (e.goldN = (e.goldN || 0) + 1) % GOLD_SPEED === 0) tick(e);      // animT は小数から始まるので、別に数える
+  }
+  function tick(e) {
     var p = G.pl, A = arena(e), i;
     e.stT++; e.animT++;
     if (e.invul > 0) e.invul--;
@@ -638,8 +674,9 @@
     e.warn = false;
     for (i = 0; i < e.trail.length; i++) e.trail[i].t++;
     if (e.trail.length) e.trail = e.trail.filter(function (q) { return q.t < q.life; });
-    if (rage(e) && e.st !== 'die' && e.animT % 6 === 0) aura(e, 1);
-    if (e.pending && (e.st === 'idle' || e.st === 'hurt' || e.st === 'guard')) { e.pending = false; go(e, 'roar'); }      // 体力が半分を切ったら、本気を出す
+    if (rage(e) && e.st !== 'die' && e.animT % (gold(e) ? 3 : 6) === 0) aura(e, gold(e) ? 2 : 1);
+    if (gold(e) && (e.st === 'move' || e.st === 'step') && e.animT % 4 === 0 && Math.abs(e.vx) > 1) ghost(e, 10);      // 覚醒中は、動くたびに金色の残像
+    if (e.pending && (e.st === 'idle' || e.st === 'hurt' || e.st === 'guard')) { e.pending = false; go(e, e.phase === 1 ? 'roar' : 'awaken'); }      // 体力が半分を切ったら本気、2 割を切ったら覚醒
     ST[e.st](e, p, p.x - e.x, Math.abs(p.x - e.x), e.stT, A);
     e.vy = Math.min(9, e.vy + 0.45); X.moveBody(e);
     e.x = clamp(e.x, A[0] + 14, A[1] - 14);
@@ -652,6 +689,7 @@
       e.phase = 1; e.st = 'intro'; e.stT = 0; e.cd = 60; e.q = {}; e.mv = null; e.mvName = ''; e.last = '';      // mvName = いま出している技の名前（e.name は、HUD に出す名前）
       e.gHits = 0; e.gT = 0; e.gp = 0; e.stepCd = 0; e.camCd = 200; e.rushCd = 0; e.trail = []; e.fr = null; e.warn = false; e.hide = false;
       e.expr = 'smirk'; e.exprT = 0; e.pending = false;
+      e.animT = 0;      // 敵の共通の初期値は小数なので、整数から数え直す（「n フレームごと」の判定が効くように）
       e.onHit = onHit; e.afterHit = afterHit; e.onKill = onKill; e.upd = update; e.draw = draw;
       return true;
     }
@@ -686,7 +724,7 @@
     }
     for (i = 0; i < e.trail.length; i++) {      // 残像（紫）
       tr = e.trail[i]; g.globalAlpha = 0.42 * (1 - tr.t / tr.life);
-      put(g, R.tinted(tr.f, '#a050ff'), tr.x - cam, tr.y, tr.face, tr.f);
+      put(g, R.tinted(tr.f, gold(e) ? '#ffb83a' : '#a050ff'), tr.x - cam, tr.y, tr.face, tr.f);      // 覚醒中は金色
     }
     g.globalAlpha = 1;
     if (e.hide) return;      // 光に紛れて、姿を消している
@@ -699,6 +737,10 @@
       g.drawImage(c, 0, 0, f.w, kr, -f.ox, 1 - f.oy, f.w, kr);
       g.restore();
     } else put(g, c, x, y, e.face, f);
+    if (gold(e) && e.st !== 'die') {      // 覚醒: 体が金色に光る（明るさが脈打つ）
+      g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.27 + 0.1 * Math.sin(G.t * 0.22);      // 強すぎると絵が塗りつぶされるので、うっすら
+      put(g, R.tinted(f, '#ffc83e'), x, y, e.face, f); g.restore();
+    }
     if (e.st === 'guard') {      // 守りの光
       g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.55 + 0.25 * Math.sin(G.t * 0.5);
       for (i = -5; i <= 5; i++) { g.fillStyle = i % 2 ? '#aebcff' : '#ffffff'; g.fillRect(Math.round(x + e.face * (18 - Math.abs(i) * 0.9)) - 1, Math.round(y - 28 + i * 4.4), 2, 4); }

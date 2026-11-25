@@ -229,20 +229,27 @@
     g.save(); g.translate(off, 0);
     g.beginPath(); g.moveTo(x0, y); g.lineTo(x0 + w + sk, y); g.lineTo(x0 + w, y + h); g.lineTo(x0, y + h); g.closePath();
     g.save(); g.clip();
-    gr = g.createLinearGradient(x0, 0, x0 + w, 0); gr.addColorStop(0, '#3a1470'); gr.addColorStop(1, '#12052a');
+    var gd = !!c.gold, acc = gd ? '#ffc83e' : '#c98bff';      // gold = 覚醒のカットイン（金色の帯）
+    gr = g.createLinearGradient(x0, 0, x0 + w, 0); gr.addColorStop(0, gd ? '#6a4210' : '#3a1470'); gr.addColorStop(1, gd ? '#1e1006' : '#12052a');
     g.fillStyle = gr; g.fillRect(x0, y, w + sk, h);
     if (im && im.complete && im.naturalWidth) { g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(im, 40, y, h * 450 / 306, h); }
-    gr = g.createLinearGradient(40 + h * 450 / 306 - 120, 0, 40 + h * 450 / 306, 0); gr.addColorStop(0, 'rgba(18,5,42,0)'); gr.addColorStop(1, '#1c0838');      // 絵の右端をなじませる
+    gr = g.createLinearGradient(40 + h * 450 / 306 - 120, 0, 40 + h * 450 / 306, 0); gr.addColorStop(0, gd ? 'rgba(60,36,8,0)' : 'rgba(18,5,42,0)'); gr.addColorStop(1, gd ? '#4a2e0a' : '#1c0838');      // 絵の右端をなじませる
     g.fillStyle = gr; g.fillRect(40 + h * 450 / 306 - 120, y, 122, h);
     g.globalCompositeOperation = 'lighter';
-    for (i = 0; i < 5; i++) { g.fillStyle = i % 2 ? '#c98bff' : '#ffffff'; g.globalAlpha = 0.3; g.fillRect(x0 + ((c.t * 44 + i * 300) % (w + 200)), y + 22 + i * 48, 260, 4 + i % 2 * 4); }
+    for (i = 0; i < 5; i++) { g.fillStyle = i % 2 ? acc : '#ffffff'; g.globalAlpha = 0.3; g.fillRect(x0 + ((c.t * 44 + i * 300) % (w + 200)), y + 22 + i * 48, 260, 4 + i % 2 * 4); }
     g.restore();
     g.lineJoin = 'miter'; g.lineWidth = 7; g.strokeStyle = '#ffffff';
     g.beginPath(); g.moveTo(x0, y); g.lineTo(x0 + w + sk, y); g.lineTo(x0 + w, y + h); g.lineTo(x0, y + h); g.stroke();
-    g.lineWidth = 3; g.strokeStyle = '#c98bff';
+    g.lineWidth = 3; g.strokeStyle = acc;
     g.beginPath(); g.moveTo(x0, y + 9); g.lineTo(x0 + w + sk - 9, y + 9); g.moveTo(x0, y + h - 9); g.lineTo(x0 + w - 4, y + h - 9); g.stroke();
-    T(g, '黒瀬', 1020, y + 100, 90, '#c98bff', 'right', MIN, '#ffffff', 7);
-    T(g, c.line, 1030, y + 180, 44, '#ffffff', 'right', MIN, '#2a0c50', 8);
+    if (c.line2) {      // 2 行の台詞（覚醒）: 名前を小さく上へ
+      T(g, '黒瀬', 1020, y + 72, 64, acc, 'right', MIN, '#ffffff', 6);
+      T(g, c.line, 1030, y + 136, 42, '#ffffff', 'right', MIN, gd ? '#4a2a06' : '#2a0c50', 8);
+      T(g, c.line2, 1030, y + 194, 46, gd ? '#fff3b0' : '#ffffff', 'right', MIN, gd ? '#4a2a06' : '#2a0c50', 8);
+    } else {
+      T(g, '黒瀬', 1020, y + 100, 90, '#c98bff', 'right', MIN, '#ffffff', 7);
+      T(g, c.line, 1030, y + 180, 44, '#ffffff', 'right', MIN, '#2a0c50', 8);
+    }
     g.restore();
   }
   // 合体技のカットイン: 紅は左から、蒼は右から、目のあたりの帯がすべり込む
@@ -317,7 +324,8 @@
       var mid = !!b.mid, ba = G.bossIntro > 0 ? clamp(1 - G.bossIntro / 110, 0, 1) : 1;      // mid = 中ボス（紫の帯と、顔のアイコン）
       g.globalAlpha = ba;
       T(g, b.name, 520, 968, 38, '#ffffff', 'left', MIN, mid ? '#1e0a3c' : '#2a0818', 8); T(g, b.sub, 1400, 968, 20, mid ? '#d9b8ff' : '#ffb0c0', 'right', UI, mid ? '#1e0a3c' : '#2a0818', 5);
-      if (mid) bar(g, 510, 978, 900, 30, b.hp / b.max * ba, '#c98bff', '#7a2be0'); else bar(g, 510, 978, 900, 30, b.hp / b.max * ba, '#ff9a6a', '#e02a5a');
+      if (mid && b.phase === 3) bar(g, 510, 978, 900, 30, b.hp / b.max * ba, (G.t >> 3) % 2 ? '#fff3b0' : '#ffd36a', '#c07818');      // 覚醒中は金色の帯
+      else if (mid) bar(g, 510, 978, 900, 30, b.hp / b.max * ba, '#c98bff', '#7a2be0'); else bar(g, 510, 978, 900, 30, b.hp / b.max * ba, '#ff9a6a', '#e02a5a');
       if (mid) midFace(g, b, 392, 906, 104, 114);
       g.globalAlpha = 1;
       if (G.bossIntro > 20 && G.bossIntro <= 110) {
