@@ -364,16 +364,16 @@
     g.strokeStyle = JADE; g.lineWidth = 3; g.beginPath();
     g.arc(cx, cy, 196 * pop, -PI / 2, -PI / 2 + PI * 2 * R.ease(Math.min(1, u / 46))); g.stroke();      // 輪を一筆で描く
     g.globalAlpha = a * 0.45; g.lineWidth = 1.5; g.beginPath(); g.arc(cx, cy, 214 * pop, 0, PI * 2); g.stroke();
-    // 龍（ボスのドット絵を単色の影にして、紋章として使う。翼はゆっくり動く）
-    var dc = R.Dragon.render({ t: u, wing: u * 0.045, jaw: 0.12, lunge: 0, rear: 0.3, claw: 0, tail: 0.1, fire: false, aim: 0 });
+    // 龍（ボスのドット絵のうち、翼を広げた正面の姿を単色の影にして、紋章として使う）
+    var dc = R.Dragon.emblem();
     if (!embC) embC = R.mk(dc.width, dc.height);
-    var e = embC.getContext('2d'), eg = e.createLinearGradient(0, 30, 0, embC.height);
+    var e = embC.getContext('2d'), eg = e.createLinearGradient(0, 0, 0, embC.height);
     eg.addColorStop(0, '#ffffff'); eg.addColorStop(0.55, JADE_L); eg.addColorStop(1, JADE);
     e.globalCompositeOperation = 'source-over'; e.clearRect(0, 0, embC.width, embC.height); e.drawImage(dc, 0, 0);
     e.globalCompositeOperation = 'source-in'; e.fillStyle = eg; e.fillRect(0, 0, embC.width, embC.height);
-    var s = 1.25 * pop;
+    var s = 1.5 * pop;
     g.globalAlpha = a * clamp((u - 6) / 30, 0, 1); g.imageSmoothingEnabled = false; g.shadowColor = JADE; g.shadowBlur = 34;
-    g.drawImage(embC, cx - 226 * s, cy - 168 * s, embC.width * s, embC.height * s);
+    g.drawImage(embC, cx - embC.width / 2 * s, cy - embC.height * 0.46 * s, embC.width * s, embC.height * s);
     g.shadowBlur = 0;
     // 文字: 1 文字ずつ浮かび上がる
     spaced(g, 'GYOKURYU', 960, font, 22, function (ch, x, i) {

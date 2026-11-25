@@ -163,15 +163,7 @@
 
   function drawEnemy(g, e, cam) {
     var S, an, fr, c, x = e.x - cam;
-    if (e.draw) { e.draw(g, e, cam); return; }      // 中ボスと写し身は、自分で描く（52_karate.js）
-    if (e.type === 'dragon') {
-      if (e.gone) return;
-      c = R.Dragon.render(e.pose);
-      var jx = e.st === 'die' ? rand(-2, 2) : 0;
-      if (e.st === 'die' && e.stT > 110 && (e.stT >> 1) % 2) return;
-      g.drawImage(e.flash > 0 && (e.flash >> 1) % 2 === 0 ? white(c) : c, Math.round(x - R.Dragon.ox + jx), Math.round(e.y - R.Dragon.oy));
-      return;
-    }
+    if (e.draw) { e.draw(g, e, cam); return; }      // 龍（35_dragon.js）、中ボスと写し身（52_karate.js）は、自分で描く
     if (e.type === 'drone') {
       S = R.SPR.drone; c = S.fly.frames[(e.animT >> 3) % 2];
       if (e.flash > 0 || (e.aim > 0 && (e.aim >> 2) % 2)) c = white(c);

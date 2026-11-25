@@ -285,10 +285,7 @@
     }
   }
   function hurtboxes(e) {
-    if (e.type === 'dragon') {
-      var h = R.Dragon.head(e.pose);
-      return [{ x: e.x + h[0] - 30, y: e.y + h[1] - 22, w: 58, h: 42, weak: true }, { x: e.x - 44, y: e.y - 92, w: 110, h: 84 }];
-    }
+    if (e.boxes) return e.boxes(e);      // 龍: 頭（弱点）と胴。向きと傾きで変わる（35_dragon.js）
     if (e.type === 'drone') return [{ x: e.x - 10, y: e.y - 10, w: 20, h: 20 }];
     return [box(e)];
   }
@@ -778,10 +775,9 @@
     if (grav) p.vy = Math.min(9.6, p.vy + grav);
     var vy0 = p.vy;
     moveBody(p);
-    // ステージ端・ボス部屋・ドラゴンの体
+    // ステージ端・ボス部屋
     var lo = 8, hi = G.S.len - 8;
     if (G.arena) { lo = G.arena[0] + 8; hi = G.arena[1] - 8; }
-    if (G.boss && G.boss.type === 'dragon' && !G.boss.gone) hi = Math.min(hi, G.boss.x - 52);
     if ((p.x <= lo && p.vx < 0) || (p.x >= hi && p.vx > 0)) p.vx = 0;      // 端で止められたら、その場で足踏みしない
     p.x = clamp(p.x, lo, hi);
     if (p.ground) {
@@ -809,7 +805,7 @@
     if (type === 'robot') { e.w = 24; e.h = 46; e.hp = e.max = 58; e.exp = 12; }
     else if (type === 'drone') { e.w = 18; e.h = 18; e.hp = e.max = 30; e.exp = 9; e.armor = true; e.baseY = e.y; e.homeX = x; }
     else if (type === 'guard') { e.w = 36; e.h = 66; e.hp = e.max = 620; e.exp = 160; e.armor = true; }
-    else if (type === 'dragon') { e.w = 110; e.h = 90; e.hp = e.max = 2000; e.exp = 0; e.armor = true; e.pose = { t: 0, wing: 0, jaw: 0, lunge: 0, rear: 0, claw: 0, tail: 0, fire: false, aim: 0 }; e.phase = 1; e.cd = 100; }
+    else if (type === 'dragon') R.Dragon.init(e);      // ボス「玉龍」。空を飛び回る。中身は 35_dragon.js
     else if (R.Karate) R.Karate.init(e);      // 中ボス「黒瀬 龍士」（karate）と、その写し身（photo）。中身は 52_karate.js
     return e;
   }
@@ -899,95 +895,13 @@
     e.vy = Math.min(9, e.vy + 0.45); moveBody(e);
     if (G.arena) e.x = clamp(e.x, G.arena[0] + 22, G.arena[1] - 22);
   }
-  // ボス: 玉龍
-  function updDragon(e) {
-    var p = G.pl, q = e.pose, i, m;
-    q.t++; e.stT++; q.wing += 0.06;
-    if (q.t % 3 === 0 && e.st !== 'die') part(e.x + rand(-84, 104), e.y - 1, rand(-0.3, 0.3), rand(-1.9, -0.6), rand(18, 34), q.t % 2 ? '#ff4fb0' : '#ffb0e0', 2, 0, true);   // 足元から立ちのぼる桃色の光
-    function to(key, v, sp) { q[key] += clamp(v - q[key], -sp, sp); }
-    var front = e.x - 60, dist = front - p.x, rage = e.phase === 2;
-    if (e.st === 'die') {
-      to('jaw', 1, 0.1); to('lunge', 0.6, 0.02); to('rear', 0, 0.05); q.fire = false;
-      if (e.stT % 6 === 0) { fx({ type: 'boom', x: e.x + rand(-90, 60), y: e.y - rand(10, 120), life: 18, r: rand(16, 34) }); R.snd('explosion'); shake(5); }
-      if (e.stT === 150) { G.flash = 1; shake(14); burst(e.x - 20, e.y - 60, 80, ['#ff7ad1', '#ffffff', '#37e6ff', '#ffd36a'], 7, 60, 0.05); }
-      if (e.stT > 150) { e.gone = true; e.dead = true; if (G.boss === e) { G.bossDefeated = true; G.stateT = 0; } }
-      return;
-    }
-    if (e.phase === 1 && e.hp < e.max * 0.5) {      // 怒り
-      e.phase = 2; e.st = 'roar'; e.stT = 0; e.invul = 80; G.rage = true; R.snd('roar'); toast('玉龍が怒りに燃えている…！', '#ff7a8a');
-    }
-    if (e.invul > 0) e.invul--;
-    if (e.st === 'idle') {
-      to('jaw', 0.05 + 0.05 * Math.sin(q.t * 0.05), 0.03); to('lunge', 0, 0.03); to('rear', 0, 0.04); to('claw', 0, 0.08); to('tail', 0, 0.05); to('aim', 0, 0.03); q.fire = false;
-      if (e.cd > 0) e.cd--;
-      else {
-        var k = Math.random(), opts;
-        if (dist < 70) opts = k < 0.55 ? 'claw' : (k < 0.8 ? 'tail' : 'breath');
-        else if (dist < 240) opts = k < 0.4 ? 'breath' : (k < 0.7 ? 'fireball' : (k < 0.85 ? 'tail' : (rage ? 'pillar' : 'breath')));
-        else opts = k < 0.5 ? 'fireball' : (rage && k < 0.8 ? 'pillar' : 'tail');
-        if (opts === e.last && Math.random() < 0.7) opts = opts === 'fireball' ? 'breath' : 'fireball';
-        e.last = opts; e.st = opts; e.stT = 0;
-      }
-    } else if (e.st === 'roar') {
-      to('rear', 1, 0.06); to('jaw', 1, 0.1);
-      if (e.stT % 5 === 0) shake(5);
-      if (e.stT > 80) { e.st = 'idle'; e.cd = 20; }
-    } else if (e.st === 'claw') {
-      if (e.stT < 22) { to('rear', 0.4, 0.04); to('claw', 0.2, 0.02); }
-      else if (e.stT < 32) {
-        to('claw', 1, 0.14); to('lunge', 0.3, 0.05);
-        if (e.stT === 23) R.snd('slash_red3');
-        if (R.overlap({ x: e.x - 150, y: e.y - 70, w: 110, h: 70 }, box(p))) hurtPlayer(18, -1, true);
-      } else { to('claw', 0, 0.06); to('rear', 0, 0.04); if (e.stT > 58) { e.st = 'idle'; e.cd = rage ? 30 : 55; } }
-    } else if (e.st === 'breath') {
-      if (e.stT < 40) { to('rear', 1, 0.04); to('jaw', 0.5, 0.03); if (e.stT === 6) R.snd('roar'); if (e.stT % 4 === 0) { m = R.Dragon.mouth(q); part(e.x + m[0] + rand(-6, 6), e.y + m[1] + rand(-6, 6), rand(-0.5, 0.5), rand(-1, 0), 16, '#ffd36a', 2, 0, true); } }
-      else if (e.stT < 40 + (rage ? 100 : 80)) {
-        to('rear', 0, 0.08); to('lunge', 0.75, 0.06); to('jaw', 1, 0.1); q.fire = true; q.aim = Math.sin(e.stT * 0.07) * 0.12;
-        if (e.stT % 8 === 0) R.snd('fire');
-        if (q.lunge > 0.4) {
-          m = R.Dragon.mouth(q);
-          for (i = 0; i < 2; i++) shoot({ type: 'flame', x: e.x + m[0], y: e.y + m[1], vx: -Math.cos(m[2]) * rand(3.6, 4.8), vy: Math.sin(m[2]) * rand(2.4, 3.6) + rand(-0.3, 0.3), life: rand(38, 52), dmg: 13, r: 5 });
-        }
-      } else { q.fire = false; to('jaw', 0.1, 0.05); to('lunge', 0, 0.03); if (e.stT > 40 + (rage ? 100 : 80) + 40) { e.st = 'idle'; e.cd = rage ? 36 : 70; } }
-    } else if (e.st === 'fireball') {
-      to('rear', 0.6, 0.04); to('jaw', (e.stT % 26) < 12 ? 1 : 0.3, 0.12);
-      var n = rage ? 5 : 3;
-      if (e.stT > 20 && (e.stT - 20) % 26 === 0 && (e.stT - 20) / 26 <= n) {
-        m = R.Dragon.mouth(q);
-        var tx = p.x + rand(-30, 30) + p.vx * 20, sx = e.x + m[0], sy = e.y + m[1], T = 62;
-        var ty = Math.min(GY, p.y);      // 足場の上にいる相手には、その高さをねらう（空中戦）
-        shoot({ type: 'fireball', x: sx, y: sy, vx: (tx - sx) / T, vy: (ty - sy - 0.5 * 0.14 * T * T) / T, g: 0.14, life: 200, dmg: 13, r: 7, ty: ty });
-        R.snd('fire');
-      }
-      if (e.stT > 20 + 26 * (n + 1)) { e.st = 'idle'; e.cd = rage ? 30 : 60; }
-    } else if (e.st === 'tail') {
-      if (e.stT < 36) { to('tail', 1, 0.05); to('rear', 0.3, 0.03); }
-      else if (e.stT < 46) {
-        to('tail', -0.25, 0.3);
-        if (e.stT === 40) {
-          shake(9); R.snd('special_red'); dust(e.x + 60, e.y, 16);
-          shoot({ type: 'shock', x: e.x - 50, y: e.y, vx: -3.4, vy: 0, life: 200, dmg: 14, w: 18, h: 26 });
-          if (rage) shoot({ type: 'shock', x: e.x - 20, y: e.y, vx: -2.2, vy: 0, life: 260, dmg: 14, w: 18, h: 26 });
-        }
-      } else { to('tail', 0, 0.03); if (e.stT > 80) { e.st = 'idle'; e.cd = rage ? 26 : 50; } }
-    } else if (e.st === 'pillar') {
-      to('rear', 1, 0.05); to('jaw', 1, 0.08);
-      if (e.stT === 10) {
-        R.snd('roar');
-        for (i = 0; i < 5; i++) shoot({ type: 'pillar', x: G.arena[0] + 50 + i * 96 + rand(-20, 20), y: GY, vx: 0, vy: 0, life: 110, dmg: 16, w: 26, h: 120, warn: 56 });
-        shoot({ type: 'pillar', x: p.x, y: GY, vx: 0, vy: 0, life: 110, dmg: 16, w: 26, h: 120, warn: 56 });
-      }
-      if (e.stT > 100) { e.st = 'idle'; e.cd = 40; }
-    }
-  }
-
   function updEnemies() {
     for (var i = 0; i < G.enemies.length; i++) {
       var e = G.enemies[i];
       if (e.dead) continue;
       if (e.flash > 0) e.flash--;
-      if (e.type === 'robot') updRobot(e); else if (e.type === 'drone') updDrone(e); else if (e.type === 'guard') updGuard(e); else if (e.type === 'dragon') updDragon(e);
-      else if (e.upd) e.upd(e);      // 中ボスと写し身
+      if (e.type === 'robot') updRobot(e); else if (e.type === 'drone') updDrone(e); else if (e.type === 'guard') updGuard(e);
+      else if (e.upd) e.upd(e);      // 龍（35_dragon.js）、中ボスと写し身（52_karate.js）
     }
     G.enemies = G.enemies.filter(function (e) { return !e.dead || e === G.boss; });
   }
