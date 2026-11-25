@@ -57,6 +57,7 @@
     if (world) {      // 奥から順に: 背景 → 看板の文字 → 敵と斬撃の弧 →（光のにじみ）→ 主人公（細かい解像度）→ 弾・火花
       R.renderBack(bg); F.drawImage(bgC, 0, 0, cv.width, cv.height);
       decals();
+      if (R.Cyber) R.Cyber.holo(F, SCALE, G.S, R.viewCam, R.viewOy, G.t);      // ホログラムの看板（細かい解像度で）
       R.renderMid(fg); F.imageSmoothingEnabled = false; F.drawImage(fgC, 0, 0, cv.width, cv.height);
       R.renderFront(fg);
       if (bloom) doBloom();

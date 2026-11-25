@@ -336,6 +336,7 @@
     if (S.vertical) {      // 縦のステージ: 地形の絵は縦に長い。画面の上端に映る世界の y は -oy
       bg.drawImage(S.layer, cam, clamp(-oy - S.top, 0, S.layer.height - R.H), R.W, R.H, 0, 0, R.W, R.H);
     } else bg.drawImage(S.layer, cam, 0, R.W, R.H, 0, oy, R.W, R.H);
+    if (R.Cyber) R.Cyber.near(bg, S, cam, G.t, oy);      // ネオンの霧・蒸気・雲（14_cyber.js）
     if (G.slow > 0) { bg.fillStyle = 'rgba(40,70,220,' + (0.24 * Math.min(1, G.slow / 12)) + ')'; bg.fillRect(0, 0, R.W, R.H); }      // ジャスト回避のスロー中は青く沈む
     var X = G.cross;
     if (X) {
@@ -464,5 +465,6 @@
     }
     fg.globalAlpha = 1;
     fg.restore();
+    if (R.Cyber) R.Cyber.rain(fg, G.S, cam, oy, G.t);      // 雨（画面の手前）
   };
 })();

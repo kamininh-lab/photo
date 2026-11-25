@@ -372,11 +372,13 @@
 
   // 遠景を描く
   R.drawBackdrop = function (g, S, camX, t, rage, oy) {
-    var BG = R.BG, x, y;
+    var BG = R.BG, x, y, CY = R.Cyber;
     g.drawImage(BG.sky, 0, 0);
+    if (CY) CY.sky(g, S, camX, t, oy || 0);      // サーチライト・広告飛行船（14_cyber.js）
     if (S.vertical) {      // 鉄塔: 登るほど、街の灯りが下へ沈んでいく。奥の塔の骨組みは、ゆっくり流れる
       oy = oy || 0;
       g.drawImage(BG.far, -240, Math.round(Math.min(150, oy * 0.1)));
+      if (CY) CY.mid(g, S, camX, t, oy);      // 空を走るエアカー
       y = Math.round(oy * 0.4) % 384;
       g.globalAlpha = 0.9; g.drawImage(BG.lattice, 0, y - 384); g.drawImage(BG.lattice, 0, y); g.globalAlpha = 1;
       if (rage) { g.fillStyle = 'rgba(255,30,70,.1)'; g.fillRect(0, 0, R.W, R.H); }
@@ -389,6 +391,7 @@
     } else {
       g.drawImage(BG.school, R.schoolX(camX), -7);
     }
+    if (CY) CY.mid(g, S, camX, t, oy || 0);      // 空を走るエアカー（水道橋・校舎の手前を横切る）
     if (rage) { g.fillStyle = 'rgba(255,30,70,' + (0.10 + 0.05 * Math.sin(t * 0.08)) + ')'; g.fillRect(0, 0, R.W, R.H); }
   };
 })();
