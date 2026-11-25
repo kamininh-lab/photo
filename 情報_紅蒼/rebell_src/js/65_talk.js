@@ -32,12 +32,14 @@
     ],
     // 中ボス「黒瀬 龍士」と初めて会ったとき（52_karate.js の enter から）。
     // シートの説明に沿わせてある: カメラを手にする異色の武闘家。正体と目的は謎。卓越した空手の技術で立ちはだかる
+    //   黒瀬の face: camera（カメラを構えた笑み）/ old（1 枚目のシートの絵）/ grin（不敵な笑みの寄り）/ reach（手を突き出す）
     kurose: [
-      { who: 'kurose', text: ['――そこまでだ。', 'いい月、いい顔だ。一枚、撮らせてもらう。'] },
+      { who: 'kurose', face: 'camera', text: ['――そこまでだ。', 'いい月、いい顔だ。一枚、撮らせてもらう。'] },
       { who: 'kurenai', face: 'anger', text: ['誰！？　こっちは急いでるの！', '姫さまが、あの《龍》に捕まってるんだから！'] },
-      { who: 'kurose', text: ['知っている。だから、ここで確かめる。', '姫を取り戻せるだけの腕が、あるのかどうかをな。'] },
+      { who: 'kurose', face: 'old', text: ['知っている。だから、ここで確かめる。', '姫を取り戻せるだけの腕が、あるのかどうかをな。'] },
       { who: 'aoi', face: 'normal', text: ['……紅、気をつけて。この人、流れが読めない。', '構えは空手。でも、あのカメラ……何かある。'] },
-      { who: 'kurose', text: ['黒瀬 龍士。通りすがりの、ただの空手使いだ。', 'さあ――二人まとめて、かかってこい。'] },
+      { who: 'kurose', face: 'grin', text: ['いい読みだ。拳も、蹴りも、光も――', '全部見切れたら、通してやる。'] },
+      { who: 'kurose', face: 'reach', text: ['黒瀬 龍士。通りすがりの、ただの空手使いだ。', 'さあ――二人まとめて、かかってこい。'] },
       { who: 'kurenai', face: 'anger', pose: 'stance', text: ['言ったね！　行くよ、蒼！'] }
     ]
   };
@@ -45,7 +47,7 @@
   var WHO = {
     kurenai: { side: -1, col: PINK, dark: '#40103c', lite: '#8a2062', mid: '#6a1a58', plate: '#5a1650', name: '紅', kana: 'くれない', en: 'KURENAI', icon: 'iconKurenai' },
     aoi: { side: 1, col: CYAN, dark: '#0c1450', lite: '#1a36a8', mid: '#152a80', plate: '#12246e', name: '蒼', kana: 'あおい', en: 'AOI', icon: 'iconAoi' },
-    kurose: { side: 1, col: '#c98bff', dark: '#170a30', lite: '#4a2890', mid: '#2e1960', plate: '#2a1650', name: '黒瀬', kana: 'くろせ', en: 'KUROSE RYUJI', icon: null, portrait: true },
+    kurose: { side: 1, col: '#c98bff', dark: '#170a30', lite: '#4a2890', mid: '#2e1960', plate: '#2a1650', name: '黒瀬', kana: 'くろせ', en: 'KUROSE RYUJI', icon: null, portrait: true, pics: true },
     // 四角: 通信で話す。pics = 表情ごとの絵（09_shikaku_art.js）、tag = 帯に出す小さな札
     shikaku: { side: 1, col: '#ffc84a', dark: '#07122e', lite: '#1c4a86', mid: '#123260', plate: '#143058', name: '四角', kana: 'しかく', en: 'SHIKAKU AKIHIRO', icon: null, pics: true, tag: '通信中  ‐  SUPPORT' }
   };
@@ -149,7 +151,8 @@
     // 顔（出た瞬間は少し大きく、すぐ戻る）
     var fw = 450, fh = 306, fx = K ? x0 + 150 : x0 + w + sk - 150 - fw, pop = 1 + 0.07 * Math.max(0, 1 - pt / 9);
     g.save(); g.translate(fx + fw / 2, y + h / 2); g.scale(pop, pop);
-    if (W.pics) { im = PICS[who + '_' + expr] || PICS[who + '_smile']; if (im && im.complete && im.naturalWidth) { g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(im, -fw / 2, -fh / 2, fw, fh); } }
+    im = W.pics ? (who === 'kurose' ? R.IMG['midPic_' + expr] : (PICS[who + '_' + expr] || PICS[who + '_smile'])) : null;      // 黒瀬の絵は 52_karate.js が読み込む
+    if (im && im.complete && im.naturalWidth) { g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(im, -fw / 2, -fh / 2, fw, fh); }
     else if (W.portrait) drawPortrait(g, -fw / 2, -fh / 2, fw, fh); else U.drawFace(g, who, expr, 'hud', -fw / 2, -fh / 2, fw, fh);
     g.restore();
     // 顔の両端を、帯の色になじませる

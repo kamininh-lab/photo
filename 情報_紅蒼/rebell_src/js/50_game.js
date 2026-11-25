@@ -1096,7 +1096,7 @@
   R.startStage = function (idx, fromCheckpoint, talk) {
     var S = R.STAGES[idx], p = G.pl;
     G.stageIdx = idx; G.S = S; G.enemies = []; G.shots = []; G.pshots = []; G.items = []; G.fx = []; G.parts = []; G.texts = []; G.ghosts = [];
-    G.boss = null; G.arena = null; G.cross = null; G.bossDefeated = false; G.rage = false; G.combo = 0; G.hitstop = 0; G.slow = 0;
+    G.boss = null; G.arena = null; G.cross = null; G.bossCut = null; G.bossDefeated = false; G.rage = false; G.combo = 0; G.hitstop = 0; G.slow = 0;
     G.dazzle = 0; G.bossIntro = 0;
     if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; }      // 中ボスを倒したか・もう会ったか（やり直しても覚えておく。ステージを最初から始めるときだけ戻す）
     S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });

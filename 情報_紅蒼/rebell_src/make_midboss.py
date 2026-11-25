@@ -17,9 +17,12 @@ import make_sprites as MS
 HERE = os.path.dirname(os.path.abspath(__file__))
 SOURCE_ART = os.path.join(os.path.dirname(HERE), 'art', 'source')
 SHEET = 'kurose-sprites.png'
+# 2 枚目のシート（バリエーション。1536x1024）: 新しい技のコマ・表情アイコン 7 つ・カットイン 2 枚・大きな絵
+SHEET2 = 'EE62119D-A923-42FA-9E4F-19A8E8E3E7FB.png'
 OUTLINE = np.array(T.OUTLINE, np.uint8)
-# 段の帯（見出しの線より下、ラベルの文字より上）
-BAND = {'A': (86, 143), 'B': (197, 246), 'C': (303, 357), 'D': (399, 453), 'E': (512, 580), 'F': (652, 702), 'G': (778, 871)}
+# 段の帯（見出しの線より下、ラベルの文字より上）。N1・N2 は 2 枚目のシート
+BAND = {'A': (86, 143), 'B': (197, 246), 'C': (303, 357), 'D': (399, 453), 'E': (512, 580), 'F': (652, 702), 'G': (778, 871),
+        'N1': (252, 328), 'N2': (382, 463)}
 G_SCALE = 0.66      # 「その他アクション」の段を、ほかの段の大きさに合わせる倍率（立ち姿の背丈 83 → 55）
 
 
@@ -78,6 +81,13 @@ CFG = {
     'pose': ('G', 'row', [(1006, 1047)]),
     'camera': ('G', 'row', [(1087, 1133), (1140, 1186), (1196, 1241), (1247, 1296)]),
     'victory': ('G', 'row', [(1546, 1645)]),
+}
+# 2 枚目のシートから足すコマ（新しい技）
+CFG2 = {
+    'akick': ('N1', 'own', [(852, 923, {'y0': 262}), (935, 1000), (1009, 1074)]),          # 空中攻撃（蹴り）: 跳び上がって、斜めに蹴り落ちる
+    'hiza': ('N2', 'row', [(1119, 1157), (1172, 1207, {'y0': 394})]),                       # 飛び膝蹴り: 沈む → 踏み切る
+    'hizaair': ('N2', 'own', [(1232, 1280)]),                                  #             宙で膝を突き上げる
+    'sokuto': ('N2', 'row', [(1328, 1390, {'nofx': True, 'y0': 394}), (1409, 1523, {'nofx': True, 'y0': 394})]),     # 足刀蹴り: 構え → 蹴り出す（飛ぶ刃は、ゲームの中で描く。見出しの文字は避ける）
 }
 
 
@@ -177,9 +187,10 @@ def torso_x(rgba):
 
 
 def extract():
-    a = T.load(os.path.join(SOURCE_ART, SHEET))
+    sheets = {1: T.load(os.path.join(SOURCE_ART, SHEET)), 2: T.load(os.path.join(SOURCE_ART, SHEET2))}
     frames = {}
-    for name, cfg in CFG.items():
+    for name, cfg, sh in [(n, c, 1) for n, c in CFG.items()] + [(n, c, 2) for n, c in CFG2.items()]:
+        a = sheets[sh]
         band, base, items = cfg[:3]
         spans = []
         for it in items:
@@ -253,11 +264,19 @@ def contact(frames, path, Z=4):
     sheet.save(path)
 
 
-# 顔の絵。表情アイコン 8 つ（HUD 用）と、左上の大きな絵（会話のカットイン用）
-ICON_NAMES = ['normal', 'anger', 'smirk', 'rage', 'hurt', 'surprise', 'laugh', 'focus']      # 通常・怒り・嘲り・激昂・負傷・驚き・大笑い・真剣
+# 顔の絵。表情アイコン（HUD 用）と、左上の大きな絵（会話のカットイン用）
+#   1 枚目のシートの 8 つ（48x53）と、2 枚目のシートの 7 つ（枠の中の顔の部分 60x66）を、同じ大きさ ICON_SIZE にそろえて 1 本に並べる
+ICON_NAMES = ['normal', 'anger', 'smirk', 'rage', 'hurt', 'surprise', 'laugh', 'focus',      # 通常・怒り・嘲り・激昂・負傷・驚き・大笑い・真剣
+              'n_normal', 'n_anger', 'n_taunt', 'n_calm', 'n_surprise', 'n_wounded', 'n_laugh']      # 2 枚目: 通常・怒り・挑発・余裕・驚き・負傷（血）・笑い
 ICON_X = [30, 91, 153, 214, 275, 337, 398, 459]      # それぞれの枠の内側の左端
 ICON_BOX = (530, 48, 53)                             # 上端・幅・高さ
+ICON2_X = [21, 97, 170, 246, 318, 392, 464]          # 2 枚目: 枠の左端
+ICON2_BOX = (834, 5, 60, 66)                         # 2 枚目: 上端・枠の中での左のずれ・幅・高さ
+ICON_SIZE = (96, 106)
 PORTRAIT = (12, 64, 326, 356)                        # 大きな絵の範囲（右上の「ドット立ち絵」の札にかからないところまで）
+# 2 枚目のシートの、会話のカットインに使う絵（どれも 450x306 の枠に合わせた横長）
+PICS = {'camera': (0, 58, 300, 262), 'grin': (580, 818, 795, 964), 'reach': (845, 822, 1090, 989)}
+PIC_SIZE = (450, 306)
 
 
 def data_uri(im, kind, **kw):
@@ -267,25 +286,33 @@ def data_uri(im, kind, **kw):
 
 def faces(dev):
     src = Image.open(os.path.join(SOURCE_ART, SHEET)).convert('RGB')
+    src2 = Image.open(os.path.join(SOURCE_ART, SHEET2)).convert('RGB')
     y, w, h = ICON_BOX
-    strip = Image.new('RGB', (w * len(ICON_X), h))
+    W, H = ICON_SIZE
+    strip = Image.new('RGB', (W * len(ICON_NAMES), H))
     for i, x in enumerate(ICON_X):
-        strip.paste(src.crop((x, y, x + w, y + h)), (i * w, 0))
+        strip.paste(src.crop((x, y, x + w, y + h)).resize((W, H), Image.LANCZOS), (i * W, 0))
+    y2, dx2, w2, h2 = ICON2_BOX
+    for j, x in enumerate(ICON2_X):
+        strip.paste(src2.crop((x + dx2, y2, x + dx2 + w2, y2 + h2)).resize((W, H), Image.LANCZOS), ((len(ICON_X) + j) * W, 0))
     por = src.crop(PORTRAIT)
+    pics = {k: src2.crop(b).resize(PIC_SIZE, Image.LANCZOS) for k, b in PICS.items()}
+    q = (45, 40) if dev else (92, 88)
     if dev:      # アプリ内プレビュー用は軽く（半分の大きさ）
         por = por.resize((por.width // 2, por.height // 2), Image.LANCZOS)
-        iu, isz = data_uri(strip, 'WEBP', quality=45, method=6); pu, psz = data_uri(por, 'WEBP', quality=40, method=6)
-    else:
-        iu, isz = data_uri(strip, 'WEBP', quality=92, method=6); pu, psz = data_uri(por, 'WEBP', quality=90, method=6)
-    return iu, pu, isz, psz, por.size
+        pics = {k: v.resize((v.width // 2, v.height // 2), Image.LANCZOS) for k, v in pics.items()}
+    iu, isz = data_uri(strip, 'WEBP', quality=q[0], method=6); pu, psz = data_uri(por, 'WEBP', quality=q[0] if dev else 90, method=6)
+    pd = {k: data_uri(v, 'WEBP', quality=q[1], method=6)[0] for k, v in pics.items()}
+    return iu, pu, isz, psz, por.size, pd
 
 
-def js(uri, table, icons, portrait, psize):
-    y, w, h = ICON_BOX
-    return ('// make_midboss.py が生成したファイル（手で編集しない）。中ボス「黒瀬 龍士」のシートから切り出したコマと顔の絵\n'
+def js(uri, table, icons, portrait, psize, pics):
+    W, H = ICON_SIZE
+    pl = ',\n    '.join('%s: "%s"' % (k, v) for k, v in pics.items())
+    return ('// make_midboss.py が生成したファイル（手で編集しない）。中ボス「黒瀬 龍士」のシート（2 枚）から切り出したコマと顔の絵\n'
             '// 1 コマ = [x, y, 幅, 高さ, 基準点 x, 基準点 y]。絵の 1 ドットはゲームの 1 ドット\n'
-            'window.REBELL_MIDBOSS = {\n  img: "%s",\n  frames: { %s },\n  icons: "%s",\n  iconSize: [%d, %d],\n  iconNames: %s,\n  portrait: "%s",\n  portraitSize: [%d, %d]\n};\n'
-            % (uri, table, icons, w, h, repr(ICON_NAMES).replace("'", '"'), portrait, psize[0], psize[1]))
+            'window.REBELL_MIDBOSS = {\n  img: "%s",\n  frames: { %s },\n  icons: "%s",\n  iconSize: [%d, %d],\n  iconNames: %s,\n  portrait: "%s",\n  portraitSize: [%d, %d],\n  pics: {\n    %s\n  }\n};\n'
+            % (uri, table, icons, W, H, repr(ICON_NAMES).replace("'", '"'), portrait, psize[0], psize[1], pl))
 
 
 def main():
@@ -296,9 +323,11 @@ def main():
     table = ', '.join('%s: [%s]' % (k, ', '.join('[%d,%d,%d,%d,%d,%d]' % (f['x'], f['y'], f['img'].shape[1], f['img'].shape[0], f['ox'], f['oy']) for f in fs)) for k, fs in frames.items())
     for path, colors, rare, dev in ((os.path.join(HERE, 'js', '07_midboss.js'), 96, True, False), (os.path.join(HERE, 'midboss_dev.js'), 28, False, True)):
         uri, size, kind = MS.encode(atlas, colors, rare)
-        iu, pu, isz, psz, psize = faces(dev)
+        iu, pu, isz, psz, psize, pd = faces(dev)
         with open(path, 'w', encoding='utf-8', newline='\n') as f:
-            f.write(js(uri, table, iu, pu, psize))
+            f.write(js(uri, table, iu, pu, psize, pd))
+        if dbg and not dev:
+            b = base64.b64decode(iu.split(',')[1]); Image.open(io.BytesIO(b)).save(os.path.join(dbg, 'icons_mid.png'))
         print('frames', n, 'atlas', atlas.size, colors, 'colors', kind, size // 1024, 'KB / icons', isz // 1024, 'KB / portrait', psz // 1024, 'KB ->', path, os.path.getsize(path) // 1024, 'KB')
     if dbg:
         contact(frames, os.path.join(dbg, 'contact_mid.png')); atlas.save(os.path.join(dbg, 'atlas_mid.png'))

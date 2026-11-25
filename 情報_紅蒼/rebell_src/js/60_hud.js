@@ -204,6 +204,29 @@
     T(g, blue ? '蒼' : '紅', 1856, 874, 78, col, 'center', MIN, '#ffffff', 6);
     g.restore();
   }
+  // 中ボス（黒瀬）の、戦いの最中のカットイン: 左上から紫の帯がすべり込み、シートのカットインの絵と、ひとことを出す（52_karate.js の bossCut）
+  function bossCut(g) {
+    var c = G.bossCut, u = c.t / 84, k = u < 0.14 ? R.ease(u / 0.14) : (u > 0.82 ? 1 - R.ease((u - 0.82) / 0.18) : 1), off = -(1 - k) * 1300;
+    var y = 270, h = 230, x0 = -40, w = 1180, sk = 90, im = R.IMG['midPic_' + c.pic], i, gr;      // 左上の HP の表示にかからない高さ
+    g.save(); g.translate(off, 0);
+    g.beginPath(); g.moveTo(x0, y); g.lineTo(x0 + w + sk, y); g.lineTo(x0 + w, y + h); g.lineTo(x0, y + h); g.closePath();
+    g.save(); g.clip();
+    gr = g.createLinearGradient(x0, 0, x0 + w, 0); gr.addColorStop(0, '#3a1470'); gr.addColorStop(1, '#12052a');
+    g.fillStyle = gr; g.fillRect(x0, y, w + sk, h);
+    if (im && im.complete && im.naturalWidth) { g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(im, 40, y, h * 450 / 306, h); }
+    gr = g.createLinearGradient(40 + h * 450 / 306 - 120, 0, 40 + h * 450 / 306, 0); gr.addColorStop(0, 'rgba(18,5,42,0)'); gr.addColorStop(1, '#1c0838');      // 絵の右端をなじませる
+    g.fillStyle = gr; g.fillRect(40 + h * 450 / 306 - 120, y, 122, h);
+    g.globalCompositeOperation = 'lighter';
+    for (i = 0; i < 5; i++) { g.fillStyle = i % 2 ? '#c98bff' : '#ffffff'; g.globalAlpha = 0.3; g.fillRect(x0 + ((c.t * 44 + i * 300) % (w + 200)), y + 22 + i * 48, 260, 4 + i % 2 * 4); }
+    g.restore();
+    g.lineJoin = 'miter'; g.lineWidth = 7; g.strokeStyle = '#ffffff';
+    g.beginPath(); g.moveTo(x0, y); g.lineTo(x0 + w + sk, y); g.lineTo(x0 + w, y + h); g.lineTo(x0, y + h); g.stroke();
+    g.lineWidth = 3; g.strokeStyle = '#c98bff';
+    g.beginPath(); g.moveTo(x0, y + 9); g.lineTo(x0 + w + sk - 9, y + 9); g.moveTo(x0, y + h - 9); g.lineTo(x0 + w - 4, y + h - 9); g.stroke();
+    T(g, '黒瀬', 1020, y + 100, 90, '#c98bff', 'right', MIN, '#ffffff', 7);
+    T(g, c.line, 1030, y + 180, 44, '#ffffff', 'right', MIN, '#2a0c50', 8);
+    g.restore();
+  }
   // 合体技のカットイン: 紅は左から、蒼は右から、目のあたりの帯がすべり込む
   function crossBand(g, who, dx, y, a) {
     var K = who === 'kurenai', col = K ? PINK : CYAN, dark = K ? '#40103c' : '#0c1450', w = 1180, h = 176, sk = 70, x0 = K ? -80 : 1920 + 80 - w - sk;
@@ -290,6 +313,7 @@
     }
     if (G.helpT > 0 && !G.boss && G.state === 'play') { var ha = Math.min(1, G.helpT / 40); helpPanel(g, ha); keyHints(g, ha); }
     if (G.cutin) cutin(g);
+    if (G.bossCut && G.state === 'play') bossCut(g);
     // 合体技の題字
     if (G.cross) {
       var X = G.cross, xa = Math.min(1, X.t / 10) * (X.t > 96 ? Math.max(0, (118 - X.t) / 22) : 1), sp = 150 + Math.max(0, 26 - X.t) * 24;

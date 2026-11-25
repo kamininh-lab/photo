@@ -18,7 +18,12 @@
   var SP = null;         // コマ { 組の名前: [コマ…] }
   var HP = 1500, CAM_FLASH = 44, DAZZLE = 84, STAGGER = 70;      // 体力 / カメラが光るまでのフレーム数 / 目がくらむ長さ / ガードを割られてよろける長さ
   var PUR = ['#7a2be0', '#c98bff', '#ffffff'];
-  var ICONS = { normal: 0, anger: 1, smirk: 2, rage: 3, hurt: 4, surprise: 5, laugh: 6, focus: 7 };
+  // 表情アイコンの番号（0〜7 = 1 枚目のシート、8〜14 = 2 枚目のシート）
+  var ICONS = { normal: 0, anger: 1, smirk: 2, rage: 3, hurt: 4, surprise: 5, laugh: 6, focus: 7,
+    n_normal: 8, n_anger: 9, n_taunt: 10, n_calm: 11, n_surprise: 12, n_wounded: 13, n_laugh: 14 };
+  function pick(a) { return a[(Math.random() * a.length) | 0]; }
+  // 戦いの最中のカットイン（60_hud.js が描く）。pic = 絵（grin / reach / camera）、line = ひとこと
+  function bossCut(pic, line) { G.bossCut = { pic: pic, line: line, t: 0 }; }
 
   // ---- 絵の読み込み（1 コマ = { c: 絵, w, h, ox, oy: 基準点, tint: 単色版の置き場 }）----
   function slice(img, f) {
@@ -41,6 +46,8 @@
     [['icons', 'midIcons'], ['portrait', 'midPortrait']].forEach(function (q) {
       var im = new Image(); im.onload = fin; im.onerror = fin; im.src = D[q[0]]; R.IMG[q[1]] = im;
     });
+    // 2 枚目のシートの大きな絵（会話と、戦いの最中のカットイン）。読み込みは待たない
+    if (D.pics) Object.keys(D.pics).forEach(function (k) { var im = new Image(); im.src = D.pics[k]; R.IMG['midPic_' + k] = im; });
   };
 
   // ---- 小物 ----
@@ -54,7 +61,7 @@
   function strike(e, b, dmg, big) {
     if (!R.overlap(hbox(e, b), X.box(G.pl))) return false;
     if (!X.hurtPlayer(dmg, e.face, !!big)) return false;
-    e.expr = 'smirk'; e.exprT = 80;
+    e.expr = big ? pick(['n_taunt', 'n_laugh', 'smirk']) : pick(['smirk', 'n_taunt']); e.exprT = 80;      // 当てたら、にやりと笑う（大技なら高笑い）
     return true;
   }
   function ghost(e, life) { if (e.fr) e.trail.push({ f: e.fr, x: e.x, y: e.y, face: e.face, t: 0, life: life || 12 }); }
@@ -103,6 +110,12 @@
       g.fillStyle = PUR[2]; tri(g, x - 3, y, x, y - h * 0.55, x + 3, y);
     }
     g.restore();
+  }
+  // 足刀蹴りの飛ぶ刃: 胸の高さを、横一文字に飛ぶ小さな三日月（跳び越えるか、ダッシュですり抜ける）
+  function fireBlade(e, v) {
+    X.shoot({ type: 'kblade', x: e.x + e.face * 34, y: e.y - 20, vx: e.face * v, vy: 0, life: 110, dmg: 12, w: 12, h: 24, big: false, upd: waveUpd, draw: waveDraw });
+    R.snd('slash_red2');
+    X.fx({ type: 'slash', x: e.x + e.face * 18, y: e.y - 32, face: e.face, a0: -1.2, a1: 1.2, r: 22, wd: 0.8, life: 9, col: 'purple' });
   }
   function fireWave(e, v) {
     X.shoot({ type: 'kwave', x: e.x + e.face * 28, y: e.y, vx: e.face * v, vy: 0, life: 140, dmg: 13, w: 14, h: 40, big: true, upd: waveUpd, draw: waveDraw });
@@ -270,6 +283,67 @@
         }
       }
     },
+    // ---- 2 枚目のシートの技 ----
+    // 飛び膝蹴り: 深く沈んでから、相手めがけて前へ跳び、膝を突き上げる（間合いを一気に詰める。ダッシュでくぐるか、下がってかわす）。着地にスキ
+    hiza: {
+      warn: 14, fric: 1, cd: [40, 26],
+      upd: function (e, p, t) {
+        var q = e.q;
+        if (t < 14) { e.fr = F('hiza', 0); e.vx *= 0.5; return; }
+        if (t === 14) { faceTo(e, p); e.vy = -6.6; e.vx = e.face * clamp(Math.abs(p.x - e.x) / 30, 2.4, rage(e) ? 5.4 : 4.6); R.snd('dash'); X.dust(e.x, e.y, 6); }
+        if (!q.land) {
+          e.fr = t < 18 ? F('hiza', 1) : F('hizaair', 0);
+          if (t >= 16) strike(e, [-6, -54, 36, 44], 15, 1);
+          if (t % 2 === 0) ghost(e, 10);
+          if (e.ground && t > 18) { q.land = t; q.rec = true; e.vx *= 0.3; X.dust(e.x, e.y, 6); R.snd('land'); }
+        } else {
+          e.vx *= 0.7; e.fr = F('land', t - q.land < 10 ? 0 : t - q.land < 18 ? 1 : 2);
+          if (t - q.land >= 24) finish(e);
+        }
+      }
+    },
+    // 足刀蹴り（遠距離）: 構えてから、真横へ蹴り抜き、三日月の刃を飛ばす。本気のときは 2 発
+    sokuto: {
+      seq: [[0, 'sokuto', 0], [18, 'sokuto', 1], [32, 'sokuto', 0], [40, 'straight', 0]], warn: 18, hits: [[18, 23, [6, -40, 52, 24], 12, 1]], lunge: [[17, 2.6]], rec: 32, dur: 48, cd: [38, 24],
+      upd: function (e, p, t) {
+        if (t < 18 && t % 3 === 0) X.part(e.x + e.face * rand(4, 14), e.y - rand(20, 40), -e.face * 0.6, rand(-0.6, 0.2), 10, t % 6 ? PUR[1] : PUR[2], 2, 0, true);      // 足もとに気が集まる
+        if (t === 18) fireBlade(e, rage(e) ? 6.2 : 5.2);
+        if (t === 30 && rage(e)) { e.fr = F('sokuto', 1); fireBlade(e, 4.4); }
+      }
+    },
+    // 跳び蹴り（空中攻撃）: 高く跳び、頂点で相手を見定めて、斜めに蹴り落ちる（ダッシュで横へ逃げる）。着地にスキ
+    akick: {
+      warn: 12, fric: 1, cd: [42, 28],
+      upd: function (e, p, t, A) {
+        var q = e.q, d;
+        if (t < 12) { e.fr = F('hiza', 0); e.vx *= 0.5; return; }
+        if (t === 12) { e.vy = -8.4; e.vx = -e.face * 1.2; R.snd('jump'); X.dust(e.x, e.y, 6); }
+        if (!q.dive && !q.land) {
+          e.fr = e.vy < -3 ? F('akick', 2) : F('akick', 0);
+          if (e.vy > -1.2 && t > 16) {      // 頂点: 相手の足もとめがけて、斜めに蹴り落ちる（落ちるまでの時間から、横の速さを決める）
+            faceTo(e, p); d = Math.abs(p.x - e.x);
+            var hh = Math.max(10, GY - e.y), tt = Math.max(hh / (rage(e) ? 6.4 : 5.6), d / 7.2);      // 遠いときは、浅い角度で長く滑空する
+            q.dive = t; q.vy = hh / tt; e.vy = q.vy; e.vx = e.face * Math.max(1.4, d / tt); R.snd('slash_red3');
+            X.fx({ type: 'ring', x: e.x, y: e.y - 26, life: 10, r: 22, col: PUR[1] });
+          }
+          if (e.ground && t > 16) { q.land = t; q.rec = true; }
+          return;
+        }
+        if (q.dive && !q.land) {
+          e.fr = F('akick', 1); e.vy = q.vy - 0.45;      // まっすぐ斜めに落ちる（このあと重力が足されて、ちょうどこの速さ）
+          strike(e, [0, -42, 44, 42], 16, 1);
+          if (t % 2 === 0) ghost(e, 12);
+          if (e.ground) {
+            q.land = t; q.rec = true; e.vx = 0; X.shake(6); X.dust(e.x, e.y, 10); R.snd('special_red');
+            X.fx({ type: 'ring', x: e.x + e.face * 10, y: e.y - 2, life: 14, r: 34, col: PUR[1], flat: true });
+            if (p.ground && Math.abs(p.x - e.x) < 40) X.hurtPlayer(10, sign(p.x - e.x), false);      // 着地の衝撃
+          }
+          return;
+        }
+        e.vx *= 0.7; e.fr = F('land', t - q.land < 12 ? 1 : 2);
+        if (t - q.land >= 28) finish(e);
+      }
+    },
     // カメラのフラッシュ: 構える（無防備）→ 光る → 光に紛れて動く
     camera: {
       warn: 0, cd: [21, 12],
@@ -313,7 +387,8 @@
     go(e, 'move'); e.mv = MV[name]; e.mvName = name;
     faceTo(e, G.pl);
     if (name === 'camera') { e.camCd = rage(e) ? 400 : 500; hint('camera', 'カメラだ！　光る瞬間は背を向けろ（構えの間は、殴れば止まる）'); }
-    if (name === 'rush') e.rushCd = 640;
+    if (name === 'rush') { e.rushCd = 640; bossCut('grin', 'この拳、見切れるか！'); }
+    if (name === 'sokuto') hint('sokuto', '足刀の刃だ！　跳び越えるか、ダッシュですり抜けろ');
   }
   function finish(e) {
     var m = e.mv;
@@ -362,7 +437,7 @@
     }
   }
   function breakGuard(e) {
-    go(e, 'stagger'); e.vx = -e.face * 2.4; e.gHits = 0; e.expr = 'surprise'; e.exprT = 100;
+    go(e, 'stagger'); e.vx = -e.face * 2.4; e.gHits = 0; e.expr = 'n_surprise'; e.exprT = 100;
     X.text(e.x, e.y - 66, 'GUARD BREAK!', '#ffe04a', true); X.shake(6); G.hitstop = Math.max(G.hitstop, 7);
     X.burst(e.x + e.face * 10, e.y - 30, 16, ['#aebcff', '#ffffff', '#ffe04a'], 4.5, 26, 0.1);
     R.snd('hit_heavy');
@@ -385,7 +460,7 @@
   }
   // 攻撃が通ったあと: ひるみ・殴られた回数（たまるとガードする）・本気への切り替え
   function afterHit(e, d, dir, kb, opt) {
-    e.gHits += opt.heavy ? (rage(e) ? 3 : 2) : 1; e.gT = 90; e.expr = 'hurt'; e.exprT = 40;
+    e.gHits += opt.heavy ? (rage(e) ? 3 : 2) : 1; e.gT = 90; e.expr = e.hp < e.max * 0.3 ? 'n_wounded' : 'hurt'; e.exprT = 40;
     if (e.hp <= 0) return;
     if (e.phase === 1 && e.hp <= e.max * 0.5) e.pending = true;      // 次に動けるとき、本気を出す
     if (e.st === 'stagger') { e.vx = dir * Math.min(1.6, kb * 0.3); return; }
@@ -444,12 +519,12 @@
     }
     if (t === 1) R.bgm((e.mid && e.mid.bgm) || 'midboss');
     if (t < 70) e.fr = F('pose', 0);
-    else { e.fr = F('taunt', (t >> 4) % 2); if (t === 70) { e.expr = 'smirk'; e.exprT = 90; } }      // 手招き
+    else { e.fr = F('taunt', (t >> 4) % 2); if (t === 70) { e.expr = 'n_taunt'; e.exprT = 90; } }      // 手招き
     if (t >= 128) { go(e, 'idle'); e.cd = 26; e.invul = 0; }
   }
   function stRoar(e, p, dx, ad, t) {
     e.vx = 0; e.invul = 2; e.fr = F('roar', 0);
-    if (t === 1) { e.phase = 2; R.snd('roar'); X.toast('黒瀬が本気を出した…！', '#d9a0ff'); e.expr = 'rage'; e.exprT = 150; G.flash = Math.max(G.flash, 0.4); }
+    if (t === 1) { e.phase = 2; R.snd('roar'); X.toast('黒瀬が本気を出した…！', '#d9a0ff'); e.expr = 'rage'; e.exprT = 150; G.flash = Math.max(G.flash, 0.4); bossCut('reach', '遊びは終わりだ。――本気で行くぞ！'); }
     if (t % 4 === 0) { X.shake(4); aura(e, 3); }
     if (t === 10) {      // 気合いで押し返す（ダメージはない）
       X.fx({ type: 'ring', x: e.x, y: e.y - 26, life: 20, r: 96, col: PUR[1] });
@@ -460,7 +535,7 @@
   function onKill(e, dir) {
     e.dead = false; e.dying = true; e.hp = 0; G.kills++;
     go(e, 'die'); e.vx = (dir || -e.face) * 3.2; e.vy = -3; e.invul = 0; e.trail = []; e.hide = false; e.expr = 'hurt'; e.exprT = 9999;
-    G.shots = []; R.bgm(null); R.snd('hit_heavy'); killDecoys(e);
+    G.shots = []; G.bossCut = null; R.bgm(null); R.snd('hit_heavy'); killDecoys(e);
     X.gainExp(e.exp);
     G.hitstop = Math.max(G.hitstop, 14); G.flash = Math.max(G.flash, 0.6); X.shake(10);
   }
@@ -478,7 +553,8 @@
     if (t === 150) faceTo(e, p);
     if (t === 84) X.toast(p.chars.kurenai.down || p.chars.aoi.down ? '黒瀬「……いい腕だ。その覚悟、見せてもらった」' : '黒瀬「……いい腕だ。二人で、ひとつか」', '#d9b8ff');
     if (t === 170) R.snd('select');
-    if (t === 196) { R.snd('shutter'); G.flash = 1; e.expr = 'laugh'; X.toast('黒瀬「いい顔だ、撮らせてもらった。――行け。姫は、龍の足もとだ」', '#d9b8ff'); }
+    if (t === 130) { e.expr = 'n_wounded'; e.exprT = 9999; }
+    if (t === 196) { R.snd('shutter'); G.flash = 1; e.expr = 'n_laugh'; X.toast('黒瀬「いい顔だ、撮らせてもらった。――行け。姫は、龍の足もとだ」', '#d9b8ff'); }
     if (t >= 204) {      // 薬と結晶を置いていく
       for (i = 0; i < 5; i++) X.dropItem('crystal', e.x + rand(-30, 30), e.y - 30);
       X.dropItem('potion', e.x, e.y - 40);
@@ -523,9 +599,10 @@
     var r = rage(e), air = !p.ground && p.y < GY - 26, w = [], tot = 0, k, i, cam = e.camCd <= 0;
     function add(name, wt) { if (wt > 0) { if (name === e.last) wt *= 0.3; w.push([name, wt]); tot += wt; } }
     if (air && ad < 86) { add('knee', 5); add('round', 4); }
-    else if (ad < 56) { add('combo', 4); add('low', 2.5); add('round', 2); add('flurry', r ? 3.5 : 0.8); add('camera', cam ? 2.5 : 0); add('spin', 1); }
-    else if (ad < 140) { add('kick', 4); add('spin', 2.5); add('palm', 2); add('low', ad < 84 ? 2 : 0); add('smash', r ? 2.5 : 1.2); add('camera', cam ? 3 : 0); add('rush', r && e.rushCd <= 0 ? 3 : 0); }
-    else { add('palm', 3.5); add('kick', 2.5); add('smash', 2.5); add('spin', 1.5); add('camera', cam ? 3 : 0); add('rush', r && e.rushCd <= 0 ? 4 : 0); }
+    else if (air) { add('sokuto', 3); add('akick', 2.5); add('palm', 1.5); }      // 離れて跳んでいる相手: 刃を飛ばすか、上から蹴り落ちる
+    else if (ad < 56) { add('combo', 4); add('low', 2.5); add('round', 2); add('flurry', r ? 3.5 : 0.8); add('camera', cam ? 2.5 : 0); add('spin', 1); add('akick', 1); }
+    else if (ad < 140) { add('kick', 3.5); add('hiza', 3); add('spin', 2); add('palm', 2); add('sokuto', 2); add('low', ad < 84 ? 2 : 0); add('smash', r ? 2.5 : 1.2); add('akick', 1.5); add('camera', cam ? 3 : 0); add('rush', r && e.rushCd <= 0 ? 3 : 0); }
+    else { add('palm', 3); add('sokuto', 3); add('hiza', 2); add('kick', 2); add('akick', 2.5); add('smash', 2.5); add('spin', 1.5); add('camera', cam ? 3 : 0); add('rush', r && e.rushCd <= 0 ? 4 : 0); }
     k = Math.random() * tot;
     for (i = 0; i < w.length; i++) { k -= w[i][1]; if (k <= 0) break; }
     k = w[Math.min(i, w.length - 1)][0];
@@ -556,6 +633,7 @@
     if (e.camCd > 0) e.camCd--;
     if (e.rushCd > 0) e.rushCd--;
     if (e.exprT > 0) e.exprT--;
+    if (G.bossCut && ++G.bossCut.t > 84) G.bossCut = null;
     if (e.gT > 0 && --e.gT === 0) e.gHits = 0;      // しばらく殴られなければ、数え直す
     e.warn = false;
     for (i = 0; i < e.trail.length; i++) e.trail[i].t++;
@@ -645,8 +723,19 @@
   // 会話のあいだの立ち姿（65_talk.js から）。話すときは手招き、聞いているときは腕を組む
   function talkPose(e, speaking, T) { e.fr = speaking ? F('taunt', (T >> 4) % 2) : F('pose', 0); }
   // HUD に出す顔（表情アイコンの番号）
+  //   場面ごとの顔: ガード中は真剣 → 守りきりそうなら余裕 / カメラは嘲り / 二人を倒したら高笑い / 体力わずかは血のにじむ顔 /
+  //   本気は怒り（技を出す瞬間は激昂）/ ふだんは、待つときと技を出すときで別の顔
   function icon(e) {
-    var k = e.st === 'die' || e.exprT > 0 ? e.expr : e.st === 'guard' ? 'focus' : (e.st === 'intro' || (e.st === 'move' && e.mvName === 'camera')) ? 'smirk' : G.state === 'gameover' ? 'laugh' : rage(e) ? 'anger' : 'normal';
+    var k;
+    if (e.st === 'die' || e.exprT > 0) k = e.expr;
+    else if (G.state === 'gameover') k = 'n_laugh';
+    else if (e.st === 'guard') k = e.stT > 30 ? 'n_calm' : 'focus';
+    else if (e.st === 'intro') k = 'n_taunt';
+    else if (e.st === 'move' && e.mvName === 'camera') k = 'smirk';
+    else if (e.st === 'stagger') k = 'n_surprise';
+    else if (e.hp < e.max * 0.3) k = 'n_wounded';
+    else if (rage(e)) k = e.st === 'move' ? 'rage' : 'n_anger';
+    else k = e.st === 'move' ? 'n_normal' : 'normal';
     return ICONS[k] || 0;
   }
 
