@@ -112,6 +112,23 @@
     if (c.sp >= 30 && active && !c.down) { g.fillStyle = '#ffffff'; g.fillRect(396 + 6 + 250 * 0.3, y + 79, 2, 22); }
   }
 
+  // 縦のステージの地図の代わり: 高さ計（左がふもと、右がてっぺん。塔の高さは 120m として数える）
+  function altimeter(g, S, x, y, w, h) {
+    var y0 = R.GY, y1 = S.goal[1], bx = x + 24, bw = w - 70, by = y + 92, f = function (wy) { return bx + clamp((y0 - wy) / (y0 - y1), 0, 1) * bw; };
+    var m = Math.max(0, Math.round((y0 - G.pl.y) / (y0 - y1) * 120));
+    T(g, 'ALTITUDE', x + 24, y + 46, 26, '#c8b8ff', 'left', UI, '#120a30', 5);
+    T(g, m + ' m', x + w - 24, y + 50, 40, '#ffffff', 'right', UI, '#120a30', 6);
+    g.fillStyle = '#2a2266'; g.fillRect(bx, by, bw, 14);
+    g.fillStyle = '#8a70e0'; g.fillRect(bx, by, f(G.pl.y) - bx, 14); g.fillStyle = '#b49cff'; g.fillRect(bx, by, f(G.pl.y) - bx, 4);
+    G.terminals.forEach(function (tm) { g.fillStyle = tm.on ? CYAN : '#5a8ab0'; g.fillRect(f(tm.y) - 2, by - 12, 5, 12); });
+    // てっぺん（旗）
+    var gx = bx + bw + 4; g.fillStyle = '#ffffff'; g.fillRect(gx, by - 30, 3, 44); g.fillStyle = '#ff2e48'; g.beginPath(); g.moveTo(gx + 3, by - 30); g.lineTo(gx + 26, by - 22); g.lineTo(gx + 3, by - 14); g.fill();
+    // 自分（赤い菱形）
+    var px = f(G.pl.y), py = by + 7, r = 11 + ((G.t >> 4) % 2);
+    g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(px, py - r - 3); g.lineTo(px + r + 3, py); g.lineTo(px, py + r + 3); g.lineTo(px - r - 3, py); g.fill();
+    g.fillStyle = '#ff2e48'; g.beginPath(); g.moveTo(px, py - r); g.lineTo(px + r, py); g.lineTo(px, py + r); g.lineTo(px - r, py); g.fill();
+    T(g, 'TOP 120 m', x + w - 24, y + 132, 20, '#8a7ac8', 'right', UI, '#120a30', 4);
+  }
   function minimap(g) {
     var S = G.S, x = 1552, y = 20, w = 343, h = 143, i;
     panel(g, x, y, w, h, 10, 'rgba(22,16,60,.86)', '#ffffff', 5);
@@ -119,6 +136,7 @@
     g.strokeStyle = 'rgba(120,100,220,.35)'; g.lineWidth = 2;
     for (i = 1; i < 12; i++) { g.beginPath(); g.moveTo(x + i * 29, y); g.lineTo(x + i * 29, y + h); g.stroke(); }
     for (i = 1; i < 5; i++) { g.beginPath(); g.moveTo(x, y + i * 29); g.lineTo(x + w, y + i * 29); g.stroke(); }
+    if (S.vertical) { altimeter(g, S, x, y, w, h); g.restore(); return; }
     var sx = (w - 30) / S.len, bx = x + 15, by = y + 96;
     g.fillStyle = '#8a70e0';
     S.ground.forEach(function (q) { g.fillRect(bx + q[0] * sx, by, (q[1] - q[0]) * sx, 22); });

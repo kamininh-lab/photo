@@ -34,7 +34,38 @@
       boss: { type: 'guard', x: 3560, arena: [3040, 3800], trigger: 3130, name: '重機兵ガーディアン', sub: 'HEAVY GUARDIAN' }
     },
     {
-      id: 'school', title: '第二章　玉龍学園　紅い月の下で', sub: 'STAGE 2  -  GYOKURYU ACADEMY', bgm: 'school', len: 3360,
+      // 縦に登るステージ: 画面 1 枚ぶんの幅（カメラは横に動かない）の鉄塔を、足場を伝って上へ登る。
+      //   plats は下からすり抜けられるので、真下から跳べば上の足場に乗れる。足場の間は、上がり幅 46 ドット（ふつうのジャンプ）が基本。
+      //   カメラは登った高さに合わせて上がるだけで、下には戻らない。画面の下へ落ちたら、その場でゲームオーバー（つづきは最後の端末から）。
+      //   y は上ほど小さい（地面 = 192、てっぺん = -1460）。checkpoints / springs は [x, y]、walls = 壁 [x, y, 幅, 高さ]（壁キックで登れる縦穴）
+      //   goal = てっぺんの足場。ここに立つとステージクリア（ボスはいない）
+      id: 'tower', title: '第二章　天を衝く鉄塔', sub: 'STAGE 2  -  SKYWARD TOWER', bgm: 'city', len: 480, vertical: true, talk: 'tower',
+      top: -1720, startX: 100,
+      ground: [[0, 480]],
+      walls: [[180, -980, 16, 180], [268, -980, 16, 180]],      // 下は、頭がぎりぎり通る高さ（端末の足場の上 52 ドット）で終わる
+      springs: [[215, -534]],
+      // 動く足場 [x, y, 幅, dx, dy, 周期]
+      movers: [[300, -176, 60, -220, 0, 230], [262, -268, 48, 0, -120, 210], [300, -1046, 50, 100, 0, 170], [60, -1236, 50, 0, -80, 180]],
+      plats: [
+        // 基部
+        [40, 146, 150], [170, 100, 150], [300, 54, 140], [180, 8, 140], [40, -38, 160], [170, -84, 130], [280, -130, 170],
+        // 動く足場の区間
+        [30, -222, 100], [140, -268, 90], [330, -396, 110], [180, -442, 120], [40, -488, 120],
+        // バネと縦穴
+        [170, -534, 90], [150, -656, 150], [320, -702, 120], [120, -748, 220], [196, -850, 24], [244, -920, 24], [150, -1000, 180],
+        // 最上部
+        [380, -1092, 80], [250, -1138, 90], [110, -1184, 110], [150, -1320, 90], [270, -1366, 90], [150, -1412, 100], [170, -1460, 200]],
+      goal: [170, -1460, 200],
+      enemies: [['robot', 120, -38], ['drone', 390, -10], ['drone', 380, -250], ['robot', 400, -396], ['drone', 110, -580],
+      ['drone', 60, -660], ['drone', 420, -720], ['robot', 150, -748], ['drone', 100, -1150], ['drone', 410, -1260], ['drone', 320, -1430]],
+      items: [['crystal', 115, 130], ['crystal', 245, 84], ['crystal', 370, 38], ['crystal', 250, -8], ['crystal', 70, -54], ['crystal', 235, -100],
+      ['crystal', 80, -238], ['crystal', 185, -284], ['crystal', 286, -330], ['chest', 425, -396], ['crystal', 240, -458], ['crystal', 100, -504],
+      ['crystal', 215, -600], ['crystal', 215, -640], ['crystal', 380, -718], ['potion', 150, -764], ['crystal', 232, -880], ['crystal', 232, -950],
+      ['crystal', 420, -1108], ['crystal', 295, -1154], ['crystal', 165, -1200], ['crystal', 85, -1290], ['crystal', 195, -1336], ['crystal', 315, -1382]],
+      checkpoints: [[60, 192], [380, -130], [300, -748]]
+    },
+    {
+      id: 'school', title: '第三章　玉龍学園　紅い月の下で', sub: 'STAGE 3  -  GYOKURYU ACADEMY', bgm: 'school', len: 3360,
       // 足場だけの過酷なステージ: 地面があるのは、出発点（〜400）・小さな島 2 つ・中ボスの区間・龍の岸だけ。
       // あとは底なしの穴の上を、小さな足場・動く足場・石の柱（blocks。穴の底から立つ）で渡る。落ちると即ゲームオーバー。
       // 足場の間は 16〜50 ドット、上がり幅は 40 ドットまで（紅のふつうのジャンプで届く）。動く足場は、近づくのを待って乗る。
@@ -215,6 +246,50 @@
     return cv;
   }
 
+  // 縦のステージ（鉄塔）の地形。絵の y = 世界の y - S.top（上ほど小さい世界の y を、絵の中では 0 から数える）
+  function buildTower(S) {
+    var oy = -S.top, LH = 300 + oy, cv = R.mk(S.len, LH), c = cv.getContext('2d'), P = R.painter(c), r = R.rng(5517), x, y, i;
+    // 塔の骨組み（左右の柱と、ななめの筋かい。乗れない飾り）
+    for (y = S.goal[1] - 60 + oy; y < LH; y += 96) {
+      P.line(12, y, 468, y + 96, 2, '#1c1846'); P.line(468, y, 12, y + 96, 2, '#1c1846');
+      P.rect(0, y, S.len, 3, '#221d52'); P.rect(0, y, S.len, 1, '#3a3380');
+    }
+    [[0, 14], [466, 14]].forEach(function (q) {
+      P.rect(q[0], 0, q[1], LH, '#241f56'); P.rect(q[0] + (q[0] ? 0 : q[1] - 2), 0, 2, LH, '#4a4396');
+      for (y = (S.goal[1] - 60 + oy) % 24; y < LH; y += 24) { P.rect(q[0] + 3, y, q[1] - 6, 2, '#17143a'); if (r() < 0.18) P.rect(q[0] + 5, y + 8, 3, 3, r() < 0.5 ? '#ff4fb0' : '#37e6ff'); }
+    });
+    // 地面（塔のふもとの鉄の床）
+    bricks(P, r, 0, GY + oy, S.len, LH - GY - oy, true);
+    P.rect(0, GY + oy, S.len, 1, '#ffe2ff'); P.rect(0, GY + oy + 1, S.len, 1, '#c79ae8'); P.rect(0, GY + oy + 2, S.len, 1, ST[4]);
+    moss(P, r, 0, S.len, GY + oy + 3);
+    // 縦穴の壁（石積み。側面は壁キックで蹴れる）
+    (S.walls || []).forEach(function (w) {
+      bricks(P, r, w[0], w[1] + oy, w[2], w[3], true);
+      P.rect(w[0], w[1] + oy, 2, w[3], ST[5]); P.rect(w[0] + w[2] - 2, w[1] + oy, 2, w[3], ST[1]);
+      P.rect(w[0], w[1] + oy, w[2], 1, '#ffe2ff'); P.rect(w[0], w[1] + oy + w[3] - 2, w[2], 2, ST[0]);
+    });
+    // てっぺん: 電波塔のアンテナと、赤い航空灯
+    var gx = S.goal[0] + S.goal[2] / 2, gy = S.goal[1] + oy;
+    P.rect(gx - 2, gy - 150, 4, 150, '#3d3684'); P.rect(gx - 2, gy - 150, 1, 150, '#7a70d0');
+    for (i = 0; i < 6; i++) { P.line(gx - 18 + i * 3, gy, gx - 1, gy - 150 + i * 12, 1, '#2a2462'); P.line(gx + 18 - i * 3, gy, gx + 1, gy - 150 + i * 12, 1, '#2a2462'); }
+    P.rect(gx - 5, gy - 156, 10, 6, '#ff2e48'); P.rect(gx - 3, gy - 155, 6, 3, '#ffb0c0');
+    P.rect(gx - 30, gy - 70, 60, 3, '#3d3684'); P.rect(gx - 32, gy - 74, 4, 6, '#ff2e48'); P.rect(gx + 28, gy - 74, 4, 6, '#ff2e48');
+    S.plats.forEach(function (p) { platform(P, p[0], p[1] + oy, p[2], false); });
+    return cv;
+  }
+  // 鉄塔の奥に見える、別の塔の骨組み（縦にくり返す 480x384）
+  function buildLattice() {
+    var cv = R.mk(480, 384), P = R.painter(cv.getContext('2d')), r = R.rng(3131), y, i, x;
+    [[70, 46], [330, 60]].forEach(function (q) {
+      var x0 = q[0], w = q[1];
+      P.rect(x0, 0, 4, 384, '#1a1644'); P.rect(x0 + w, 0, 4, 384, '#1a1644');
+      for (y = 0; y < 384; y += 48) { P.rect(x0, y, w + 4, 3, '#1a1644'); P.line(x0 + 2, y, x0 + w + 2, y + 48, 1, '#171340'); P.line(x0 + w + 2, y, x0 + 2, y + 48, 1, '#171340'); }
+      for (i = 0; i < 5; i++) { y = r() * 384 | 0; P.rect(x0 + (r() < 0.5 ? 0 : w), y, 4, 3, r() < 0.5 ? '#ff4fb0' : '#37e6ff'); }
+    });
+    for (i = 0; i < 40; i++) { x = r() * 480 | 0; y = r() * 384 | 0; P.px(x, y, r() < 0.5 ? '#3a3380' : '#5a50a8'); }
+    return cv;
+  }
+
   // ステージ1 の中景: 二段アーチの水道橋（左右がつながる 960px）。石積みの目地・アーチのふち・灯りまで描き込む
   function buildViaduct() {
     var cv = R.mk(960, R.H), c = cv.getContext('2d'), P = R.painter(c), r = R.rng(4242), x, y, i;
@@ -266,12 +341,13 @@
   }
   R.buildStages = function () {
     var BG = R.BG = window.REBELL_BG_SCHOOL.build();
-    BG.viaduct = buildViaduct();
+    BG.viaduct = buildViaduct(); BG.lattice = buildLattice();
     R.STAGES.forEach(function (S) {
-      S.layer = S.id === 'city' ? buildCity(S, BG) : buildSchool(S, BG);
+      S.layer = S.id === 'city' ? buildCity(S, BG) : S.vertical ? buildTower(S) : buildSchool(S, BG);
       S.solids = S.ground.map(function (g) { return { x: g[0], y: GY, w: g[1] - g[0], h: 120 }; });
       S.blockRects = (S.blocks || []).map(function (b) { return { x: b[0], y: GY - b[2], w: b[1], h: b[2] + 60 }; });      // 石の段も、ぶつかる地形に入れる
       S.solids = S.solids.concat(S.blockRects);
+      S.solids = S.solids.concat((S.walls || []).map(function (w) { return { x: w[0], y: w[1], w: w[2], h: w[3] }; }));      // 宙に浮いた壁（下から頭をぶつける）
       S.platRects = S.plats.map(function (p) { return { x: p[0], y: p[1], w: p[2] }; });
     });
   };
@@ -280,9 +356,17 @@
   R.schoolX = function (camX) { return Math.round(150 - camX * 0.22); };
 
   // 遠景を描く
-  R.drawBackdrop = function (g, S, camX, t, rage) {
-    var BG = R.BG, x;
+  R.drawBackdrop = function (g, S, camX, t, rage, oy) {
+    var BG = R.BG, x, y;
     g.drawImage(BG.sky, 0, 0);
+    if (S.vertical) {      // 鉄塔: 登るほど、街の灯りが下へ沈んでいく。奥の塔の骨組みは、ゆっくり流れる
+      oy = oy || 0;
+      g.drawImage(BG.far, -240, Math.round(Math.min(150, oy * 0.1)));
+      y = Math.round(oy * 0.4) % 384;
+      g.globalAlpha = 0.9; g.drawImage(BG.lattice, 0, y - 384); g.drawImage(BG.lattice, 0, y); g.globalAlpha = 1;
+      if (rage) { g.fillStyle = 'rgba(255,30,70,.1)'; g.fillRect(0, 0, R.W, R.H); }
+      return;
+    }
     if (S.id === 'school') g.drawImage(BG.volcano, Math.round(250 - camX * 0.03), 28);
     x = -Math.round(camX * 0.1) % 960; g.drawImage(BG.far, x, 0); g.drawImage(BG.far, x + 960, 0);
     if (S.id === 'city') {

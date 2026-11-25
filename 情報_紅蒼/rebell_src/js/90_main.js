@@ -117,7 +117,7 @@
         if (G.stateT > 60 && ok) {
           R.snd('select');
           if (G.stageIdx + 1 < R.STAGES.length) {
-            R.startStage(G.stageIdx + 1, false);      // HP と SP は、前のステージを終えたときのまま持ち越す（回復しない）
+            R.startStage(G.stageIdx + 1, false, R.STAGES[G.stageIdx + 1].talk);      // HP と SP は、前のステージを終えたときのまま持ち越す（回復しない）。会話があれば、その前にはさむ
           } else { G.state = 'ending'; G.stateT = 0; R.bgm('title'); }
         }
         break;

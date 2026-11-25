@@ -143,7 +143,19 @@
   function toast(str, col) { G.toast = { str: str, col: col || '#ffffff', t: 0 }; }
   function shake(n) { G.cam.shake = Math.max(G.cam.shake, n); }
   function box(b) { return { x: b.x - b.w / 2, y: b.y - b.h, w: b.w, h: b.h }; }
-  function onScreen(x, m) { return x > G.cam.x - (m || 40) && x < G.cam.x + R.W + (m || 40); }
+  // 画面に入っているか（y を渡すと、縦のステージでは高さも見る）
+  function onScreen(x, m, y) {
+    m = m || 40;
+    if (y !== undefined && G.S && G.S.vertical && (y + G.cam.y < -m || y + G.cam.y > R.H + m)) return false;
+    return x > G.cam.x - m && x < G.cam.x + R.W + m;
+  }
+  // その場所に、立てる床があるか（足場・動く足場・地形の上面。縦のステージの機兵が、足場から落ちないように）
+  function standAt(x, y) {
+    var P = G.plats || G.S.platRects, S = G.S.solids, i;
+    for (i = 0; i < P.length; i++) if (x > P[i].x && x < P[i].x + P[i].w && Math.abs(P[i].y - y) < 3) return true;
+    for (i = 0; i < S.length; i++) if (x > S[i].x && x < S[i].x + S[i].w && Math.abs(S[i].y - y) < 3) return true;
+    return false;
+  }
   function groundAt(x) { var g = G.S.ground; for (var i = 0; i < g.length; i++) if (x >= g[i][0] && x <= g[i][1]) return true; return false; }
   function inBlock(x, y) { var B = G.S.blockRects || [], i; for (i = 0; i < B.length; i++) if (x >= B[i].x && x <= B[i].x + B[i].w && y >= B[i].y) return true; return false; }
   // その x で立てる高さ（地面か、石の段のいちばん上）。穴の上なら null
@@ -177,7 +189,11 @@
     var py = b.y; b.y += b.vy; b.ground = false; bb = box(b);
     for (i = 0; i < S.length; i++) {
       s = S[i];
-      if (R.overlap(bb, s)) { if (b.vy >= 0 && py <= s.y + 6) { b.y = s.y; b.vy = 0; b.ground = true; } bb = box(b); }
+      if (R.overlap(bb, s)) {
+        if (b.vy >= 0 && py <= s.y + 6) { b.y = s.y; b.vy = 0; b.ground = true; }
+        else if (b.vy < 0 && py - b.h >= s.y + s.h - 8) { b.y = s.y + s.h + b.h; b.vy = 0; }      // 宙に浮いた壁の下面に、頭をぶつける
+        bb = box(b);
+      }
     }
     if (b.vy >= 0 && !(b.drop > 0)) {
       var P = G.plats || G.S.platRects;      // 動く足場も含む
@@ -470,7 +486,7 @@
     var K = p.who === 'kurenai';
     if (p.ground || p.coyote > 0) { p.vy = -7.6; p.jumps = 1; p.coyote = 0; p.stretchT = 6; p.landT = 0; p.landAnim = null; R.snd('jump'); dust(p.x, p.y, 4); }
     else if (p.jumps < 2) {      // 二段ジャンプは宙返り
-      p.vy = -7.0; p.jumps = 2; p.flipT = FLIP; R.snd('djump');
+      p.vy = Math.min(p.vy, -7.0); p.jumps = 2; p.flipT = FLIP; R.snd('djump');      // バネで跳ね上がった直後に押しても、勢いは落とさない
       fx({ type: 'ring', x: p.x, y: p.y, life: 12, r: 16, col: K ? '#ff7ad1' : '#7af3ff', flat: true });
       burst(p.x, p.y - 4, 6, K ? ['#ff7ad1', '#ffffff'] : ['#7af3ff', '#ffffff'], 1.8, 14);
     }
@@ -862,7 +878,8 @@
     }
     else if (p.coyote > 0) p.coyote--;
     if (p.flipT > 0 && p.flipT % 4 === 0) ghost(p, 9);
-    if (p.y > R.H + 60 && G.state === 'play') {      // ステージから落ちたら、その場でゲームオーバー（つづきは、最後に記録した端末から）
+    // ステージから落ちたら、その場でゲームオーバー（つづきは、最後に記録した端末から）。縦のステージでは、画面の下へ消えたら
+    if ((G.S.vertical ? p.y - p.h + G.cam.y > R.H + 6 : p.y > R.H + 60) && G.state === 'play') {
       p.vx = 0; p.vy = 0; p.st = 'free'; p.flipT = 0; G.combo = 0; G.cross = null;
       toast('落下…', '#ff9db8'); R.snd('hurt');
       G.state = 'gameover'; G.stateT = 0; R.bgm('gameover');
@@ -894,12 +911,12 @@
       if (e.stT >= 24 && e.stT <= 32 && R.overlap({ x: e.face > 0 ? e.x : e.x - 40, y: e.y - 40, w: 40, h: 36 }, box(p))) hurtPlayer(10, e.face, false);
       if (e.stT > 52) { e.st = 'idle'; e.cd = rand(40, 80); }
     } else {
-      if (ad < 230 && Math.abs(p.y - e.y) < 90 && onScreen(e.x, 60)) {
+      if (ad < 230 && Math.abs(p.y - e.y) < 90 && onScreen(e.x, 60, e.y)) {
         e.face = R.sign(dx);
         if (ad < 42 && e.cd <= 0) { e.st = 'attack'; e.stT = 0; }
         else if (ad > 34) {
           var ahead = e.x + e.face * 14;
-          e.vx = groundAt(ahead) ? e.face * 0.75 : 0; e.st = e.vx ? 'walk' : 'idle';
+          e.vx = (G.S.vertical ? e.ground && standAt(ahead, e.y) : groundAt(ahead)) ? e.face * 0.75 : 0; e.st = e.vx ? 'walk' : 'idle';
         } else { e.vx *= 0.8; e.st = 'idle'; }
       } else { e.vx *= 0.8; e.st = 'idle'; }
     }
@@ -909,7 +926,7 @@
   function updDrone(e) {
     var p = G.pl, dx = p.x - e.x;
     e.animT++; e.stT++; if (e.cd > 0) e.cd--;
-    if (Math.abs(dx) < 260 && onScreen(e.x, 30)) {
+    if (Math.abs(dx) < 260 && onScreen(e.x, 30, e.y)) {
       e.face = R.sign(dx);
       var want = p.x - e.face * 110;
       e.vx += clamp((want - e.x) * 0.002, -0.05, 0.05);
@@ -1018,7 +1035,7 @@
         hit = s.t > s.warn && s.t < s.life - 12 && R.overlap({ x: s.x - s.w / 2, y: s.y - s.h, w: s.w, h: s.h }, pb);
       } else if (s.upd) hit = s.upd(s, p, pb);      // 中ボスの技（衝撃波・地裂）は、動きを自分で決める
       if (hit) { if (hurtPlayer(s.dmg, R.sign(s.vx || (p.x - s.x)), s.type === 'shock' || !!s.big)) { if (s.type === 'bullet') s.dead = true; } }
-      if (s.t > s.life || s.x < G.cam.x - 80 || s.x > G.cam.x + R.W + 80) s.dead = true;
+      if (s.t > s.life || s.x < G.cam.x - 80 || s.x > G.cam.x + R.W + 80 || (G.S.vertical && !onScreen(s.x, 80, s.y))) s.dead = true;
     }
     G.shots = G.shots.filter(function (s) { return !s.dead; });
   }
@@ -1044,9 +1061,9 @@
     // 端末（チェックポイント）
     for (i = 0; i < G.terminals.length; i++) {
       var tm = G.terminals[i];
-      if (!tm.on && Math.abs(p.x - tm.x) < 22 && p.ground) {
-        tm.on = true; G.respawn = { x: tm.x, stage: G.stageIdx }; R.snd('checkpoint'); p.joyT = 70; p.joyAll = true; toast('CHECKPOINT ― 記録した', '#7af3ff');
-        fx({ type: 'ring', x: tm.x, y: GY - 30, life: 26, r: 50, col: '#37e6ff' });
+      if (!tm.on && Math.abs(p.x - tm.x) < 22 && p.ground && Math.abs(p.y - tm.y) < 4) {
+        tm.on = true; G.respawn = { x: tm.x, y: tm.y, stage: G.stageIdx }; R.snd('checkpoint'); p.joyT = 70; p.joyAll = true; toast('CHECKPOINT ― 記録した', '#7af3ff');
+        fx({ type: 'ring', x: tm.x, y: tm.y - 30, life: 26, r: 50, col: '#37e6ff' });
         ['kurenai', 'aoi'].forEach(function (k) { var c = p.chars[k]; if (c.down) { c.down = false; c.hp = Math.round(c.max * 0.5); } else c.hp = Math.min(c.max, c.hp + Math.round(c.max * 0.35)); });
       }
     }
@@ -1064,7 +1081,7 @@
     // 舞う桜・光の粒
     if (G.S && G.parts.length < 160 && G.t % 5 === 0) {
       if (G.S.id === 'school') G.parts.push({ x: G.cam.x + rand(0, R.W + 80), y: -6, vx: rand(-0.9, -0.3), vy: rand(0.35, 0.8), life: 420, t: 0, col: null, petal: true, size: 1, grav: 0, sway: rand(0, 6) });
-      else if (G.t % 15 === 0) part(G.cam.x + rand(0, R.W), rand(20, 190), rand(-0.2, 0.2), rand(-0.3, -0.1), 120, Math.random() < 0.5 ? '#ff7ad1' : '#37e6ff', 1, 0, true);
+      else if (G.t % 15 === 0) part(G.cam.x + rand(0, R.W), rand(20, 190) - (G.cam.y || 0), rand(-0.2, 0.2), rand(-0.3, -0.1), 120, Math.random() < 0.5 ? '#ff7ad1' : '#37e6ff', 1, 0, true);
     }
   }
   // 合体技「紅蒼交錯」
@@ -1081,7 +1098,7 @@
     if (hits.indexOf(X.t) >= 0 || X.t === 92) {
       var fin = X.t === 92;
       G.enemies.forEach(function (e) {
-        if (e.dead || !onScreen(e.x, 10)) return;
+        if (e.dead || !onScreen(e.x, 10, e.y)) return;
         var hbs = hurtboxes(e), h = hbs[0];
         if (fin) fx({ type: 'sprfx', who: 'aoi', group: 'ougi', i0: 2, i1: 3, x: e.x, y: e.type === 'drone' ? GY : e.y, life: 30 });
         damageEnemy(e, fin ? 80 : 20, R.sign(e.x - p.x) || 1, fin ? 5 : 0.4, { heavy: fin, noGain: true, cross: true, col: X.t % 4 ? 'blue' : 'gold', weak: !!h.weak, lift: fin ? -5 : 0, cx: h.x + h.w / 2 + rand(-10, 10), cy: h.y + h.h / 2 + rand(-10, 10), stop: fin ? 8 : 2 });
@@ -1101,18 +1118,25 @@
     if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; }      // 中ボスを倒したか・もう会ったか（やり直しても覚えておく。ステージを最初から始めるときだけ戻す）
     S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });
     S.items.forEach(function (q) { G.items.push({ type: q[0], x: q[1], y: q[2], t: 0, open: false }); });
-    G.terminals = S.checkpoints.map(function (x) { return { x: x, on: false }; });
+    // 端末・バネは、x だけ（地面の上）か、[x, y]（縦のステージの足場の上）
+    G.terminals = S.checkpoints.map(function (q) { return typeof q === 'number' ? { x: q, y: GY, on: false } : { x: q[0], y: q[1], on: false }; });
     G.movers = (S.movers || []).map(function (q, n) { return { x0: q[0], y0: q[1], x: q[0], y: q[1], w: q[2], dx: q[3], dy: q[4], per: q[5], ph: n * 37 }; });
     G.plats = S.platRects.concat(G.movers);
-    G.springs = (S.springs || []).map(function (x) { var y = floorAt(x); return { x: x, y: y === null ? GY : y, t: 0 }; });
-    var sx = 70;
+    G.springs = (S.springs || []).map(function (q) { if (typeof q !== 'number') return { x: q[0], y: q[1], t: 0 }; var y = floorAt(q); return { x: q, y: y === null ? GY : y, t: 0 }; });
+    var sx = S.startX || 70, sy = GY;
     if (fromCheckpoint && G.respawn && G.respawn.stage === idx) {
-      sx = G.respawn.x;
-      G.terminals.forEach(function (tm) { if (tm.x <= sx) tm.on = true; });
-      G.enemies = G.enemies.filter(function (e) { return e.x > sx + 200; });
-    } else { G.respawn = { x: 70, stage: idx }; }
-    p.x = sx; p.y = GY; p.vx = 0; p.vy = 0; p.st = 'free'; p.inv = 60; p.face = 1; p.safeX = sx; p.ground = true; p.slammed = false; p.entry = false; p.flipT = 0; p.landT = 0; p.skidT = 0; p.airAtk = 0; p.airDashed = 0; p.landAnim = null; p.battleT = 0; p.angerT = 0; p.hurtFaceT = 0; p.joyT = 0; p.running = false; p.stopT = 0;
-    G.cam.x = clamp(sx - 180, 0, S.len - R.W); G.cam.y = 0;
+      sx = G.respawn.x; sy = G.respawn.y === undefined ? GY : G.respawn.y;
+      if (S.vertical) {      // 縦のステージ: 記録した高さより下の端末は済み。上にいる敵だけ残す
+        G.terminals.forEach(function (tm) { if (tm.y >= sy) tm.on = true; });
+        G.enemies = G.enemies.filter(function (e) { return e.y < sy - 110; });
+      } else {
+        G.terminals.forEach(function (tm) { if (tm.x <= sx) tm.on = true; });
+        G.enemies = G.enemies.filter(function (e) { return e.x > sx + 200; });
+      }
+    } else { G.respawn = { x: sx, y: GY, stage: idx }; }
+    p.x = sx; p.y = sy; p.vx = 0; p.vy = 0; p.st = 'free'; p.inv = 60; p.face = 1; p.safeX = sx; p.ground = true; p.slammed = false; p.entry = false; p.flipT = 0; p.landT = 0; p.skidT = 0; p.airAtk = 0; p.airDashed = 0; p.landAnim = null; p.battleT = 0; p.angerT = 0; p.hurtFaceT = 0; p.joyT = 0; p.running = false; p.stopT = 0;
+    G.cam.x = clamp(sx - 180, 0, S.len - R.W); G.cam.y = S.vertical ? towerCam(sy) : 0;
+    G.goalT = 0;
     G.card = null; G.talk = null;
     G.state = 'play'; G.stateT = 0; G.fade = 1; G.fadeDir = -1;
     if (talk && R.TALKS && R.TALKS[talk]) R.beginTalk(talk); else R.openStage();
@@ -1129,8 +1153,22 @@
     p.who = 'kurenai'; p.potions = Math.max(p.potions, 2);
     R.startStage(G.stageIdx, true);
   };
+  // 縦のステージのカメラ: 足もとが画面の下から 105 ドット（y = 165）に来る高さ。下の地面より下は映さず、てっぺんより上へも行かない
+  function towerCam(y) { return clamp(165 - y, 0, 165 - G.S.goal[1] + 20); }
+  // 縦のステージ: てっぺんの足場に立ったら、登りきってステージクリア
+  function updGoal() {
+    var S = G.S, q = S.goal, p = G.pl;
+    if (!G.bossDefeated && p.ground && Math.abs(p.y - q[1]) < 2 && p.x > q[0] && p.x < q[0] + q[2]) {
+      G.bossDefeated = true; G.stateT = 0; G.shots = [];
+      G.enemies.forEach(function (e) { if (!e.dead) { e.dead = true; burst(e.x, e.y - 10, 12, ['#ffe04a', '#ffffff'], 2.4, 22); } });
+      toast('登頂！ ― 鉄塔のてっぺんに着いた', '#ffe04a'); R.snd('levelup'); p.joyT = 120; p.joyAll = true;
+      fx({ type: 'ring', x: p.x, y: p.y - MID, life: 30, r: 70, col: '#ffe04a' });
+    }
+    if (G.bossDefeated) { G.stateT++; if (G.stateT === 90) { R.bgm('clear'); G.state = 'clear'; G.stateT = 0; } }
+  }
   function updBossTrigger() {
     var S = G.S, b = S.boss, m = S.mid, p = G.pl;
+    if (S.goal) { updGoal(); return; }
     // 中ボス: ステージの途中で立ちはだかる。退けると先へ進める（ステージクリアにはならない）。一騎打ちなので、ほかの敵は入れない
     if (m && R.Karate && R.Karate.ok() && !G.midDone && !G.boss && !G.cross && p.x > m.trigger && p.x < m.arena[1]) {
       G.arena = m.arena.slice();
@@ -1208,6 +1246,12 @@
     if (G.arena) { lo = G.arena[0]; hi = G.arena[1] - R.W; }
     G.cam.x += (clamp(tx, lo, hi) - G.cam.x) * 0.1;
     if (G.cam.x < lo) G.cam.x += Math.min(4, lo - G.cam.x); if (G.cam.x > hi) G.cam.x -= Math.min(4, G.cam.x - hi);
+    if (G.S.vertical) {
+      // 縦のステージ: 高い足場に乗るとカメラが上がる。下へは戻らない（落ちたら画面の外 = ゲームオーバー）。
+      //   跳んで画面の上端に近づいたときも、少し先に上げる
+      var cy = Math.max(p.ground ? towerCam(p.y) : 0, towerCam(p.y + 95));      // 足もとが画面の上から 70 ドットより上に来たら
+      if (cy > G.cam.y) G.cam.y = Math.min(cy, G.cam.y + Math.min(6, (cy - G.cam.y) * 0.08 + 0.3));
+    } else
     // 高い所に上がると、カメラが少し上を向く（塔の上から跳んでも、自分が画面の外へ消えない）
     G.cam.y = (G.cam.y || 0) + (clamp(104 - p.y, 0, 84) - (G.cam.y || 0)) * 0.1;
   };

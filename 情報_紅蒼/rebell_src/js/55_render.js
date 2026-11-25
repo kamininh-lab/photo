@@ -278,8 +278,10 @@
     var S = G.S, sh = G.cam.shake;
     cam = Math.round(clamp(G.cam.x + (sh > 0.4 ? rand(-1, 1) * sh : 0), 0, S.len - R.W)); oy = (sh > 0.4 ? Math.round(rand(-1, 1) * sh * 0.5) : 0) + Math.round(G.cam.y || 0);      // 画面ゆれ + 高い所でのカメラの上向き
     R.viewCam = cam; R.viewOy = oy;
-    R.drawBackdrop(bg, S, cam, G.t, G.rage);
-    bg.drawImage(S.layer, cam, 0, R.W, R.H, 0, oy, R.W, R.H);
+    R.drawBackdrop(bg, S, cam, G.t, G.rage, oy);
+    if (S.vertical) {      // 縦のステージ: 地形の絵は縦に長い。画面の上端に映る世界の y は -oy
+      bg.drawImage(S.layer, cam, clamp(-oy - S.top, 0, S.layer.height - R.H), R.W, R.H, 0, 0, R.W, R.H);
+    } else bg.drawImage(S.layer, cam, 0, R.W, R.H, 0, oy, R.W, R.H);
     if (G.slow > 0) { bg.fillStyle = 'rgba(40,70,220,' + (0.24 * Math.min(1, G.slow / 12)) + ')'; bg.fillRect(0, 0, R.W, R.H); }      // ジャスト回避のスロー中は青く沈む
     var X = G.cross;
     if (X) {
@@ -296,7 +298,9 @@
     fg.clearRect(0, 0, R.W, R.H); fg.imageSmoothingEnabled = false;
     fg.save(); fg.translate(0, oy);
     // 端末
-    for (i = 0; i < G.terminals.length; i++) { var tm = G.terminals[i]; fg.drawImage(I.terminal[tm.on ? ((G.t >> 4) % 2) : 0], Math.round(tm.x - cam - 17), GY - 56); if (!tm.on && (G.t >> 4) % 2) { fg.fillStyle = '#7af3ff'; fg.fillRect(Math.round(tm.x - cam) - 1, GY - 66, 2, 5); fg.fillRect(Math.round(tm.x - cam) - 3, GY - 62, 6, 1); } }
+    for (i = 0; i < G.terminals.length; i++) { var tm = G.terminals[i], ty = tm.y; fg.drawImage(I.terminal[tm.on ? ((G.t >> 4) % 2) : 0], Math.round(tm.x - cam - 17), ty - 56); if (!tm.on && (G.t >> 4) % 2) { fg.fillStyle = '#7af3ff'; fg.fillRect(Math.round(tm.x - cam) - 1, ty - 66, 2, 5); fg.fillRect(Math.round(tm.x - cam) - 3, ty - 62, 6, 1); } }
+    // 縦のステージのてっぺん: 航空灯が明滅する
+    if (G.S.vertical && (G.t >> 5) % 2 === 0) { var gl = G.S.goal; fg.globalAlpha = 0.5; fg.fillStyle = '#ff2e48'; fg.fillRect(gl[0] + gl[2] / 2 - 9 - cam, gl[1] - 162, 18, 18); fg.globalAlpha = 1; }
     // 動く足場（水色に光る板。下に噴射の光）
     var MV = G.movers || [], SPG = G.springs || [], mx, my, k;
     for (i = 0; i < MV.length; i++) {

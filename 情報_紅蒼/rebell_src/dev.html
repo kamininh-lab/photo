@@ -1483,7 +1483,28 @@ ruins: [[24, 3], [1610, 2], [2880, 2], [3700, 1]],
 boss: { type: 'guard', x: 3560, arena: [3040, 3800], trigger: 3130, name: '重機兵ガーディアン', sub: 'HEAVY GUARDIAN' }
 },
 {
-id: 'school', title: '第二章　玉龍学園　紅い月の下で', sub: 'STAGE 2  -  GYOKURYU ACADEMY', bgm: 'school', len: 3360,
+id: 'tower', title: '第二章　天を衝く鉄塔', sub: 'STAGE 2  -  SKYWARD TOWER', bgm: 'city', len: 480, vertical: true, talk: 'tower',
+top: -1720, startX: 100,
+ground: [[0, 480]],
+walls: [[180, -980, 16, 180], [268, -980, 16, 180]],
+springs: [[215, -534]],
+movers: [[300, -176, 60, -220, 0, 230], [262, -268, 48, 0, -120, 210], [300, -1046, 50, 100, 0, 170], [60, -1236, 50, 0, -80, 180]],
+plats: [
+[40, 146, 150], [170, 100, 150], [300, 54, 140], [180, 8, 140], [40, -38, 160], [170, -84, 130], [280, -130, 170],
+[30, -222, 100], [140, -268, 90], [330, -396, 110], [180, -442, 120], [40, -488, 120],
+[170, -534, 90], [150, -656, 150], [320, -702, 120], [120, -748, 220], [196, -850, 24], [244, -920, 24], [150, -1000, 180],
+[380, -1092, 80], [250, -1138, 90], [110, -1184, 110], [150, -1320, 90], [270, -1366, 90], [150, -1412, 100], [170, -1460, 200]],
+goal: [170, -1460, 200],
+enemies: [['robot', 120, -38], ['drone', 390, -10], ['drone', 380, -250], ['robot', 400, -396], ['drone', 110, -580],
+['drone', 60, -660], ['drone', 420, -720], ['robot', 150, -748], ['drone', 100, -1150], ['drone', 410, -1260], ['drone', 320, -1430]],
+items: [['crystal', 115, 130], ['crystal', 245, 84], ['crystal', 370, 38], ['crystal', 250, -8], ['crystal', 70, -54], ['crystal', 235, -100],
+['crystal', 80, -238], ['crystal', 185, -284], ['crystal', 286, -330], ['chest', 425, -396], ['crystal', 240, -458], ['crystal', 100, -504],
+['crystal', 215, -600], ['crystal', 215, -640], ['crystal', 380, -718], ['potion', 150, -764], ['crystal', 232, -880], ['crystal', 232, -950],
+['crystal', 420, -1108], ['crystal', 295, -1154], ['crystal', 165, -1200], ['crystal', 85, -1290], ['crystal', 195, -1336], ['crystal', 315, -1382]],
+checkpoints: [[60, 192], [380, -130], [300, -748]]
+},
+{
+id: 'school', title: '第三章　玉龍学園　紅い月の下で', sub: 'STAGE 3  -  GYOKURYU ACADEMY', bgm: 'school', len: 3360,
 ground: [[0, 400], [990, 1090], [1560, 1640], [2090, 2764], [3046, 3360]],
 blocks: [[760, 48, 70], [1320, 44, 110], [1408, 44, 130]],
 spikes: [[1052, 24]],
@@ -1644,6 +1665,43 @@ terrain(P, r, S);
 S.plats.forEach(function (p) { platform(P, p[0], p[1], p[2], true); });
 return cv;
 }
+function buildTower(S) {
+var oy = -S.top, LH = 300 + oy, cv = R.mk(S.len, LH), c = cv.getContext('2d'), P = R.painter(c), r = R.rng(5517), x, y, i;
+for (y = S.goal[1] - 60 + oy; y < LH; y += 96) {
+P.line(12, y, 468, y + 96, 2, '#1c1846'); P.line(468, y, 12, y + 96, 2, '#1c1846');
+P.rect(0, y, S.len, 3, '#221d52'); P.rect(0, y, S.len, 1, '#3a3380');
+}
+[[0, 14], [466, 14]].forEach(function (q) {
+P.rect(q[0], 0, q[1], LH, '#241f56'); P.rect(q[0] + (q[0] ? 0 : q[1] - 2), 0, 2, LH, '#4a4396');
+for (y = (S.goal[1] - 60 + oy) % 24; y < LH; y += 24) { P.rect(q[0] + 3, y, q[1] - 6, 2, '#17143a'); if (r() < 0.18) P.rect(q[0] + 5, y + 8, 3, 3, r() < 0.5 ? '#ff4fb0' : '#37e6ff'); }
+});
+bricks(P, r, 0, GY + oy, S.len, LH - GY - oy, true);
+P.rect(0, GY + oy, S.len, 1, '#ffe2ff'); P.rect(0, GY + oy + 1, S.len, 1, '#c79ae8'); P.rect(0, GY + oy + 2, S.len, 1, ST[4]);
+moss(P, r, 0, S.len, GY + oy + 3);
+(S.walls || []).forEach(function (w) {
+bricks(P, r, w[0], w[1] + oy, w[2], w[3], true);
+P.rect(w[0], w[1] + oy, 2, w[3], ST[5]); P.rect(w[0] + w[2] - 2, w[1] + oy, 2, w[3], ST[1]);
+P.rect(w[0], w[1] + oy, w[2], 1, '#ffe2ff'); P.rect(w[0], w[1] + oy + w[3] - 2, w[2], 2, ST[0]);
+});
+var gx = S.goal[0] + S.goal[2] / 2, gy = S.goal[1] + oy;
+P.rect(gx - 2, gy - 150, 4, 150, '#3d3684'); P.rect(gx - 2, gy - 150, 1, 150, '#7a70d0');
+for (i = 0; i < 6; i++) { P.line(gx - 18 + i * 3, gy, gx - 1, gy - 150 + i * 12, 1, '#2a2462'); P.line(gx + 18 - i * 3, gy, gx + 1, gy - 150 + i * 12, 1, '#2a2462'); }
+P.rect(gx - 5, gy - 156, 10, 6, '#ff2e48'); P.rect(gx - 3, gy - 155, 6, 3, '#ffb0c0');
+P.rect(gx - 30, gy - 70, 60, 3, '#3d3684'); P.rect(gx - 32, gy - 74, 4, 6, '#ff2e48'); P.rect(gx + 28, gy - 74, 4, 6, '#ff2e48');
+S.plats.forEach(function (p) { platform(P, p[0], p[1] + oy, p[2], false); });
+return cv;
+}
+function buildLattice() {
+var cv = R.mk(480, 384), P = R.painter(cv.getContext('2d')), r = R.rng(3131), y, i, x;
+[[70, 46], [330, 60]].forEach(function (q) {
+var x0 = q[0], w = q[1];
+P.rect(x0, 0, 4, 384, '#1a1644'); P.rect(x0 + w, 0, 4, 384, '#1a1644');
+for (y = 0; y < 384; y += 48) { P.rect(x0, y, w + 4, 3, '#1a1644'); P.line(x0 + 2, y, x0 + w + 2, y + 48, 1, '#171340'); P.line(x0 + w + 2, y, x0 + 2, y + 48, 1, '#171340'); }
+for (i = 0; i < 5; i++) { y = r() * 384 | 0; P.rect(x0 + (r() < 0.5 ? 0 : w), y, 4, 3, r() < 0.5 ? '#ff4fb0' : '#37e6ff'); }
+});
+for (i = 0; i < 40; i++) { x = r() * 480 | 0; y = r() * 384 | 0; P.px(x, y, r() < 0.5 ? '#3a3380' : '#5a50a8'); }
+return cv;
+}
 function buildViaduct() {
 var cv = R.mk(960, R.H), c = cv.getContext('2d'), P = R.painter(c), r = R.rng(4242), x, y, i;
 function tier(y0, pierW, span, deck, pal, bottom, lights) {
@@ -1688,19 +1746,28 @@ return cv;
 }
 R.buildStages = function () {
 var BG = R.BG = window.REBELL_BG_SCHOOL.build();
-BG.viaduct = buildViaduct();
+BG.viaduct = buildViaduct(); BG.lattice = buildLattice();
 R.STAGES.forEach(function (S) {
-S.layer = S.id === 'city' ? buildCity(S, BG) : buildSchool(S, BG);
+S.layer = S.id === 'city' ? buildCity(S, BG) : S.vertical ? buildTower(S) : buildSchool(S, BG);
 S.solids = S.ground.map(function (g) { return { x: g[0], y: GY, w: g[1] - g[0], h: 120 }; });
 S.blockRects = (S.blocks || []).map(function (b) { return { x: b[0], y: GY - b[2], w: b[1], h: b[2] + 60 }; });
 S.solids = S.solids.concat(S.blockRects);
+S.solids = S.solids.concat((S.walls || []).map(function (w) { return { x: w[0], y: w[1], w: w[2], h: w[3] }; }));
 S.platRects = S.plats.map(function (p) { return { x: p[0], y: p[1], w: p[2] }; });
 });
 };
 R.schoolX = function (camX) { return Math.round(150 - camX * 0.22); };
-R.drawBackdrop = function (g, S, camX, t, rage) {
-var BG = R.BG, x;
+R.drawBackdrop = function (g, S, camX, t, rage, oy) {
+var BG = R.BG, x, y;
 g.drawImage(BG.sky, 0, 0);
+if (S.vertical) {
+oy = oy || 0;
+g.drawImage(BG.far, -240, Math.round(Math.min(150, oy * 0.1)));
+y = Math.round(oy * 0.4) % 384;
+g.globalAlpha = 0.9; g.drawImage(BG.lattice, 0, y - 384); g.drawImage(BG.lattice, 0, y); g.globalAlpha = 1;
+if (rage) { g.fillStyle = 'rgba(255,30,70,.1)'; g.fillRect(0, 0, R.W, R.H); }
+return;
+}
 if (S.id === 'school') g.drawImage(BG.volcano, Math.round(250 - camX * 0.03), 28);
 x = -Math.round(camX * 0.1) % 960; g.drawImage(BG.far, x, 0); g.drawImage(BG.far, x + 960, 0);
 if (S.id === 'city') {
@@ -1826,7 +1893,17 @@ function text(x, y, str, col, big) { G.texts.push({ x: x + rand(-4, 4), y: y, vy
 function toast(str, col) { G.toast = { str: str, col: col || '#ffffff', t: 0 }; }
 function shake(n) { G.cam.shake = Math.max(G.cam.shake, n); }
 function box(b) { return { x: b.x - b.w / 2, y: b.y - b.h, w: b.w, h: b.h }; }
-function onScreen(x, m) { return x > G.cam.x - (m || 40) && x < G.cam.x + R.W + (m || 40); }
+function onScreen(x, m, y) {
+m = m || 40;
+if (y !== undefined && G.S && G.S.vertical && (y + G.cam.y < -m || y + G.cam.y > R.H + m)) return false;
+return x > G.cam.x - m && x < G.cam.x + R.W + m;
+}
+function standAt(x, y) {
+var P = G.plats || G.S.platRects, S = G.S.solids, i;
+for (i = 0; i < P.length; i++) if (x > P[i].x && x < P[i].x + P[i].w && Math.abs(P[i].y - y) < 3) return true;
+for (i = 0; i < S.length; i++) if (x > S[i].x && x < S[i].x + S[i].w && Math.abs(S[i].y - y) < 3) return true;
+return false;
+}
 function groundAt(x) { var g = G.S.ground; for (var i = 0; i < g.length; i++) if (x >= g[i][0] && x <= g[i][1]) return true; return false; }
 function inBlock(x, y) { var B = G.S.blockRects || [], i; for (i = 0; i < B.length; i++) if (x >= B[i].x && x <= B[i].x + B[i].w && y >= B[i].y) return true; return false; }
 function floorAt(x) {
@@ -1857,7 +1934,11 @@ b.vx = 0; b.hitWall = true; bb = box(b);
 var py = b.y; b.y += b.vy; b.ground = false; bb = box(b);
 for (i = 0; i < S.length; i++) {
 s = S[i];
-if (R.overlap(bb, s)) { if (b.vy >= 0 && py <= s.y + 6) { b.y = s.y; b.vy = 0; b.ground = true; } bb = box(b); }
+if (R.overlap(bb, s)) {
+if (b.vy >= 0 && py <= s.y + 6) { b.y = s.y; b.vy = 0; b.ground = true; }
+else if (b.vy < 0 && py - b.h >= s.y + s.h - 8) { b.y = s.y + s.h + b.h; b.vy = 0; }
+bb = box(b);
+}
 }
 if (b.vy >= 0 && !(b.drop > 0)) {
 var P = G.plats || G.S.platRects;
@@ -2132,7 +2213,7 @@ function doJump(p) {
 var K = p.who === 'kurenai';
 if (p.ground || p.coyote > 0) { p.vy = -7.6; p.jumps = 1; p.coyote = 0; p.stretchT = 6; p.landT = 0; p.landAnim = null; R.snd('jump'); dust(p.x, p.y, 4); }
 else if (p.jumps < 2) {
-p.vy = -7.0; p.jumps = 2; p.flipT = FLIP; R.snd('djump');
+p.vy = Math.min(p.vy, -7.0); p.jumps = 2; p.flipT = FLIP; R.snd('djump');
 fx({ type: 'ring', x: p.x, y: p.y, life: 12, r: 16, col: K ? '#ff7ad1' : '#7af3ff', flat: true });
 burst(p.x, p.y - 4, 6, K ? ['#ff7ad1', '#ffffff'] : ['#7af3ff', '#ffffff'], 1.8, 14);
 }
@@ -2500,7 +2581,7 @@ if (groundAt(p.x - 10) && groundAt(p.x + 10)) p.safeX = p.x;
 }
 else if (p.coyote > 0) p.coyote--;
 if (p.flipT > 0 && p.flipT % 4 === 0) ghost(p, 9);
-if (p.y > R.H + 60 && G.state === 'play') {
+if ((G.S.vertical ? p.y - p.h + G.cam.y > R.H + 6 : p.y > R.H + 60) && G.state === 'play') {
 p.vx = 0; p.vy = 0; p.st = 'free'; p.flipT = 0; G.combo = 0; G.cross = null;
 toast('落下…', '#ff9db8'); R.snd('hurt');
 G.state = 'gameover'; G.stateT = 0; R.bgm('gameover');
@@ -2529,12 +2610,12 @@ if (e.stT === 24) { e.vx = e.face * 2.6; R.snd('slash_red1'); }
 if (e.stT >= 24 && e.stT <= 32 && R.overlap({ x: e.face > 0 ? e.x : e.x - 40, y: e.y - 40, w: 40, h: 36 }, box(p))) hurtPlayer(10, e.face, false);
 if (e.stT > 52) { e.st = 'idle'; e.cd = rand(40, 80); }
 } else {
-if (ad < 230 && Math.abs(p.y - e.y) < 90 && onScreen(e.x, 60)) {
+if (ad < 230 && Math.abs(p.y - e.y) < 90 && onScreen(e.x, 60, e.y)) {
 e.face = R.sign(dx);
 if (ad < 42 && e.cd <= 0) { e.st = 'attack'; e.stT = 0; }
 else if (ad > 34) {
 var ahead = e.x + e.face * 14;
-e.vx = groundAt(ahead) ? e.face * 0.75 : 0; e.st = e.vx ? 'walk' : 'idle';
+e.vx = (G.S.vertical ? e.ground && standAt(ahead, e.y) : groundAt(ahead)) ? e.face * 0.75 : 0; e.st = e.vx ? 'walk' : 'idle';
 } else { e.vx *= 0.8; e.st = 'idle'; }
 } else { e.vx *= 0.8; e.st = 'idle'; }
 }
@@ -2544,7 +2625,7 @@ if (e.y > R.H + 80) { e.dead = true; }
 function updDrone(e) {
 var p = G.pl, dx = p.x - e.x;
 e.animT++; e.stT++; if (e.cd > 0) e.cd--;
-if (Math.abs(dx) < 260 && onScreen(e.x, 30)) {
+if (Math.abs(dx) < 260 && onScreen(e.x, 30, e.y)) {
 e.face = R.sign(dx);
 var want = p.x - e.face * 110;
 e.vx += clamp((want - e.x) * 0.002, -0.05, 0.05);
@@ -2651,7 +2732,7 @@ if (s.t === s.warn) { R.snd('fire'); shake(4); }
 hit = s.t > s.warn && s.t < s.life - 12 && R.overlap({ x: s.x - s.w / 2, y: s.y - s.h, w: s.w, h: s.h }, pb);
 } else if (s.upd) hit = s.upd(s, p, pb);
 if (hit) { if (hurtPlayer(s.dmg, R.sign(s.vx || (p.x - s.x)), s.type === 'shock' || !!s.big)) { if (s.type === 'bullet') s.dead = true; } }
-if (s.t > s.life || s.x < G.cam.x - 80 || s.x > G.cam.x + R.W + 80) s.dead = true;
+if (s.t > s.life || s.x < G.cam.x - 80 || s.x > G.cam.x + R.W + 80 || (G.S.vertical && !onScreen(s.x, 80, s.y))) s.dead = true;
 }
 G.shots = G.shots.filter(function (s) { return !s.dead; });
 }
@@ -2676,9 +2757,9 @@ else { p.potions = Math.min(9, p.potions + 1); burst(it.x, it.y, 10, ['#ff5a7a',
 G.items = G.items.filter(function (q) { return !q.dead; });
 for (i = 0; i < G.terminals.length; i++) {
 var tm = G.terminals[i];
-if (!tm.on && Math.abs(p.x - tm.x) < 22 && p.ground) {
-tm.on = true; G.respawn = { x: tm.x, stage: G.stageIdx }; R.snd('checkpoint'); p.joyT = 70; p.joyAll = true; toast('CHECKPOINT ― 記録した', '#7af3ff');
-fx({ type: 'ring', x: tm.x, y: GY - 30, life: 26, r: 50, col: '#37e6ff' });
+if (!tm.on && Math.abs(p.x - tm.x) < 22 && p.ground && Math.abs(p.y - tm.y) < 4) {
+tm.on = true; G.respawn = { x: tm.x, y: tm.y, stage: G.stageIdx }; R.snd('checkpoint'); p.joyT = 70; p.joyAll = true; toast('CHECKPOINT ― 記録した', '#7af3ff');
+fx({ type: 'ring', x: tm.x, y: tm.y - 30, life: 26, r: 50, col: '#37e6ff' });
 ['kurenai', 'aoi'].forEach(function (k) { var c = p.chars[k]; if (c.down) { c.down = false; c.hp = Math.round(c.max * 0.5); } else c.hp = Math.min(c.max, c.hp + Math.round(c.max * 0.35)); });
 }
 }
@@ -2695,7 +2776,7 @@ for (i = 0; i < G.ghosts.length; i++) { o = G.ghosts[i]; o.t++; if (o.leave) { o
 G.ghosts = G.ghosts.filter(function (q) { return q.t < q.life; });
 if (G.S && G.parts.length < 160 && G.t % 5 === 0) {
 if (G.S.id === 'school') G.parts.push({ x: G.cam.x + rand(0, R.W + 80), y: -6, vx: rand(-0.9, -0.3), vy: rand(0.35, 0.8), life: 420, t: 0, col: null, petal: true, size: 1, grav: 0, sway: rand(0, 6) });
-else if (G.t % 15 === 0) part(G.cam.x + rand(0, R.W), rand(20, 190), rand(-0.2, 0.2), rand(-0.3, -0.1), 120, Math.random() < 0.5 ? '#ff7ad1' : '#37e6ff', 1, 0, true);
+else if (G.t % 15 === 0) part(G.cam.x + rand(0, R.W), rand(20, 190) - (G.cam.y || 0), rand(-0.2, 0.2), rand(-0.3, -0.1), 120, Math.random() < 0.5 ? '#ff7ad1' : '#37e6ff', 1, 0, true);
 }
 }
 function updCross() {
@@ -2711,7 +2792,7 @@ if (X.t === 92) { fx({ type: 'ring', x: X.x, y: X.y - 30, life: 24, r: 220, col:
 if (hits.indexOf(X.t) >= 0 || X.t === 92) {
 var fin = X.t === 92;
 G.enemies.forEach(function (e) {
-if (e.dead || !onScreen(e.x, 10)) return;
+if (e.dead || !onScreen(e.x, 10, e.y)) return;
 var hbs = hurtboxes(e), h = hbs[0];
 if (fin) fx({ type: 'sprfx', who: 'aoi', group: 'ougi', i0: 2, i1: 3, x: e.x, y: e.type === 'drone' ? GY : e.y, life: 30 });
 damageEnemy(e, fin ? 80 : 20, R.sign(e.x - p.x) || 1, fin ? 5 : 0.4, { heavy: fin, noGain: true, cross: true, col: X.t % 4 ? 'blue' : 'gold', weak: !!h.weak, lift: fin ? -5 : 0, cx: h.x + h.w / 2 + rand(-10, 10), cy: h.y + h.h / 2 + rand(-10, 10), stop: fin ? 8 : 2 });
@@ -2728,18 +2809,24 @@ G.dazzle = 0; G.bossIntro = 0;
 if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; }
 S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });
 S.items.forEach(function (q) { G.items.push({ type: q[0], x: q[1], y: q[2], t: 0, open: false }); });
-G.terminals = S.checkpoints.map(function (x) { return { x: x, on: false }; });
+G.terminals = S.checkpoints.map(function (q) { return typeof q === 'number' ? { x: q, y: GY, on: false } : { x: q[0], y: q[1], on: false }; });
 G.movers = (S.movers || []).map(function (q, n) { return { x0: q[0], y0: q[1], x: q[0], y: q[1], w: q[2], dx: q[3], dy: q[4], per: q[5], ph: n * 37 }; });
 G.plats = S.platRects.concat(G.movers);
-G.springs = (S.springs || []).map(function (x) { var y = floorAt(x); return { x: x, y: y === null ? GY : y, t: 0 }; });
-var sx = 70;
+G.springs = (S.springs || []).map(function (q) { if (typeof q !== 'number') return { x: q[0], y: q[1], t: 0 }; var y = floorAt(q); return { x: q, y: y === null ? GY : y, t: 0 }; });
+var sx = S.startX || 70, sy = GY;
 if (fromCheckpoint && G.respawn && G.respawn.stage === idx) {
-sx = G.respawn.x;
+sx = G.respawn.x; sy = G.respawn.y === undefined ? GY : G.respawn.y;
+if (S.vertical) {
+G.terminals.forEach(function (tm) { if (tm.y >= sy) tm.on = true; });
+G.enemies = G.enemies.filter(function (e) { return e.y < sy - 110; });
+} else {
 G.terminals.forEach(function (tm) { if (tm.x <= sx) tm.on = true; });
 G.enemies = G.enemies.filter(function (e) { return e.x > sx + 200; });
-} else { G.respawn = { x: 70, stage: idx }; }
-p.x = sx; p.y = GY; p.vx = 0; p.vy = 0; p.st = 'free'; p.inv = 60; p.face = 1; p.safeX = sx; p.ground = true; p.slammed = false; p.entry = false; p.flipT = 0; p.landT = 0; p.skidT = 0; p.airAtk = 0; p.airDashed = 0; p.landAnim = null; p.battleT = 0; p.angerT = 0; p.hurtFaceT = 0; p.joyT = 0; p.running = false; p.stopT = 0;
-G.cam.x = clamp(sx - 180, 0, S.len - R.W); G.cam.y = 0;
+}
+} else { G.respawn = { x: sx, y: GY, stage: idx }; }
+p.x = sx; p.y = sy; p.vx = 0; p.vy = 0; p.st = 'free'; p.inv = 60; p.face = 1; p.safeX = sx; p.ground = true; p.slammed = false; p.entry = false; p.flipT = 0; p.landT = 0; p.skidT = 0; p.airAtk = 0; p.airDashed = 0; p.landAnim = null; p.battleT = 0; p.angerT = 0; p.hurtFaceT = 0; p.joyT = 0; p.running = false; p.stopT = 0;
+G.cam.x = clamp(sx - 180, 0, S.len - R.W); G.cam.y = S.vertical ? towerCam(sy) : 0;
+G.goalT = 0;
 G.card = null; G.talk = null;
 G.state = 'play'; G.stateT = 0; G.fade = 1; G.fadeDir = -1;
 if (talk && R.TALKS && R.TALKS[talk]) R.beginTalk(talk); else R.openStage();
@@ -2755,8 +2842,20 @@ var p = G.pl;
 p.who = 'kurenai'; p.potions = Math.max(p.potions, 2);
 R.startStage(G.stageIdx, true);
 };
+function towerCam(y) { return clamp(165 - y, 0, 165 - G.S.goal[1] + 20); }
+function updGoal() {
+var S = G.S, q = S.goal, p = G.pl;
+if (!G.bossDefeated && p.ground && Math.abs(p.y - q[1]) < 2 && p.x > q[0] && p.x < q[0] + q[2]) {
+G.bossDefeated = true; G.stateT = 0; G.shots = [];
+G.enemies.forEach(function (e) { if (!e.dead) { e.dead = true; burst(e.x, e.y - 10, 12, ['#ffe04a', '#ffffff'], 2.4, 22); } });
+toast('登頂！ ― 鉄塔のてっぺんに着いた', '#ffe04a'); R.snd('levelup'); p.joyT = 120; p.joyAll = true;
+fx({ type: 'ring', x: p.x, y: p.y - MID, life: 30, r: 70, col: '#ffe04a' });
+}
+if (G.bossDefeated) { G.stateT++; if (G.stateT === 90) { R.bgm('clear'); G.state = 'clear'; G.stateT = 0; } }
+}
 function updBossTrigger() {
 var S = G.S, b = S.boss, m = S.mid, p = G.pl;
+if (S.goal) { updGoal(); return; }
 if (m && R.Karate && R.Karate.ok() && !G.midDone && !G.boss && !G.cross && p.x > m.trigger && p.x < m.arena[1]) {
 G.arena = m.arena.slice();
 G.boss = spawn(m.type, m.x, GY); G.boss.name = m.name; G.boss.sub = m.sub; G.boss.mid = m; G.enemies.push(G.boss);
@@ -2828,6 +2927,10 @@ var p = G.pl, tx = p.x - R.W * 0.42 + p.face * 26, lo = 0, hi = G.S.len - R.W;
 if (G.arena) { lo = G.arena[0]; hi = G.arena[1] - R.W; }
 G.cam.x += (clamp(tx, lo, hi) - G.cam.x) * 0.1;
 if (G.cam.x < lo) G.cam.x += Math.min(4, lo - G.cam.x); if (G.cam.x > hi) G.cam.x -= Math.min(4, G.cam.x - hi);
+if (G.S.vertical) {
+var cy = Math.max(p.ground ? towerCam(p.y) : 0, towerCam(p.y + 95));
+if (cy > G.cam.y) G.cam.y = Math.min(cy, G.cam.y + Math.min(6, (cy - G.cam.y) * 0.08 + 0.3));
+} else
 G.cam.y = (G.cam.y || 0) + (clamp(104 - p.y, 0, 84) - (G.cam.y || 0)) * 0.1;
 };
 R.midBossDone = function (e) {
@@ -3776,8 +3879,10 @@ R.renderBack = function (bg) {
 var S = G.S, sh = G.cam.shake;
 cam = Math.round(clamp(G.cam.x + (sh > 0.4 ? rand(-1, 1) * sh : 0), 0, S.len - R.W)); oy = (sh > 0.4 ? Math.round(rand(-1, 1) * sh * 0.5) : 0) + Math.round(G.cam.y || 0);
 R.viewCam = cam; R.viewOy = oy;
-R.drawBackdrop(bg, S, cam, G.t, G.rage);
-bg.drawImage(S.layer, cam, 0, R.W, R.H, 0, oy, R.W, R.H);
+R.drawBackdrop(bg, S, cam, G.t, G.rage, oy);
+if (S.vertical) {
+bg.drawImage(S.layer, cam, clamp(-oy - S.top, 0, S.layer.height - R.H), R.W, R.H, 0, 0, R.W, R.H);
+} else bg.drawImage(S.layer, cam, 0, R.W, R.H, 0, oy, R.W, R.H);
 if (G.slow > 0) { bg.fillStyle = 'rgba(40,70,220,' + (0.24 * Math.min(1, G.slow / 12)) + ')'; bg.fillRect(0, 0, R.W, R.H); }
 var X = G.cross;
 if (X) {
@@ -3791,7 +3896,8 @@ R.renderMid = function (fg) {
 var I = R.SPR.items, i, e;
 fg.clearRect(0, 0, R.W, R.H); fg.imageSmoothingEnabled = false;
 fg.save(); fg.translate(0, oy);
-for (i = 0; i < G.terminals.length; i++) { var tm = G.terminals[i]; fg.drawImage(I.terminal[tm.on ? ((G.t >> 4) % 2) : 0], Math.round(tm.x - cam - 17), GY - 56); if (!tm.on && (G.t >> 4) % 2) { fg.fillStyle = '#7af3ff'; fg.fillRect(Math.round(tm.x - cam) - 1, GY - 66, 2, 5); fg.fillRect(Math.round(tm.x - cam) - 3, GY - 62, 6, 1); } }
+for (i = 0; i < G.terminals.length; i++) { var tm = G.terminals[i], ty = tm.y; fg.drawImage(I.terminal[tm.on ? ((G.t >> 4) % 2) : 0], Math.round(tm.x - cam - 17), ty - 56); if (!tm.on && (G.t >> 4) % 2) { fg.fillStyle = '#7af3ff'; fg.fillRect(Math.round(tm.x - cam) - 1, ty - 66, 2, 5); fg.fillRect(Math.round(tm.x - cam) - 3, ty - 62, 6, 1); } }
+if (G.S.vertical && (G.t >> 5) % 2 === 0) { var gl = G.S.goal; fg.globalAlpha = 0.5; fg.fillStyle = '#ff2e48'; fg.fillRect(gl[0] + gl[2] / 2 - 9 - cam, gl[1] - 162, 18, 18); fg.globalAlpha = 1; }
 var MV = G.movers || [], SPG = G.springs || [], mx, my, k;
 for (i = 0; i < MV.length; i++) {
 mx = Math.round(MV[i].x - cam); my = Math.round(MV[i].y); k = MV[i].w;
@@ -3991,6 +4097,20 @@ bar(g, 396, y + 75, 262, 30, c.sp / c.maxsp, '#7af3ff', '#16b6e6');
 T(g, Math.ceil(c.hp) + '/' + c.max, 652, y + 62, 17, '#ffffff', 'right', UI, '#120a30', 4);
 if (c.sp >= 30 && active && !c.down) { g.fillStyle = '#ffffff'; g.fillRect(396 + 6 + 250 * 0.3, y + 79, 2, 22); }
 }
+function altimeter(g, S, x, y, w, h) {
+var y0 = R.GY, y1 = S.goal[1], bx = x + 24, bw = w - 70, by = y + 92, f = function (wy) { return bx + clamp((y0 - wy) / (y0 - y1), 0, 1) * bw; };
+var m = Math.max(0, Math.round((y0 - G.pl.y) / (y0 - y1) * 120));
+T(g, 'ALTITUDE', x + 24, y + 46, 26, '#c8b8ff', 'left', UI, '#120a30', 5);
+T(g, m + ' m', x + w - 24, y + 50, 40, '#ffffff', 'right', UI, '#120a30', 6);
+g.fillStyle = '#2a2266'; g.fillRect(bx, by, bw, 14);
+g.fillStyle = '#8a70e0'; g.fillRect(bx, by, f(G.pl.y) - bx, 14); g.fillStyle = '#b49cff'; g.fillRect(bx, by, f(G.pl.y) - bx, 4);
+G.terminals.forEach(function (tm) { g.fillStyle = tm.on ? CYAN : '#5a8ab0'; g.fillRect(f(tm.y) - 2, by - 12, 5, 12); });
+var gx = bx + bw + 4; g.fillStyle = '#ffffff'; g.fillRect(gx, by - 30, 3, 44); g.fillStyle = '#ff2e48'; g.beginPath(); g.moveTo(gx + 3, by - 30); g.lineTo(gx + 26, by - 22); g.lineTo(gx + 3, by - 14); g.fill();
+var px = f(G.pl.y), py = by + 7, r = 11 + ((G.t >> 4) % 2);
+g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(px, py - r - 3); g.lineTo(px + r + 3, py); g.lineTo(px, py + r + 3); g.lineTo(px - r - 3, py); g.fill();
+g.fillStyle = '#ff2e48'; g.beginPath(); g.moveTo(px, py - r); g.lineTo(px + r, py); g.lineTo(px, py + r); g.lineTo(px - r, py); g.fill();
+T(g, 'TOP 120 m', x + w - 24, y + 132, 20, '#8a7ac8', 'right', UI, '#120a30', 4);
+}
 function minimap(g) {
 var S = G.S, x = 1552, y = 20, w = 343, h = 143, i;
 panel(g, x, y, w, h, 10, 'rgba(22,16,60,.86)', '#ffffff', 5);
@@ -3998,6 +4118,7 @@ g.save(); cham(g, x + 4, y + 4, w - 8, h - 8, 8); g.clip();
 g.strokeStyle = 'rgba(120,100,220,.35)'; g.lineWidth = 2;
 for (i = 1; i < 12; i++) { g.beginPath(); g.moveTo(x + i * 29, y); g.lineTo(x + i * 29, y + h); g.stroke(); }
 for (i = 1; i < 5; i++) { g.beginPath(); g.moveTo(x, y + i * 29); g.lineTo(x + w, y + i * 29); g.stroke(); }
+if (S.vertical) { altimeter(g, S, x, y, w, h); g.restore(); return; }
 var sx = (w - 30) / S.len, bx = x + 15, by = y + 96;
 g.fillStyle = '#8a70e0';
 S.ground.forEach(function (q) { g.fillRect(bx + q[0] * sx, by, (q[1] - q[0]) * sx, 22); });
@@ -4687,6 +4808,22 @@ stage1: [
 { who: 'kurenai', face: 'anger', pose: 'event', text: ['よーし、行くよ、蒼！', '待ってて、姫さま。いま助けに行く！'] },
 { who: 'aoi', face: 'joy', pose: 'stance', text: ['ええ、紅。背中は任せて。', '四角、案内をお願い。'] }
 ],
+tower: [
+{ who: 'kurenai', face: 'damage', text: ['……え、ちょっと待って。', 'これ、てっぺんが見えないんだけど……。'] },
+{ who: 'aoi', face: 'normal', text: ['足場は細くて、風も強い。', '一度踏み外したら、もう戻れない高さね。'] },
+{ who: 'kurenai', face: 'damage', text: ['あたし、高いところは、ちょっと……。', 'ねえ、回り道とか、ないのかな？'] },
+{ who: 'shikaku', face: 'serious', text: ['――聞こえる？　こちら四角。', '学園へ渡る橋は、《龍》の結界で塞がれてる。'] },
+{ who: 'shikaku', face: 'serious', text: ['この鉄塔のてっぺんから、結界の上を越えるしかない。', '道は、ここだけなんだ。'] },
+{ who: 'aoi', face: 'damage', text: ['……でも、四角。', 'もし途中で、足を踏み外したら……。'] },
+{ who: 'shikaku', face: 'smile', text: ['大丈夫。足場は全部、下からすり抜けられる。', '真下から跳べば、上の足場に乗れるよ。'] },
+{ who: 'shikaku', face: 'smile', text: ['それに、その大鎌も刀も、ぼくが軽く作ってある。', '二人の跳ぶ力を、いちばん活かせるように。'] },
+{ who: 'kurenai', face: 'normal', text: ['……四角の作った武器なら、信じられる。', 'でも、やっぱり下は見たくないなぁ。'] },
+{ who: 'shikaku', face: 'shout', text: ['なら、上だけ見て！　下は、ぼくが見張ってる。', '途中の端末に触れれば、そこからやり直せる。'] },
+{ who: 'aoi', face: 'joy', text: ['……ふふ。上だけ見て、か。', '紅、わたしが先に流れを読む。ついてきて。'] },
+{ who: 'kurenai', face: 'anger', pose: 'event', text: ['ううん、先に行くのは、あたし！', '怖いのは、てっぺんに着いてから叫ぶ！'] },
+{ who: 'shikaku', face: 'smile', text: ['その意気だ。てっぺんで、また通信する。', '――行って、二人とも！'] },
+{ who: 'aoi', face: 'joy', pose: 'stance', text: ['ええ。行きましょう、紅。', '姫さまは、この塔の、もっと先。'] }
+],
 kurose: [
 { who: 'kurose', face: 'camera', text: ['――そこまでだ。', 'いい月、いい顔だ。一枚、撮らせてもらう。'] },
 { who: 'kurenai', face: 'anger', text: ['誰！？　こっちは急いでるの！', '姫さまが、あの《龍》に捕まってるんだから！'] },
@@ -4960,7 +5097,7 @@ G.t++; G.stateT++;
 if (G.stateT > 60 && ok) {
 R.snd('select');
 if (G.stageIdx + 1 < R.STAGES.length) {
-R.startStage(G.stageIdx + 1, false);
+R.startStage(G.stageIdx + 1, false, R.STAGES[G.stageIdx + 1].talk);
 } else { G.state = 'ending'; G.stateT = 0; R.bgm('title'); }
 }
 break;
