@@ -955,7 +955,8 @@
       if (e.stT > 20 && (e.stT - 20) % 26 === 0 && (e.stT - 20) / 26 <= n) {
         m = R.Dragon.mouth(q);
         var tx = p.x + rand(-30, 30) + p.vx * 20, sx = e.x + m[0], sy = e.y + m[1], T = 62;
-        shoot({ type: 'fireball', x: sx, y: sy, vx: (tx - sx) / T, vy: (GY - sy - 0.5 * 0.14 * T * T) / T, g: 0.14, life: 200, dmg: 13, r: 7 });
+        var ty = Math.min(GY, p.y);      // 足場の上にいる相手には、その高さをねらう（空中戦）
+        shoot({ type: 'fireball', x: sx, y: sy, vx: (tx - sx) / T, vy: (ty - sy - 0.5 * 0.14 * T * T) / T, g: 0.14, life: 200, dmg: 13, r: 7, ty: ty });
         R.snd('fire');
       }
       if (e.stT > 20 + 26 * (n + 1)) { e.st = 'idle'; e.cd = rage ? 30 : 60; }
@@ -1015,9 +1016,10 @@
       if (s.type === 'bullet' || s.type === 'fireball' || s.type === 'flame') {
         if (s.type === 'flame') { s.vx *= 0.985; s.r = 5 + s.t * 0.16; if (s.y > GY - 4) { s.y = GY - 4; s.vy = -Math.abs(s.vy) * 0.2; } }
         hit = R.overlap({ x: s.x - s.r * 0.7, y: s.y - s.r * 0.7, w: s.r * 1.4, h: s.r * 1.4 }, pb);
-        if (s.type === 'fireball' && s.y >= GY - 4) {
-          s.dead = true; fx({ type: 'boom', x: s.x, y: GY - 8, life: 16, r: 24 }); R.snd('explosion'); shake(3);
-          if (R.overlap({ x: s.x - 24, y: GY - 36, w: 48, h: 40 }, pb)) hurtPlayer(s.dmg, R.sign(p.x - s.x), false);
+        var fty = s.ty === undefined ? GY : s.ty;      // 火球がはじける高さ（ねらった足場の高さ）
+        if (s.type === 'fireball' && s.vy > 0 && s.y >= fty - 4) {
+          s.dead = true; fx({ type: 'boom', x: s.x, y: fty - 8, life: 16, r: 24 }); R.snd('explosion'); shake(3);
+          if (R.overlap({ x: s.x - 24, y: fty - 36, w: 48, h: 40 }, pb)) hurtPlayer(s.dmg, R.sign(p.x - s.x), false);
         }
         if (s.type === 'fireball' && s.t % 2 === 0) part(s.x, s.y, rand(-0.4, 0.4), rand(-0.4, 0.4), 14, s.t % 4 ? '#ff8a3a' : '#ffd36a', 2, 0, true);
         if (s.type === 'bullet' && ((s.y > GY && groundAt(s.x)) || inBlock(s.x, s.y))) { s.dead = true; hit = false; }      // 地面と石の段で消える
@@ -1221,7 +1223,7 @@
     G.cam.x += (clamp(tx, lo, hi) - G.cam.x) * 0.1;
     if (G.cam.x < lo) G.cam.x += Math.min(4, lo - G.cam.x); if (G.cam.x > hi) G.cam.x -= Math.min(4, G.cam.x - hi);
     // 高い所に上がると、カメラが少し上を向く（塔の上から跳んでも、自分が画面の外へ消えない）
-    G.cam.y = (G.cam.y || 0) + ((G.arena ? 0 : clamp(104 - p.y, 0, 84)) - (G.cam.y || 0)) * 0.1;
+    G.cam.y = (G.cam.y || 0) + (clamp(104 - p.y, 0, 84) - (G.cam.y || 0)) * 0.1;
   };
   // 中ボスを退けたあと: 道が開き、ステージの曲に戻る（52_karate.js から呼ばれる）
   R.midBossDone = function (e) {

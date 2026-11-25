@@ -35,27 +35,31 @@
     },
     {
       id: 'school', title: '第二章　玉龍学園　紅い月の下で', sub: 'STAGE 2  -  GYOKURYU ACADEMY', bgm: 'school', len: 3360,
-      ground: [[0, 1080], [1190, 1990], [2090, 3360]],
-      blocks: [[408, 52, 32], [460, 58, 68], [850, 60, 36], [1230, 52, 36], [1282, 62, 76], [1400, 68, 130], [1790, 56, 32]],
-      spikes: [[716, 36], [956, 30], [1520, 36], [1860, 36]],
-      springs: [568, 1640],
-      movers: [[688, 96, 64, 60, -16, 120], [1748, 96, 60, 56, -20, 132]],
-      plats: [[540, 112, 62], [624, 88, 60], [826, 94, 72], [924, 124, 56], [1108, 168, 54],
-      [1344, 150, 32], [1368, 108, 32], [1486, 88, 62], [1564, 124, 48],
-      [1696, 88, 50], [1872, 100, 52], [2016, 168, 50], [2790, 136, 60], [2930, 136, 60]],
-      enemies: [['robot', 392], ['robot', 488], ['robot', 646], ['drone', 692, 126], ['robot', 774], ['drone', 822, 62],
-      ['robot', 878], ['robot', 934], ['drone', 970, 90], ['robot', 1256], ['robot', 1310], ['drone', 1490, 114],
-      ['robot', 1496], ['robot', 1582], ['robot', 1704], ['drone', 1760, 126], ['robot', 1818], ['drone', 1850, 58], ['robot', 1920]],
-      items: [['crystal', 432, 140], ['crystal', 484, 104], ['crystal', 584, 103], ['crystal', 612, 52], ['crystal', 654, 68], ['chest', 862, 94], ['crystal', 1135, 148],
-      ['crystal', 1356, 130], ['crystal', 1388, 88], ['crystal', 1434, 44], ['chest', 1516, 88],
-      ['crystal', 1656, 103], ['crystal', 1684, 52], ['crystal', 1720, 68], ['crystal', 1898, 80], ['crystal', 2042, 148], ['crystal', 2820, 114], ['crystal', 2960, 114]],
+      // 足場だけの過酷なステージ: 地面があるのは、出発点（〜400）・小さな島 2 つ・中ボスの区間・龍の岸だけ。
+      // あとは底なしの穴の上を、小さな足場・動く足場・石の柱（blocks。穴の底から立つ）で渡る。落ちると即ゲームオーバー。
+      // 足場の間は 16〜50 ドット、上がり幅は 40 ドットまで（紅のふつうのジャンプで届く）。動く足場は、近づくのを待って乗る。
+      // 龍との戦い（2764〜3046）も穴の上: 固定の足場 4 つと動く足場 2 つ。龍は右の岸（3046〜）に立つ
+      ground: [[0, 400], [990, 1090], [1560, 1640], [2090, 2764], [3046, 3360]],
+      blocks: [[760, 48, 70], [1320, 44, 110], [1408, 44, 130]],
+      spikes: [[1052, 24]],
+      springs: [1082],
+      movers: [[570, 120, 40, 50, 0, 140], [1180, 150, 44, 0, -60, 150], [1730, 140, 44, 60, -40, 160], [2838, 166, 40, 70, -34, 124], [2884, 100, 40, 64, 0, 136]],
+      plats: [[430, 170, 44], [505, 140, 40], [690, 110, 40], [842, 150, 40], [900, 128, 40],
+      [1120, 160, 40], [1250, 96, 40], [1490, 100, 40],
+      [1672, 160, 40], [1850, 96, 40], [1920, 130, 40], [1992, 160, 50],
+      [2784, 158, 36], [2870, 120, 32], [2946, 86, 32], [3004, 152, 32]],
+      enemies: [['robot', 300], ['drone', 520, 96], ['drone', 700, 66], ['drone', 880, 88], ['robot', 1040], ['drone', 1150, 110],
+      ['drone', 1290, 50], ['robot', 1342], ['drone', 1470, 56], ['robot', 1600], ['drone', 1700, 110], ['drone', 1880, 56], ['drone', 2000, 110]],
+      items: [['crystal', 452, 150], ['crystal', 525, 120], ['crystal', 710, 90], ['crystal', 862, 130], ['crystal', 920, 108],
+      ['chest', 1016, 192], ['crystal', 1100, 112], ['crystal', 1114, 72], ['crystal', 1140, 140], ['crystal', 1270, 76], ['crystal', 1430, 42], ['crystal', 1510, 80], ['potion', 1620, 176],
+      ['crystal', 1692, 140], ['crystal', 1870, 76], ['crystal', 2012, 140], ['crystal', 2806, 138], ['crystal', 2964, 66]],
       checkpoints: [340, 2150, 2704],
-      sakura: [96, 1240, 2170, 2600],
+      sakura: [96, 2170, 2600],
       gate: 196,
       // 中ボス: 桜の下で立ちはだかる空手使い（一騎打ち。画面 1 枚ぶんの広さで、カメラは動かない）。
       // ここにいた機兵 2 体とドローン 1 体・薬は外し、薬は中ボスが置いていく。3 つ目の端末は、中ボスの先（龍の手前）へ移した
       mid: { type: 'karate', x: 2545, arena: [2190, 2670], trigger: 2300, name: '黒瀬 龍士', sub: 'MID BOSS  -  KUROSE RYUJI', bgm: 'midboss' },
-      boss: { type: 'dragon', x: 3170, arena: [2740, 3360], trigger: 2830, name: '玉　龍', sub: 'GYOKURYU  -  THE JADE DRAGON' }
+      boss: { type: 'dragon', x: 3170, arena: [2740, 3360], trigger: 2752, name: '玉　龍', sub: 'GYOKURYU  -  THE JADE DRAGON' }
     }
   ];
 
@@ -92,10 +96,10 @@
     P.px(x + 4, y + 13, '#37e6ff'); P.px(x + w - 5, y + 13, '#37e6ff');
   }
   // 石の段（地面から積み上がった、乗れる壁）
-  function block(P, r, x, h, w) {
-    var y = GY - h;
-    bricks(P, r, x, y, w, h, true);
-    P.rect(x, y, 2, h, ST[5]); P.rect(x + w - 2, y, 2, h, ST[1]);
+  function block(P, r, x, h, w, S) {
+    var y = GY - h, deep = !S.ground.some(function (g) { return x + w / 2 >= g[0] && x + w / 2 <= g[1]; });      // 穴の中の柱は、底まで続く
+    bricks(P, r, x, y, w, deep ? R.H - y : h, true);
+    P.rect(x, y, 2, deep ? R.H - y : h, ST[5]); P.rect(x + w - 2, y, 2, deep ? R.H - y : h, ST[1]);
     P.rect(x, y, w, 1, '#ffe2ff'); P.rect(x, y + 1, w, 1, '#c79ae8'); P.rect(x, y + 2, w, 1, ST[4]);
     moss(P, r, x, x + w, y + 3);
   }
@@ -107,8 +111,19 @@
       P.px(x + i + 3, GY - 9, '#ffffff');
     }
   }
+  // 穴: 奥の景色が床に見えないよう、底なしの暗がりにする（下ほど濃く、底に赤い光）
+  function pits(P, S) {
+    var c = P.ctx, i, x0, x1, y, gr;
+    for (i = 0; i + 1 < S.ground.length; i++) {
+      x0 = S.ground[i][1]; x1 = S.ground[i + 1][0]; y = GY - 28;
+      gr = c.createLinearGradient(0, y, 0, R.H);
+      gr.addColorStop(0, 'rgba(8,4,26,0)'); gr.addColorStop(0.2, 'rgba(8,4,26,.84)'); gr.addColorStop(0.8, 'rgba(8,4,26,.97)'); gr.addColorStop(1, 'rgba(120,10,50,.95)');
+      c.fillStyle = gr; c.fillRect(x0, y, x1 - x0, R.H - y);
+    }
+  }
   function terrain(P, r, S) {
-    (S.blocks || []).forEach(function (b) { block(P, r, b[0], b[2], b[1]); });
+    pits(P, S);
+    (S.blocks || []).forEach(function (b) { block(P, r, b[0], b[2], b[1], S); });
     (S.spikes || []).forEach(function (k) { spikes(P, k[0], k[1]); });
   }
   // 崩れた石のアーチ（ステージ1 冒頭の遺跡）

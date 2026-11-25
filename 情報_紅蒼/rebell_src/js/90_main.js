@@ -153,6 +153,6 @@
     cv.addEventListener('pointerdown', function () { cv.focus(); });
     window.addEventListener('resize', resize);
     // 主人公と中ボスのスプライトを読み込んでから始める
-    R.loadChars(function () { R.loadKarate(function () { R.ready = true; requestAnimationFrame(frame); }); });
+    R.loadChars(function () { R.loadKarate(function () { R.loadDragon(function () { R.ready = true; requestAnimationFrame(frame); }); }); });
   });
 })();
