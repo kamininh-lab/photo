@@ -6449,8 +6449,9 @@ window.REBELL_SHIKAKU = {
   //   性格も戦い方も正反対の二人が、ひとつの魔法陣を介して共に戦う。違うからこそ噛み合う。
   //   紅 = 大鎌を手に、荒々しく踏み込む。蒼 = 静かな微笑みのまま刀を構え、流れを読む。
   R.TALKS = {
-    // 四角 明宏（しかく あきひろ）= 二人の武器を作ったメカニック。通信で二人を支える（その場にはいないので、立ち姿は出ない）。
+    // 四角 明宏（よすみ あきひろ）= 二人の武器を作ったメカニック。通信で二人を支える（その場にはいないので、立ち姿は出ない）。
     //   四角の face は smile / serious / shout（シートの大きな絵と、カットインの絵）。台詞の中身はシートの説明と決め台詞に沿わせた
+    //   後半は、武器を作った四角が「おさらい」として、連続攻撃・チャージ攻撃・交代（切り替え）・合体技を自然に教える
     stage1: [
       { who: 'kurenai', face: 'normal', text: ['うわ、機械兵だらけ……。', 'ねえ蒼、まとめて薙ぎ払っちゃっていい？'] },
       { who: 'aoi', face: 'normal', text: ['待って、紅。まずは流れを読ませて。', '姫さまを助ける前に、こちらが倒れたら意味がないから。'] },
@@ -6460,9 +6461,15 @@ window.REBELL_SHIKAKU = {
       { who: 'aoi', face: 'joy', text: ['ふふ、頼りにしてる。', 'それで四角、姫さまの居場所は？'] },
       { who: 'shikaku', face: 'serious', text: ['この水道橋を抜けた先、玉龍学園のいちばん奥。', '姫さまは、あの《龍》に囚われている。'] },
       { who: 'kurenai', face: 'anger', text: ['だったら急がなきゃ！', '月がもっと紅くなる前に、助け出すんだから！'] },
+      // ここから、武器のおさらい（連続攻撃 → チャージ攻撃 → 交代 → 合体技）
+      { who: 'shikaku', face: 'serious', text: ['焦らないで。急ぐなら、武器のおさらいをしておこう。', '攻撃は、続けて振るほど技がつながって連撃になる。'] },
+      { who: 'kurenai', face: 'joy', text: ['それなら得意！　どんどん振ればいいんだよね？', 'あたしの大鎌、止まらないよ！'] },
+      { who: 'shikaku', face: 'smile', text: ['それと、攻撃ボタンを押したまま、力をためてみて。', '刃が光ったら離す。――大技のチャージ攻撃が出るよ。'] },
+      { who: 'aoi', face: 'normal', text: ['重くて強い大鎌と、軽くて速い刀。', '正反対だから、相手に合わせて入れ替われるのね。'] },
+      { who: 'shikaku', face: 'serious', text: ['そう。二人の武器は、魔法陣でつないである。', '切り替えれば一瞬で交代。疲れた方は後ろで休める。'] },
       { who: 'kurenai', face: 'joy', text: ['へへっ、やることは、いつもどおりだね。', 'あたしが道をこじ開けて、蒼がその隙を縫う！'] },
-      { who: 'aoi', face: 'joy', text: ['重くて強い大鎌と、軽くて速い刀。', '正反対だから、噛み合うんだよ。'] },
-      { who: 'shikaku', face: 'serious', text: ['武器は魔法陣でつないである。疲れたら、すぐ交代して。', '力が満ちたら、重ねるんだ。――『紅蒼交錯』を。'] },
+      { who: 'shikaku', face: 'serious', text: ['敵に攻撃を当てるほど、二人の交錯ゲージがたまる。', '満ちたら、力を重ねるんだ。――『紅蒼交錯』を。'] },
+      { who: 'aoi', face: 'joy', text: ['二人の技を、ひとつに……。', 'ふふ、正反対だから、噛み合うんだよ。'] },
       { who: 'shikaku', face: 'shout', text: ['機械兵、来るよ！　道案内と解析は、ぼくに任せて。', '行って、二人とも！'] },
       { who: 'kurenai', face: 'anger', pose: 'event', text: ['よーし、行くよ、蒼！', '待ってて、姫さま。いま助けに行く！'] },
       { who: 'aoi', face: 'joy', pose: 'stance', text: ['ええ、紅。背中は任せて。', '四角、案内をお願い。'] }
@@ -6503,7 +6510,7 @@ window.REBELL_SHIKAKU = {
     aoi: { side: 1, col: CYAN, dark: '#0c1450', lite: '#1a36a8', mid: '#152a80', plate: '#12246e', name: '蒼', kana: 'あおい', en: 'AOI', icon: 'iconAoi' },
     kurose: { side: 1, col: '#c98bff', dark: '#170a30', lite: '#4a2890', mid: '#2e1960', plate: '#2a1650', name: '黒瀬', kana: 'くろせ', en: 'KUROSE RYUJI', icon: null, portrait: true, pics: true },
     // 四角: 通信で話す。pics = 表情ごとの絵（09_shikaku_art.js）、tag = 帯に出す小さな札
-    shikaku: { side: 1, col: '#ffc84a', dark: '#07122e', lite: '#1c4a86', mid: '#123260', plate: '#143058', name: '四角', kana: 'しかく', en: 'SHIKAKU AKIHIRO', icon: null, pics: true, tag: '通信中  ‐  SUPPORT' }
+    shikaku: { side: 1, col: '#ffc84a', dark: '#07122e', lite: '#1c4a86', mid: '#123260', plate: '#143058', name: '四角', kana: 'よすみ', en: 'YOSUMI AKIHIRO', icon: null, pics: true, tag: '通信中  ‐  SUPPORT' }
   };
   // 四角の絵を読み込んでおく（会話が始まるまでに間に合う）
   (function () {
