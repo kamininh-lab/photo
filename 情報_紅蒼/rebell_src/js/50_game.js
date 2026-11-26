@@ -74,6 +74,7 @@
       airShots: 3
     }
   };
+  R.ATK = ATK;      // タイトル画面の二人の動き（60_hud.js）でも、技のコマの並びを使う
   ['kurenai', 'aoi'].forEach(function (k) {      // コンボのつながり
     var T = ATK[k], i;
     for (i = 0; i < T.g.length; i++) T.g[i].nextA = T.g[i + 1] || null;

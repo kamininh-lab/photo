@@ -2138,6 +2138,7 @@ asd: { seq: [[0, 'airatk', 0], [8, 'jump', 3]], shot: { at: 3, vx: 5.4, vy: 3.9,
 airShots: 3
 }
 };
+R.ATK = ATK;
 ['kurenai', 'aoi'].forEach(function (k) {
 var T = ATK[k], i;
 for (i = 0; i < T.g.length; i++) T.g[i].nextA = T.g[i + 1] || null;
@@ -4869,8 +4870,9 @@ if (u < WF.back) return -WDN * Math.cos(2 * PI * (u - WF.flap) / (WF.back - WF.f
 if (u < WF.end) return -WDN * (1 - e((u - WF.back) / (WF.end - WF.back)));
 return 0;
 }
-function wings(src, u) {
-var lift = wingLift(u), P = WG.pad, W = src.width, H = src.height, x, t, dy;
+function wings(src, u) { return bendWings(src, wingLift(u)); }
+function bendWings(src, lift) {
+var P = WG.pad, W = src.width, H = src.height, x, t, dy;
 if (!wingC || wingC.width !== W) wingC = R.mk(W, H + P * 2);
 var c = wingC.getContext('2d'); c.clearRect(0, 0, W, H + P * 2);
 c.drawImage(src, 0, WG.cut, W, H - WG.cut, 0, WG.cut + P, W, H - WG.cut);
@@ -5292,25 +5294,121 @@ if (t >= SP.l1 && t < SP.l1 + SP.len1) logoGyokuryu(g, t - SP.l1, SP.len1);
 else if (t >= SP.l2 && t < SP.l2 + SP.len2) logoPhoto(g, t - SP.l2, SP.len2);
 else if (t >= SP.l3 && t < SP.l3 + SP.len3) logoKonomi(g, t - SP.l3, SP.len3);
 };
+var TM = { x: 935, y: 236, r: 150 }, darkC = null;
+function titleMoon(g, t) {
+var sky = R.BG.sky, x = TM.x, y = TM.y, r = TM.r, i;
+g.save();
+var hg = g.createRadialGradient(x, y, r * 0.9, x, y, r * 2);
+hg.addColorStop(0, 'rgba(255,40,70,' + (0.32 + 0.06 * Math.sin(t * 0.03)) + ')'); hg.addColorStop(1, 'rgba(255,0,40,0)');
+g.fillStyle = hg; g.beginPath(); g.arc(x, y, r * 2, 0, PI * 2); g.fill();
+g.beginPath(); g.arc(x, y, r, 0, PI * 2); g.clip();
+g.imageSmoothingEnabled = false; g.drawImage(sky, 245 - 34, 56 - 34, 68, 68, x - r, y - r, r * 2, r * 2);
+var mg = g.createLinearGradient(0, y - r, 0, y + r); mg.addColorStop(0, 'rgba(255,60,80,.18)'); mg.addColorStop(1, 'rgba(60,0,20,.45)');
+g.fillStyle = mg; g.fillRect(x - r, y - r, r * 2, r * 2);
+for (i = 0; i < 3; i++) {
+var w = r * (1 + fhash(i * 3) * 0.8), cx = x - r - w + ((t * (0.25 + 0.15 * fhash(i)) + fhash(i * 7) * 900) % (r * 2 + w * 2)), cy = y - r * 0.5 + i * r * 0.45;
+g.fillStyle = 'rgba(14,4,18,.55)'; g.fillRect(cx, cy, w, 7); g.fillRect(cx + w * 0.25, cy + 9, w * 0.5, 3);
+}
+g.restore();
+var dc = R.Dragon.emblem();
+if (dc.width <= 8) return;
+if (!darkC) {
+darkC = R.mk(dc.width, dc.height);
+var d = darkC.getContext('2d'); d.drawImage(dc, 0, 0); d.globalCompositeOperation = 'source-in'; d.fillStyle = '#0c0414'; d.fillRect(0, 0, dc.width, dc.height);
+}
+var P = 84, p = (t % P) / P, e = R.ease, s = 1.0;
+var lift = p < 0.6 ? -24 + 60 * e(p / 0.6) : 36 - 60 * e((p - 0.6) / 0.4);
+var rise = p < 0.6 ? 8 * e(p / 0.6) : 8 - 16 * e((p - 0.6) / 0.4);
+var wd = bendWings(darkC, lift), dx = x - darkC.width / 2 * s + Math.sin(t * 0.011) * 12, dy = y - 56 + rise + Math.sin(t * 0.017) * 6;
+g.save(); g.imageSmoothingEnabled = false; g.shadowColor = 'rgba(255,40,60,.9)'; g.shadowBlur = 18;
+g.drawImage(wd, dx, dy - WG.pad * s, wd.width * s, wd.height * s);
+g.restore();
+}
+var TH = { cycle: 400, run: 150, k: 2.8 };
+function seqFrame(seq, tt) { var e = seq[0], i; for (i = 0; i < seq.length; i++) if (seq[i][0] <= tt) e = seq[i]; return [e[1], e[2]]; }
+function titleMoves(who) {
+var A = R.ATK[who], L = [], t0 = 0;
+A.g.forEach(function (a) { L.push({ a: a, t0: t0 }); t0 += a.dur; });
+t0 += 10;
+A.s.forEach(function (a) { L.push({ a: a, t0: t0 }); t0 += a.dur; });
+return { list: L, end: t0 };
+}
+var moveCache = {};
+function titleHero(g, who, x, t) {
+var K = who === 'kurenai', col = K ? PINK : CYAN, k = TH.k, y = 880, ph = ((t % TH.cycle) + TH.cycle) % TH.cycle, f, i, fx = null;
+var M = moveCache[who] || (moveCache[who] = titleMoves(who)), tt = ph - TH.run, cur = null;
+if (tt >= 0) for (i = 0; i < M.list.length; i++) if (tt >= M.list[i].t0 && tt < M.list[i].t0 + M.list[i].a.dur) cur = M.list[i];
+if (cur) { var at = tt - cur.t0, fr = seqFrame(cur.a.seq, at); f = R.frame(who, fr[0], fr[1]); fx = { a: cur.a, at: at }; }
+else if (tt >= 0 && tt < M.end) f = R.frame(who, 'stance', R.STAND[who].stance.i);
+else f = R.frame(who, 'run', Math.floor(ph / (K ? 5 : 4)) % R.SPR[who].run.length);
+var lg = g.createRadialGradient(x, y + 2, 0, x, y + 2, 110); lg.addColorStop(0, col); lg.addColorStop(1, 'rgba(0,0,0,0)');
+g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.3; g.fillStyle = lg; g.fillRect(x - 110, y - 40, 220, 60); g.restore();
+g.imageSmoothingEnabled = false;
+if (fx && fx.a.kusari) kusariFx(g, x, y, k, fx.a, fx.at);
+g.save(); g.shadowColor = col; g.shadowBlur = 18; R.drawFrame(g, f, x, y, k, 1); g.restore();
+if (fx) {
+if (fx.a.shot) shotFx(g, x, y, k, fx.a, fx.at);
+else if (!fx.a.kusari) slashFx(g, x, y, k, fx.a, fx.at, K);
+}
+if (tt >= 0) M.list.forEach(function (m) { if (m.a.shot && (!fx || fx.a !== m.a) && tt - m.t0 > m.a.dur && tt - m.t0 < m.a.dur + 40) shotFx(g, x, y, k, m.a, tt - m.t0); });
+}
+function slashFx(g, x, y, k, a, at, K) {
+if (at < a.h0 - 1 || at > a.h1 + 4) return;
+var u = clamp((at - a.h0 + 1) / (a.h1 - a.h0 + 5), 0, 1), r = (K ? 34 : 24) * k, cx = x + (K ? 16 : 12) * k, cy = y - 20 * k, up = a.fx ? a.fx[1] < 0 : (at & 1);
+var s0 = up ? 0.9 : -1.3, s1 = up ? -1.3 : 0.9, now = s0 + (s1 - s0) * R.ease(Math.min(1, u * 1.6));
+g.save(); g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
+[[K ? '#ff4fb0' : '#37e6ff', 14, 0.55], ['#ffffff', 5, 0.9]].forEach(function (L) {
+g.strokeStyle = L[0]; g.lineWidth = L[1] * (1 - u * 0.6); g.globalAlpha = L[2] * (1 - u);
+g.beginPath(); g.arc(cx, cy, r, Math.min(s0, now), Math.max(s0, now)); g.stroke();
+});
+g.restore();
+}
+function kusariFx(g, x, y, k, a, at) {
+var q = a.kusari, t0 = a.h0, len;
+if (at < t0) return;
+var u = at - t0;
+if (u < q.out) len = R.ease(u / q.out); else if (u < q.out + q.hold) len = 1; else if (u < q.out + q.hold + q.back) len = 1 - R.ease((u - q.out - q.hold) / q.back); else return;
+var L = 180 * len, hx = x + 12 * k, hy = y + q.hy * k * 0.5 - 30, i, n = Math.floor(L / 14);
+g.save();
+for (i = 0; i < n; i++) { g.fillStyle = i % 2 ? '#c8b8d8' : '#8a7aa0'; g.fillRect(hx + i * 14, hy - 3 + Math.sin(i * 0.9 + at) * 1.5, 10, 6); }
+var tx = hx + L;
+g.translate(tx, hy); g.rotate(at * 0.6);
+g.strokeStyle = '#ffe2f0'; g.lineWidth = 7; g.beginPath(); g.arc(0, 0, 22, -2.4, 0.6); g.stroke();
+g.strokeStyle = '#ff4fb0'; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 22, -2.4, 0.6); g.stroke();
+g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.5; g.fillStyle = '#ff4fb0'; g.beginPath(); g.arc(0, 0, 30, 0, PI * 2); g.fill();
+g.restore();
+}
+function shotFx(g, x, y, k, a, at) {
+var s = a.shot, age = at - s.at; if (age < 0 || age > 40) return;
+var px = x + 16 * k + age * 22, py = y + s.y * k * 0.5 - 36, r = (s.big ? 40 : 24), al = Math.min(1, (40 - age) / 10);
+if (px > 1900) return;
+g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = al;
+g.fillStyle = 'rgba(55,230,255,.5)'; g.beginPath(); g.arc(px, py, r, -PI / 2, PI / 2); g.arc(px - r * 0.45, py, r * 0.8, PI / 2, -PI / 2, true); g.fill();
+g.fillStyle = '#ffffff'; g.beginPath(); g.arc(px, py, r * 0.8, -PI / 2, PI / 2); g.arc(px - r * 0.3, py, r * 0.7, PI / 2, -PI / 2, true); g.fill();
+g.fillStyle = 'rgba(55,230,255,.35)'; g.fillRect(px - r - 90, py - 2, 90, 4);
+g.restore();
+}
 R.drawTitle = function (g) {
 var t = G.t, i;
 var gr = g.createLinearGradient(0, 0, 0, 1080); gr.addColorStop(0, '#0b0a26'); gr.addColorStop(0.6, '#2a1a66'); gr.addColorStop(1, '#5a2470');
 g.fillStyle = gr; g.fillRect(0, 0, 1920, 1080);
 g.globalAlpha = 0.55; pix(g, R.BG.sky, 0, 0, 1920, 1080); g.globalAlpha = 0.8; pix(g, R.BG.far, -((t * 0.6) % 3840), 180, 3840, 1080); pix(g, R.BG.far, 3840 - ((t * 0.6) % 3840), 180, 3840, 1080); g.globalAlpha = 1;
 dim(g, 0.35);
+titleMoon(g, t);
 var img = R.IMG.poster, pw = 664, ph = 996, px = 110, py = 42;
 g.save(); g.shadowColor = PINK; g.shadowBlur = 50; g.fillStyle = '#ffffff'; g.fillRect(px - 6, py - 6, pw + 12, ph + 12); g.shadowBlur = 0;
 if (img && img.complete && img.naturalWidth) { g.imageSmoothingEnabled = true; g.drawImage(img, px, py, pw, ph); }
 g.restore();
 g.strokeStyle = CYAN; g.lineWidth = 3; g.strokeRect(px - 16, py - 16, pw + 32, ph + 32);
-R.drawMagicCircleHi(g, 1370, 560, 330, t * 0.004, 0.16);
-logo(g, 1370, 300, 1.55);
-T(g, '交わる運命、ぶつかる色。', 1370, 470, 46, '#ffffff', 'center', MIN, '#3a1470', 8);
-T(g, 'サイバーパンク 2D ドットアクション', 1370, 524, 26, '#c8b8ff', 'center', UI, '#120a30', 5);
-blinkText(g, 'PRESS  ENTER  /  SPACE', 1370, 640, 46);
-g.imageSmoothingEnabled = false;
-R.drawFrame(g, R.frame('kurenai', 'run', Math.floor(t / 5) % R.SPR.kurenai.run.length), 1190, 880, 3, 1); R.drawFrame(g, R.frame('aoi', 'run', (Math.floor(t / 4) + 2) % R.SPR.aoi.run.length), 1510, 880, 3, 1);
+var LX = 1420;
+R.drawMagicCircleHi(g, LX, 560, 330, t * 0.004, 0.16);
+logo(g, LX, 300, 1.55);
+T(g, '交わる運命、ぶつかる色。', LX, 470, 46, '#ffffff', 'center', MIN, '#3a1470', 8);
+T(g, 'サイバーパンク 2D ドットアクション', LX, 524, 26, '#c8b8ff', 'center', UI, '#120a30', 5);
+blinkText(g, 'PRESS  ENTER  /  SPACE', LX, 640, 46);
 g.fillStyle = '#ffe2ff'; g.fillRect(920, 880, 900, 4); g.fillStyle = 'rgba(200,150,240,.5)'; g.fillRect(920, 884, 900, 4);
+titleHero(g, 'kurenai', 1180, t);
+titleHero(g, 'aoi', 1480, t - TH.cycle / 2);
 var rows = [['←→ / A D', '移動'], ['Space / W', 'ジャンプ（二段・壁でキック）'], ['J / Z', '攻撃（連打でコンボ）'], ['U / G', '遠距離攻撃（空中でも可）'], ['↓ + 攻撃', '斬り上げ / 空中で急降下'], ['L / Shift', 'ダッシュ（空中でも可）'], ['K / X', '特技（SP 消費）'], ['Q / E', 'キャラチェンジ'], ['F', '合体技「紅蒼交錯」'], ['J 長押し', 'チャージ攻撃（離すと大技）']];
 for (i = 0; i < rows.length; i++) {
 var cx = 930 + (i % 2) * 470, cy = 920 + (i >> 1) * 30;
