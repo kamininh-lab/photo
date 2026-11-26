@@ -28,7 +28,9 @@
       g: [
         { seq: [[0, 'atk', 0], [4, 'atk', 1], [9, 'moon', 0], [11, 'moon', 1], [15, 'moon', 2], [21, 'atk', 3]], dur: 30, h0: 10, h1: 17, dmg: 22, box: [-14, -50, 78, 58], kb: 3.4, lunge: 2.6, fx: [-2.9, 1.3, 48], wd: 1.15, snd: 'slash_red1', cancel: 20, stop: 5, heavy: true },
         { seq: [[0, 'combo', 0], [5, 'combo', 1], [9, 'combo', 2], [17, 'atk', 2], [24, 'atk', 0]], dur: 30, h0: 9, h1: 16, dmg: 24, box: [-10, -60, 74, 64], kb: 3, lunge: 2.4, lift: -4, fx: [1.7, -2.6, 48], wd: 1.15, snd: 'slash_red2', cancel: 20, stop: 5, heavy: true, scrape: true },
-        { seq: [[0, 'atk', 3], [4, 'leap', 1], [8, 'leap', 2], [18, 'leap', 3, ['airatk', 0]], [32, 'land', 1], [39, 'land', 2]], dur: 46, h0: 21, h1: 28, dmg: 44, box: [-16, -58, 88, 62], kb: 6, lunge: 2.2, hopAt: 8, hop: -4.4, slamAt: 18, fx: [-2.6, 1.2, 58], wd: 1.25, snd: 'slash_red3', sndAt: 14, cancel: 99, stop: 9, heavy: true, fin: true, shock: true, quake: 3 }
+        // 3 段目「旋鎌」: 大鎌を振り回して 2 回まわる（前後とも当たる）。ここから叩きつけの締めへつながる
+        { seq: [[0, 'senpu', 0], [4, 'senpu', 1], [8, 'senpu', 2], [12, 'senpu', 3], [16, 'senpu', 0], [20, 'atk', 0]], dur: 26, h0: 4, h1: 18, rehits: [11], dmg: 13, box: [-34, -54, 100, 58], kb: 2, lunge: 1.6, fxs: [[4, -2.9, 1.3, 52], [11, 1.7, -2.6, 52]], wd: 1.15, snd: 'slash_red2', cancel: 19, stop: 4, heavy: true },
+        { seq: [[0, 'atk', 3], [4, 'leap', 1], [8, 'leap', 2], [18, 'leap', 3, ['airatk', 0]], [32, 'land', 1], [39, 'land', 2]], dur: 46, h0: 21, h1: 28, dmg: 44, box: [-16, -58, 88, 62], kb: 6, lunge: 2.2, hopAt: 8, hop: -4.4, slamAt: 18, fx: [-2.6, 1.2, 58], wd: 1.25, snd: 'slash_red3', sndAt: 14, cancel: 38, stop: 9, heavy: true, fin: true, shock: true, quake: 3 }      // 着地の後、1 段目へ戻って続けられる
       ],
       a: [
         { seq: [[0, 'airatk', 0], [9, 'airatk', 1], [18, 'jump', 3]], air: true, dur: 28, h0: 10, h1: 17, dmg: 20, box: [-14, -52, 78, 62], kb: 2.4, lift: -2.8, fx: [-2.9, 1.3, 48], wd: 1.15, snd: 'slash_red1', cancel: 19, stop: 5, heavy: true },
@@ -50,7 +52,9 @@
         { seq: [[0, 'combo', 0], [2, 'combo', 1], [8, 'combo', 0]], dur: 12, h0: 2, h1: 6, dmg: 5, box: [-4, -48, 44, 50], kb: 0.9, lunge: 2.6, fx: [1.3, -1.9, 29], wd: 0.62, snd: 'slash_blue2', cancel: 6, stop: 1 },
         { seq: [[0, 'atk', 3], [2, 'combo', 2], [8, 'atk', 3]], dur: 12, h0: 2, h1: 6, dmg: 5, box: [-4, -42, 48, 46], kb: 0.9, lunge: 3, fx: [-2.4, 1.1, 32], wd: 0.62, snd: 'slash_blue1', cancel: 6, stop: 1 },
         { seq: [[0, 'thrust', 1], [2, 'thrust', 0], [5, 'thrust', 2], [9, 'thrust', 1]], dur: 13, h0: 2, h1: 8, dmg: 6, box: [2, -28, 58, 18], kb: 1.4, lunge: 4.8, thrust: 60, snd: 'slash_blue3', cancel: 8, stop: 1 },
-        { seq: [[0, 'flash', 1], [4, 'combo', 3], [10, 'flash', 1], [12, 'flash', 2], [19, 'atk', 0]], dur: 24, h0: 5, h1: 16, rehit: 12, dmg: 6, box: [-22, -50, 72, 54], kb: 3.6, lunge: 2.6, fxs: [[4, 1.5, -2.4, 31], [11, -2.8, 1.3, 37]], wd: 0.7, snd: 'slash_blue4', cancel: 99, stop: 2, heavyLast: true }
+        // 5 段目「連刃」: 刀を目にも止まらぬ速さで 4 回振るう
+        { seq: [[0, 'renjin', 0], [3, 'renjin', 1], [6, 'renjin', 2], [9, 'renjin', 3], [12, 'renjin', 2], [15, 'atk', 3]], dur: 18, h0: 1, h1: 14, rehits: [5, 9, 13], dmg: 4, box: [0, -44, 52, 46], kb: 0.6, lunge: 1.2, fxs: [[1, -2.2, 0.9, 29], [5, 1.3, -1.9, 29], [9, -2.4, 1.1, 32], [13, 1.3, -1.9, 30]], wd: 0.62, snd: 'slash_blue1', cancel: 12, stop: 1 },
+        { seq: [[0, 'flash', 1], [4, 'combo', 3], [10, 'flash', 1], [12, 'flash', 2], [19, 'atk', 0]], dur: 24, h0: 5, h1: 16, rehit: 12, dmg: 6, box: [-22, -50, 72, 54], kb: 3.6, lunge: 2.6, fxs: [[4, 1.5, -2.4, 31], [11, -2.8, 1.3, 37]], wd: 0.7, snd: 'slash_blue4', cancel: 19, stop: 2, heavyLast: true }      // 締めの後、1 段目へ戻って続けられる
       ],
       a: [
         { seq: [[0, 'airatk', 0], [7, 'jump', 3]], air: true, dur: 12, h0: 2, h1: 6, dmg: 5, box: [-4, -42, 44, 48], kb: 0.8, lift: -2.2, fx: [-2.2, 1.0, 29], wd: 0.62, snd: 'slash_blue1', cancel: 6, stop: 1 },
@@ -77,7 +81,7 @@
   R.ATK = ATK;      // タイトル画面の二人の動き（60_hud.js）でも、技のコマの並びを使う
   ['kurenai', 'aoi'].forEach(function (k) {      // コンボのつながり
     var T = ATK[k], i;
-    for (i = 0; i < T.g.length; i++) T.g[i].nextA = T.g[i + 1] || null;
+    for (i = 0; i < T.g.length; i++) T.g[i].nextA = T.g[i + 1] || T.g[0];      // 締めのあとは 1 段目へ戻る（リズムよく押せば、どこまでも続く）
     for (i = 0; i < T.a.length; i++) T.a[i].nextA = T.a[i + 1] || null;
     T.swin.nextA = T.g[1]; T.dash.nextA = T.g[1]; T.up.nextA = null; T.dive.nextA = null;
     // 遠距離: 続けて撃てる並び（nextS）。撃ったあとは、ふつうの攻撃へつなげられる
@@ -214,6 +218,7 @@
       airShot: 0, kusari: null,      // 空中で遠距離攻撃を出した回数 / 紅の鎖鎌のようす
       chT: 0, chLv: 0, chQ: 0, chQT: 0,      // チャージ: 押している時間 / たまった段 / 放つのを待っている段と、待つ残り時間
       battleT: 0, angerT: 0, hurtFaceT: 0, joyT: 0, joyAll: false, hurtBig: false, landAnim: null,      // 構えを続ける時間 / 顔グラフィックの表情
+      rhythm: 0, rhythmT: 0, bufJust: false, atkJust: false,      // 連続攻撃のリズム（BEAT の段数 / 途切れるまで / 押した時がちょうどよかったか / いまの技がリズムよく出たか）
       mood: null, idleT: 0,      // 気持ちの表情 { expr: sad / shy / silly, who: 'kurenai' / 'aoi' / 'both', t: 残り } / 何も操作していない時間（60_hud.js の exprOf）
       chars: { kurenai: { hp: BASE.kurenai.hp, max: BASE.kurenai.hp, sp: 60, maxsp: 100, down: false }, aoi: { hp: BASE.aoi.hp, max: BASE.aoi.hp, sp: 60, maxsp: 100, down: false } },
       lv: 1, exp: 0, potions: 3, crystals: 0, cross: 0, safeX: 80, hurtFlash: 0, spHits: {}
@@ -222,6 +227,26 @@
   // 顔グラフィックに、しばらく気持ちの表情を出す（悲しみ・照れ・おとぼけ）
   function mood(expr, who, t) { G.pl.mood = { expr: expr, who: who, t: t }; }
   R.mood = mood;
+  // ---- 連続攻撃のリズム（BEAT）----
+  // 連続攻撃の途中で、次の攻撃ボタンを「技がつながる瞬間」に合わせて押すと BEAT になる（早押し・連打だと外れる。1 つの技で最初に押した時だけを見る）。
+  //   ちょうどよい時刻 = その技を打ち切れる時刻（cancel）の少し前から、技が終わるまで。紅は大振りなので幅が広い（BEAT_EARLY）。
+  //   BEAT が続くほど段が上がり（最大 BEAT_MAX）、当てたときの SP と交錯ゲージのたまり方が 1 段ごとに BEAT_GAIN ずつ増える。
+  //   外す・やられる・攻撃をやめてしばらくたつと、段は 0 に戻る。技を当てていない空振りは BEAT にならない
+  var BEAT_EARLY = { kurenai: 7, aoi: 1 }, BEAT_MAX = 6, BEAT_GAIN = 0.25, BEAT_KEEP = 50;
+  function beatOk(p, a) {
+    if (a.dive || a.kusari || a.charge || a.shot) return false;
+    return p.hitSet.length > 0 && p.stT >= a.cancel - BEAT_EARLY[p.who];
+  }
+  function beatStep(p, ok) {
+    var K = p.who === 'kurenai', col = K ? '#ff9ad8' : '#7af3ff';
+    if (ok) {
+      p.rhythm = Math.min(BEAT_MAX, p.rhythm + 1); p.rhythmT = BEAT_KEEP; p.atkJust = true;
+      text(p.x, p.y - 50, p.rhythm >= 2 ? 'BEAT ×' + p.rhythm : 'BEAT!', p.rhythm >= BEAT_MAX ? '#ffe04a' : col, p.rhythm >= 3);
+      fx({ type: 'ring', x: p.x, y: p.y - MID, life: 12, r: 18 + p.rhythm * 4, col: p.rhythm >= BEAT_MAX ? '#ffe04a' : col });
+      R.snd('select');
+    } else if (p.rhythm > 0) { p.rhythm = 0; p.rhythmT = 0; text(p.x, p.y - 50, 'MISS', '#8a80b0'); }
+  }
+  R.beatGain = function () { return 1 + BEAT_GAIN * G.pl.rhythm; };
   function needExp(lv) { return 24 + lv * 20; }
   function atkMul() { return 1 + (G.pl.lv - 1) * 0.1; }
   function gainExp(n) {
@@ -235,7 +260,7 @@
   }
   function startAttack(a) {
     var p = G.pl;
-    p.st = 'attack'; p.stT = 0; p.atk = a; p.buf = false; p.hitSet = []; p.fxDone = false; p.sndDone = false; p.flipT = 0; p.skidT = 0; p.landT = 0; p.landAnim = null;
+    p.st = 'attack'; p.stT = 0; p.atk = a; p.buf = false; p.bufJust = false; p.atkJust = false; p.hitSet = []; p.fxDone = false; p.sndDone = false; p.flipT = 0; p.skidT = 0; p.landT = 0; p.landAnim = null;
     p.battleT = 150; p.angerT = 50; p.kusari = null;
     if (a.air) { p.airAtk++; if (p.airAtk <= ATK[p.who].a.length) p.vy = Math.min(p.vy, -1.4); }      // 空中で振るたびに少し浮く
     else if (a.dive) { p.vy = -2.2; p.vx *= 0.4; }
@@ -277,11 +302,16 @@
     else if (e.type === 'drone') { e.vx = dir * kb; }
     G.combo++; G.comboT = 130; G.comboPop = 8; G.maxCombo = Math.max(G.maxCombo, G.combo);
     if (!opt.noGain) {
-      var c = p.chars[p.who], gm = opt.gain == null ? 1 : opt.gain;      // gain = SP とゲージのたまり方（離れて当てる攻撃は少なめ）
+      var c = p.chars[p.who], gm = (opt.gain == null ? 1 : opt.gain) * R.beatGain();      // gain = SP とゲージのたまり方（離れて当てる攻撃は少なめ）。リズムよく続けるほど増える
       c.sp = Math.min(c.maxsp, c.sp + (opt.heavy ? 5 : 3) * gm);
       p.cross = Math.min(100, p.cross + (2.2 + Math.min(3, G.combo * 0.08)) * gm);
     }
     G.hitstop = Math.max(G.hitstop, opt.stop || 0);
+    if (p.atkJust && !opt.noGain) {      // リズムよく出した技の最初の一撃: 少し長く止め、光らせる（爽快感）
+      p.atkJust = false; G.hitstop = Math.max(G.hitstop, (opt.stop || 0) + 2);
+      fx({ type: 'ring', x: cx, y: cy, life: 10, r: 14 + p.rhythm * 3, col: p.rhythm >= BEAT_MAX ? '#ffe04a' : '#ffffff' });
+      if (p.rhythm >= BEAT_MAX) G.flash = Math.max(G.flash, 0.1);
+    }
     shake(opt.heavy ? 4 : 1.5);
     R.snd(opt.snd || (opt.heavy ? 'hit_heavy' : 'hit'), { step: Math.min(12, G.combo) });      // コンボが続くほど音が上がっていく
     if (e.afterHit) e.afterHit(e, d, dir, kb, opt);      // 中ボス: ひるみ・ガードへの切り替え
@@ -363,7 +393,7 @@
     // 紅は大鎌を振っている間、攻撃を受けてもひるまない（ダメージは 7 割）
     var armor = p.who === 'kurenai' && p.st === 'attack' && !p.atk.dive && p.stT <= p.atk.h1 + 2;
     if (armor) dmg *= 0.7;
-    c.hp -= dmg; p.hurtFlash = 8; p.hurtFaceT = 55; p.battleT = 150;
+    c.hp -= dmg; p.hurtFlash = 8; p.hurtFaceT = 55; p.battleT = 150; p.rhythm = 0; p.rhythmT = 0;      // やられると、リズムは途切れる
     text(p.x, p.y - 36, '-' + Math.round(dmg), '#ff5a6a');
     burst(p.x, p.y - MID, armor ? 4 : 8, ['#ff5a6a', '#ffffff'], 3, 20, 0.1);
     R.snd('hurt');
@@ -770,6 +800,7 @@
     p.animT++;
     ['inv', 'dashCd', 'switchCd', 'drop', 'hurtFlash', 'flipT', 'landT', 'stretchT', 'dashWin', 'justCd', 'battleT', 'angerT', 'hurtFaceT', 'joyT', 'stopT', 'wallT', 'kickT'].forEach(function (k) { if (p[k] > 0) p[k]--; });
     if (p.mood && --p.mood.t <= 0) p.mood = null;
+    if (p.rhythm > 0 && p.st !== 'attack' && --p.rhythmT <= 0) p.rhythm = 0;      // 攻撃をやめてしばらくたつと、リズムは途切れる
     var anyKey = false, ik; for (ik in I.down) if (I.down[ik]) { anyKey = true; break; }
     p.idleT = anyKey || p.st !== 'free' ? 0 : p.idleT + 1;      // 何も押さずに立っている時間（顔がぼんやりしてくる）
     if (p.st !== 'free') p.running = false;
@@ -856,7 +887,7 @@
           if (a.quake) fx({ type: 'quake', x: p.x + p.face * 30, y: p.y, life: 24, face: p.face, n: a.quake });
         }
       }
-      if (I.hit.attack && p.stT > 2) p.buf = I.down.down ? 'down' : 'atk';
+      if (I.hit.attack && p.stT > 2) { if (!p.buf) p.bufJust = beatOk(p, a); p.buf = I.down.down ? 'down' : 'atk'; }      // リズムは、最初に押した時だけで判定
       if (I.hit.shot && p.stT > 2) p.buf = 'shot';
       var locked = !!a.kusari && p.stT < a.cancel;      // 鎖鎌は、投げたら戻るまで動けない（大振りの代わりに、ひるまない）
       if (a.dive || (a.kusari && a.kusari.pull)) {
@@ -868,7 +899,11 @@
       else if (!locked && I.hit.special && open) startSpecial();
       else if (I.hit.cross) startCross();
       else if (!locked && jumpHit && open && (p.hitSet.length > 0 || p.stT >= a.cancel) && (p.ground || p.jumps < 2)) { p.st = 'free'; p.entry = false; doJump(p); }      // ジャンプで打ち切る
-      else if (p.buf && p.stT >= (p.buf === 'down' ? Math.min(a.cancel, a.h1) : a.cancel) && (nx = nextAttack(p, a, p.buf))) { p.entry = false; if (move) p.face = move; startAttack(nx); }      // ↓+攻撃（斬り上げ・急降下）は早めに出せる
+      else if (p.buf && p.stT >= (p.buf === 'down' ? Math.min(a.cancel, a.h1) : a.cancel) && (nx = nextAttack(p, a, p.buf))) {      // ↓+攻撃（斬り上げ・急降下）は早めに出せる
+        var beat = p.buf === 'atk' && !nx.shot && !nx.dive ? (p.bufJust ? 1 : -1) : 0;
+        p.entry = false; if (move) p.face = move; startAttack(nx);
+        if (beat) beatStep(p, beat > 0);
+      }
       else if (a.walk && p.stT >= a.walk && move) { p.st = 'free'; p.entry = false; }
       else if (p.stT >= a.dur) { p.st = 'free'; p.entry = false; }
       else if (a.air && p.ground && p.stT > a.h1) { p.st = 'free'; p.entry = false; p.landT = 4; }
@@ -1207,7 +1242,7 @@
         G.enemies = G.enemies.filter(function (e) { return e.x > sx + 200; });
       }
     } else { G.respawn = { x: sx, y: GY, stage: idx }; }
-    p.x = sx; p.y = sy; p.vx = 0; p.vy = 0; p.st = 'free'; p.inv = 60; p.face = 1; p.safeX = sx; p.ground = true; p.slammed = false; p.entry = false; p.flipT = 0; p.landT = 0; p.skidT = 0; p.airAtk = 0; p.airDashed = 0; p.landAnim = null; p.battleT = 0; p.angerT = 0; p.hurtFaceT = 0; p.joyT = 0; p.mood = null; p.idleT = 0; p.running = false; p.stopT = 0;
+    p.x = sx; p.y = sy; p.vx = 0; p.vy = 0; p.st = 'free'; p.inv = 60; p.face = 1; p.safeX = sx; p.ground = true; p.slammed = false; p.entry = false; p.flipT = 0; p.landT = 0; p.skidT = 0; p.airAtk = 0; p.airDashed = 0; p.landAnim = null; p.battleT = 0; p.angerT = 0; p.hurtFaceT = 0; p.joyT = 0; p.mood = null; p.idleT = 0; p.rhythm = 0; p.rhythmT = 0; p.running = false; p.stopT = 0;
     G.cam.x = clamp(sx - 180, 0, S.len - R.W); G.cam.y = S.vertical ? towerCam(sy) : 0;
     G.goalT = 0;
     G.card = null; G.talk = null;
