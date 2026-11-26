@@ -151,7 +151,7 @@
   // 画面に入っているか（y を渡すと、縦のステージでは高さも見る）
   function onScreen(x, m, y) {
     m = m || 40;
-    if (y !== undefined && G.S && G.S.vertical && (y + G.cam.y < -m || y + G.cam.y > R.H + m)) return false;
+    if (y !== undefined && G.S && (G.S.vertical || G.S.sky) && (y + G.cam.y < -m || y + G.cam.y > R.H + m)) return false;
     return x > G.cam.x - m && x < G.cam.x + R.W + m;
   }
   // その場所に、立てる床があるか（足場・動く足場・地形の上面。縦のステージの機兵が、足場から落ちないように）
@@ -1156,6 +1156,7 @@
     // ステージ端・ボス部屋
     var lo = 8, hi = G.S.len - 8;
     if (G.arena) { lo = G.arena[0] + 8; hi = G.arena[1] - 8; }
+    if (G.S.sky) { lo = Math.max(lo, G.cam.x + 8); hi = Math.min(hi, G.cam.x + R.W - 8); }      // 空のステージ: 画面の外へは出られない（左端に押し出される）
     if ((p.x <= lo && p.vx < 0) || (p.x >= hi && p.vx > 0)) p.vx = 0;      // 端で止められたら、その場で足踏みしない
     p.x = clamp(p.x, lo, hi);
     if (p.ground) {
@@ -1169,7 +1170,7 @@
     else if (p.coyote > 0) p.coyote--;
     if (p.flipT > 0 && p.flipT % 4 === 0) ghost(p, 9);
     // ステージから落ちたら、その場でゲームオーバー（つづきは、最後に記録した端末から）。縦のステージでは、画面の下へ消えたら
-    if ((G.S.vertical ? p.y - p.h + G.cam.y > R.H + 6 : p.y > R.H + 60) && G.state === 'play') {
+    if ((G.S.vertical || G.S.sky ? p.y - p.h + G.cam.y > R.H + 6 : p.y > R.H + 60) && G.state === 'play') {
       p.vx = 0; p.vy = 0; p.st = 'free'; p.flipT = 0; G.combo = 0; G.cross = null;
       toast('落下…', '#ff9db8'); R.snd('hurt');
       G.state = 'gameover'; G.stateT = 0; R.bgm('gameover');
@@ -1207,7 +1208,7 @@
         if (ad < 42 && e.cd <= 0) { e.st = 'attack'; e.stT = 0; }
         else if (ad > 34) {
           var ahead = e.x + e.face * 14;
-          e.vx = (G.S.vertical ? e.ground && standAt(ahead, e.y) : groundAt(ahead)) ? e.face * 0.75 : 0; e.st = e.vx ? 'walk' : 'idle';
+          e.vx = (G.S.vertical || G.S.sky ? e.ground && standAt(ahead, e.y) : groundAt(ahead)) ? e.face * 0.75 : 0; e.st = e.vx ? 'walk' : 'idle';
         } else { e.vx *= 0.8; e.st = 'idle'; }
       } else { e.vx *= 0.8; e.st = 'idle'; }
     }
@@ -1326,7 +1327,7 @@
         hit = s.t > s.warn && s.t < s.life - 12 && R.overlap({ x: s.x - s.w / 2, y: s.y - s.h, w: s.w, h: s.h }, pb);
       } else if (s.upd) hit = s.upd(s, p, pb);      // 中ボスの技（衝撃波・地裂）は、動きを自分で決める
       if (hit) { if (hurtPlayer(s.dmg, R.sign(s.vx || (p.x - s.x)), s.type === 'shock' || !!s.big)) { if (s.type === 'bullet') s.dead = true; } }
-      if (s.t > s.life || s.x < G.cam.x - 80 || s.x > G.cam.x + R.W + 80 || (G.S.vertical && !onScreen(s.x, 80, s.y))) s.dead = true;
+      if (s.t > s.life || s.x < G.cam.x - 80 || s.x > G.cam.x + R.W + 80 || ((G.S.vertical || G.S.sky) && !onScreen(s.x, 80, s.y))) s.dead = true;
     }
     G.shots = G.shots.filter(function (s) { return !s.dead; });
   }
@@ -1412,14 +1413,14 @@
     S.items.forEach(function (q) { G.items.push({ type: q[0], x: q[1], y: q[2], t: 0, open: false }); });
     // 端末・バネは、x だけ（地面の上）か、[x, y]（縦のステージの足場の上）
     G.terminals = S.checkpoints.map(function (q) { return typeof q === 'number' ? { x: q, y: GY, on: false } : { x: q[0], y: q[1], on: false }; });
-    G.movers = (S.movers || []).map(function (q, n) { return { x0: q[0], y0: q[1], x: q[0], y: q[1], w: q[2], dx: q[3], dy: q[4], per: q[5], ph: n * 37 }; });
+    G.movers = (S.movers || []).map(function (q, n) { return { x0: q[0], y0: q[1], x: q[0], y: q[1], w: q[2], dx: q[3], dy: q[4], per: q[5], ph: n * 37, kind: q[6] || null }; });      // kind = 空のステージの乗り物の見た目（ship / car）
     G.crumbles = (S.crumbles || []).map(function (q) { return { x: q[0], y: q[1], y0: q[1], w: q[2], t: 0, gone: 0, crumble: true }; });
     G.rings = (S.rings || []).map(function (q) { return { x: q[0], y: q[1], t: 99 }; });
     G.fans = (S.fans || []).map(function (q) { return { x: q[0], y: q[1], w: q[2], h: q[3] }; });
     G.lasers = (S.lasers || []).map(function (q) { return { x: q[0], y: q[1], w: q[2], per: q[3], off: q[4] || 0, on: false, warn: false }; });
     G.plats = S.platRects.concat(G.movers, G.crumbles);
     G.springs = (S.springs || []).map(function (q) { if (typeof q !== 'number') return { x: q[0], y: q[1], t: 0 }; var y = floorAt(q); return { x: q, y: y === null ? GY : y, t: 0 }; });
-    var sx = S.startX || 70, sy = GY;
+    var sx = S.startX || 70, sy = S.startY === undefined ? GY : S.startY;
     if (fromCheckpoint && G.respawn && G.respawn.stage === idx) {
       sx = G.respawn.x; sy = G.respawn.y === undefined ? GY : G.respawn.y;
       if (S.vertical) {      // 縦のステージ: 記録した高さより下の端末は済み。上にいる敵だけ残す
@@ -1429,9 +1430,10 @@
         G.terminals.forEach(function (tm) { if (tm.x <= sx) tm.on = true; });
         G.enemies = G.enemies.filter(function (e) { return e.x > sx + 200; });
       }
-    } else { G.respawn = { x: sx, y: GY, stage: idx }; }
+    } else { G.respawn = { x: sx, y: sy, stage: idx }; }
     p.x = sx; p.y = sy; p.vx = 0; p.vy = 0; p.st = 'free'; p.inv = 60; p.face = 1; p.safeX = sx; p.ground = true; p.slammed = false; p.entry = false; p.flipT = 0; p.landT = 0; p.skidT = 0; p.airAtk = 0; p.airDashed = 0; p.landAnim = null; p.battleT = 0; p.angerT = 0; p.hurtFaceT = 0; p.joyT = 0; p.mood = null; p.idleT = 0; p.rhythm = 0; p.rhythmT = 0; p.running = false; p.stopT = 0;
     G.cam.x = clamp(sx - 180, 0, S.len - R.W); G.cam.y = S.vertical ? towerCam(sy) : 0;
+    if (S.sky) { G.cam.x = clamp(sx - 110, 0, S.path[S.path.length - 1][0]); G.cam.y = skyY(G.cam.x); G.skyWait = 100; }      // 空のステージ: 始めてしばらくは、画面を止めておく
     G.goalT = 0;
     G.card = null; G.talk = null;
     G.state = 'play'; G.stateT = 0; G.fade = 1; G.fadeDir = -1;
@@ -1451,11 +1453,26 @@
   };
   // 縦のステージのカメラ: 足もとが画面の下から 105 ドット（y = 165）に来る高さ。下の地面より下は映さず、てっぺんより上へも行かない
   function towerCam(y) { return clamp(165 - y, 0, 165 - G.S.goal[1] + 20); }
+  // 空のステージのカメラ: カメラの左端の x から、上向きの量（cam.y）を、道のり S.path の折れ線で決める
+  function skyY(cx) {
+    var P = G.S.path, i, a, b;
+    if (cx <= P[0][0]) return P[0][1];
+    for (i = 1; i < P.length; i++) { a = P[i - 1]; b = P[i]; if (cx <= b[0]) return a[1] + (b[1] - a[1]) * (cx - a[0]) / (b[0] - a[0]); }
+    return P[P.length - 1][1];
+  }
+  R.skyY = skyY;
+  // 空のステージの強制スクロール: 道のりに沿って、斜めでも同じ速さで進む。ゴールに着いたら止まる
+  function skyScroll() {
+    var S = G.S, end = S.path[S.path.length - 1][0], sl;
+    if (G.skyWait > 0) G.skyWait--;
+    else if (!G.bossDefeated && G.cam.x < end) { sl = skyY(G.cam.x + 1) - skyY(G.cam.x); G.cam.x = Math.min(end, G.cam.x + S.speed / Math.sqrt(1 + sl * sl)); }
+    G.cam.y = skyY(G.cam.x);
+  }
   // 縦のステージ: てっぺんの足場に立ったら、登りきってステージクリア。
   //   ボス（S.boss）がいれば、てっぺんに着いたところでボス戦になり（足場の上だけで戦う）、倒すとクリア
   function summit(p) {
     var q = G.S.goal;
-    toast('登頂！ ― 鉄塔のてっぺんに着いた', '#ffe04a'); R.snd('levelup'); p.joyT = 120; p.joyAll = true;
+    toast(G.S.goalMsg || '登頂！ ― 鉄塔のてっぺんに着いた', '#ffe04a'); R.snd('levelup'); p.joyT = 120; p.joyAll = true;
     fx({ type: 'ring', x: p.x, y: p.y - MID, life: 30, r: 70, col: '#ffe04a' });
   }
   function updGoal() {
@@ -1558,6 +1575,7 @@
     if (!G.cross) updTouch();
     updItems(); updFx(); updBossTrigger(); updSpikes();
     // カメラ
+    if (G.S.sky) { skyScroll(); return; }      // 空のステージ: 主人公には合わせず、決まった道のりを進む
     var p = G.pl, tx = p.x - R.W * 0.42 + p.face * 26, lo = 0, hi = G.S.len - R.W;
     if (G.arena && G.arena[1] - G.arena[0] >= R.W) { lo = G.arena[0]; hi = G.arena[1] - R.W; }      // 画面より狭い戦いの場（鉄塔のてっぺん）では、カメラは動かさない
     G.cam.x += (clamp(tx, lo, hi) - G.cam.x) * 0.1;

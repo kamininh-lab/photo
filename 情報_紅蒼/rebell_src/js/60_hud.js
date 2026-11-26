@@ -135,6 +135,20 @@
     g.fillStyle = '#ff2e48'; g.beginPath(); g.moveTo(px, py - r); g.lineTo(px + r, py); g.lineTo(px, py + r); g.lineTo(px - r, py); g.fill();
     T(g, 'TOP ' + top + ' m', x + w - 24, y + 132, 20, '#8a7ac8', 'right', UI, '#120a30', 4);
   }
+  // 空のステージの地図の代わり: ゴール（着艦デッキ）までの道のり。右上がりの線の上を、自分の印が進む
+  function skyRoute(g, S, x, y, w, h) {
+    var gx0 = S.goal[0], pm = S.pxPerM || 14, bx = x + 24, bw = w - 70, by = y + 118, rise = 40;
+    var f = function (wx) { return clamp(wx / gx0, 0, 1); }, left = Math.max(0, Math.round((gx0 - G.pl.x) / pm));
+    T(g, 'SKY ROUTE', x + 24, y + 46, 26, '#c8b8ff', 'left', UI, '#120a30', 5);
+    T(g, 'あと ' + left + ' m', x + w - 24, y + 50, 34, '#ffffff', 'right', UI, '#120a30', 6);
+    g.strokeStyle = '#2a2266'; g.lineWidth = 12; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx + bw, by - rise); g.stroke();
+    var u = f(G.pl.x); g.strokeStyle = '#8a70e0'; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx + bw * u, by - rise * u); g.stroke();
+    G.terminals.forEach(function (tm) { var v = f(tm.x); g.fillStyle = tm.on ? CYAN : '#5a8ab0'; g.fillRect(bx + bw * v - 2, by - rise * v - 20, 5, 12); });
+    var fx = bx + bw + 4, fy = by - rise; g.fillStyle = '#ffffff'; g.fillRect(fx, fy - 30, 3, 36); g.fillStyle = '#ffe04a'; g.beginPath(); g.moveTo(fx + 3, fy - 30); g.lineTo(fx + 26, fy - 22); g.lineTo(fx + 3, fy - 14); g.fill();
+    var px = bx + bw * u, py = by - rise * u, r = 11 + ((G.t >> 4) % 2);
+    g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(px, py - r - 3); g.lineTo(px + r + 3, py); g.lineTo(px, py + r + 3); g.lineTo(px - r - 3, py); g.fill();
+    g.fillStyle = '#ff2e48'; g.beginPath(); g.moveTo(px, py - r); g.lineTo(px + r, py); g.lineTo(px, py + r); g.lineTo(px - r, py); g.fill();
+  }
   function minimap(g) {
     var S = G.S, x = 1552, y = 20, w = 343, h = 143, i;
     panel(g, x, y, w, h, 10, 'rgba(22,16,60,.86)', '#ffffff', 5);
@@ -143,6 +157,7 @@
     for (i = 1; i < 12; i++) { g.beginPath(); g.moveTo(x + i * 29, y); g.lineTo(x + i * 29, y + h); g.stroke(); }
     for (i = 1; i < 5; i++) { g.beginPath(); g.moveTo(x, y + i * 29); g.lineTo(x + w, y + i * 29); g.stroke(); }
     if (S.vertical) { altimeter(g, S, x, y, w, h); g.restore(); return; }
+    if (S.sky) { skyRoute(g, S, x, y, w, h); g.restore(); return; }
     var sx = (w - 30) / S.len, bx = x + 15, by = y + 96;
     g.fillStyle = '#8a70e0';
     S.ground.forEach(function (q) { g.fillRect(bx + q[0] * sx, by, (q[1] - q[0]) * sx, 22); });

@@ -335,6 +335,74 @@
     }
   }
 
+  // 空のステージの足場と乗り物（毎フレーム描く）。fg は世界の y に合わせて平行移動済み
+  //   浮き足場 = 噴射口で浮く鉄板 / 飛空艇 = 甲板の下に船体・後ろに機関・腹にプロペラ / エアカー = 屋根に乗る車 / ゴール = 大きな飛空艇の着艦デッキ
+  function skyWorld(fg) {
+    var t = G.t, i, q, x, y, w, k, vis = function (xx, ww, yy) { return xx + ww > -40 && xx < R.W + 40 && yy + oy > -60 && yy + oy < R.H + 60; };
+    function jet(jx, jy, n) {      // 下向きの噴射の炎（ゆらぐ）
+      var h = 2 + ((t + jx) >> 2) % 3;
+      fg.fillStyle = '#24213f'; fg.fillRect(jx, jy, n, 3);
+      fg.fillStyle = '#37e6ff'; fg.fillRect(jx + 1, jy + 3, n - 2, h); fg.fillStyle = '#c0f8ff'; fg.fillRect(jx + (n >> 1) - 1, jy + 3, 2, h - 1);
+    }
+    function plate(px, py, pw) {      // 浮き足場
+      fg.fillStyle = '#2f2b55'; fg.fillRect(px, py, pw, 6);
+      fg.fillStyle = '#e8e0ff'; fg.fillRect(px, py, pw, 1); fg.fillStyle = '#8078b8'; fg.fillRect(px, py + 1, pw, 1);
+      fg.fillStyle = '#ffd36a'; for (k = px + 4; k < px + pw - 6; k += 10) fg.fillRect(k, py + 3, 5, 1);
+      fg.fillStyle = '#1c1846'; fg.fillRect(px + 3, py + 6, pw - 6, 3);
+      jet(px + 4, py + 9, 6); jet(px + pw - 10, py + 9, 6); if (pw > 90) jet(px + (pw >> 1) - 3, py + 9, 6);
+    }
+    function ship(sx, sy, sw, big) {      // 飛空艇: 甲板（乗れる）は y、船体はその下
+      var hd = big ? 40 : 26;
+      // 帆柱と旗（へさき寄り）
+      fg.fillStyle = '#3d3684'; fg.fillRect(sx + sw - 18, sy - 24, 2, 24);
+      fg.fillStyle = (t >> 4) % 2 ? '#ff4fb0' : '#ff7ad1'; fg.beginPath(); fg.moveTo(sx + sw - 16, sy - 24); fg.lineTo(sx + sw - 4 + Math.sin(t * 0.15) * 2, sy - 20); fg.lineTo(sx + sw - 16, sy - 16); fg.fill();
+      // 船体
+      fg.fillStyle = '#241f56'; fg.beginPath(); fg.moveTo(sx - 6, sy + 2); fg.lineTo(sx + sw + 16, sy + 2); fg.lineTo(sx + sw - 4, sy + hd * 0.6); fg.lineTo(sx + sw - 24, sy + hd); fg.lineTo(sx + 16, sy + hd); fg.lineTo(sx + 2, sy + hd * 0.55); fg.closePath(); fg.fill();
+      fg.fillStyle = '#4a4396'; fg.fillRect(sx - 4, sy + 6, sw + 16, 2);
+      fg.fillStyle = '#17143a'; fg.fillRect(sx + 14, sy + hd - 6, sw - 36, 4);
+      for (k = sx + 12; k < sx + sw - 8; k += 18) { fg.fillStyle = (k + (t >> 5)) % 3 ? '#ffd36a' : '#ff9a3a'; fg.fillRect(k, sy + 11, 4, 3); }      // 窓の灯り
+      fg.fillStyle = '#37e6ff'; fg.fillRect(sx + 10, sy + hd * 0.55 + 2, sw - 24, 1);      // 船腹のネオン
+      // 後ろの機関と噴射
+      fg.fillStyle = '#2f2b55'; fg.fillRect(sx - 16, sy + 4, 14, 12); fg.fillStyle = '#655e9e'; fg.fillRect(sx - 16, sy + 4, 14, 1);
+      var fl = 6 + ((t >> 1) % 3) * 2; fg.fillStyle = '#ff4fb0'; fg.fillRect(sx - 16 - fl, sy + 7, fl, 6); fg.fillStyle = '#ffd0ec'; fg.fillRect(sx - 16 - (fl >> 1), sy + 9, fl >> 1, 2);
+      // 腹のプロペラ（回る）
+      [0.3, 0.7].forEach(function (u) { var px = Math.round(sx + sw * u), pw = Math.round(9 * Math.abs(Math.sin(t * 0.5 + u * 3))) + 1; fg.fillStyle = '#3d3684'; fg.fillRect(px - 1, sy + hd, 2, 4); fg.fillStyle = '#a39bd0'; fg.fillRect(px - pw, sy + hd + 4, pw * 2, 1); });
+      // 甲板
+      fg.fillStyle = '#3d3868'; fg.fillRect(sx, sy, sw, 4);
+      fg.fillStyle = '#e8e0ff'; fg.fillRect(sx, sy, sw, 1); fg.fillStyle = '#a39bd0'; fg.fillRect(sx, sy + 1, sw, 1);
+      fg.fillStyle = '#24213f'; for (k = sx + 8; k < sx + sw - 4; k += 14) fg.fillRect(k, sy + 2, 1, 2);
+    }
+    function car(cx, cy, cw, dir) {      // エアカー: 屋根（乗れる）は y
+      fg.fillStyle = '#2a1640'; fg.fillRect(cx - 2, cy + 3, cw + 4, 8); fg.fillStyle = '#1c1846'; fg.fillRect(cx, cy, cw, 4);
+      fg.fillStyle = '#ffb0e0'; fg.fillRect(cx, cy, cw, 1);
+      fg.fillStyle = '#7af3ff'; fg.fillRect(cx + 6, cy + 4, cw - 12, 3); fg.fillStyle = '#1c1846'; fg.fillRect(cx + (cw >> 1), cy + 4, 1, 3);      // 窓
+      fg.fillStyle = '#ffffff'; fg.fillRect(dir > 0 ? cx + cw + 1 : cx - 3, cy + 7, 2, 2);      // 前照灯
+      fg.fillStyle = '#ff3048'; fg.fillRect(dir > 0 ? cx - 3 : cx + cw + 1, cy + 7, 2, 2);      // 尾灯
+      fg.fillStyle = (t >> 2) % 2 ? '#ff4fb0' : '#d9368f'; fg.fillRect(cx + 2, cy + 11, cw - 4, 2);      // 車体の下のネオン
+      jet(cx + 3, cy + 11, 5); jet(cx + cw - 8, cy + 11, 5);
+    }
+    // 浮き足場（ゴールは別に描く）
+    var S = G.S, gl = S.goal;
+    for (i = 0; i < S.plats.length; i++) {
+      q = S.plats[i]; if (q[0] === gl[0] && q[1] === gl[1]) continue;
+      x = Math.round(q[0] - cam); if (!vis(x, q[2], q[1])) continue;
+      plate(x, q[1], q[2]);
+    }
+    // ゴール: 大きな飛空艇の着艦デッキ。誘導灯が流れる
+    x = Math.round(gl[0] - cam);
+    if (vis(x, gl[2], gl[1])) {
+      ship(x, gl[1], gl[2], true);
+      for (k = 0; k < gl[2]; k += 16) { fg.fillStyle = ((k >> 4) + (t >> 3)) % 6 === 0 ? '#ffe04a' : '#5a50a8'; fg.fillRect(x + k + 4, gl[1] - 2, 4, 2); }
+    }
+    // 乗り物
+    for (i = 0; i < (G.movers || []).length; i++) {
+      q = G.movers[i]; if (!q.kind) continue;
+      x = Math.round(q.x - cam); y = Math.round(q.y); w = q.w; if (!vis(x - 40, w + 80, y)) continue;
+      if (q.kind === 'ship') ship(x, y, w, false);
+      else car(x, y, w, Math.sin((G.time + q.ph) / q.per * Math.PI * 2) >= 0 ? 1 : -1);      // 進んでいる向きに前照灯
+    }
+  }
+
   // ---- 1 フレームの描画。奥から順に 4 回に分けて呼ぶ ----
   var cam = 0, oy = 0;      // いまのカメラ位置と、画面ゆれの縦ずれ
 
@@ -363,6 +431,7 @@
     var I = R.SPR.items, i, e;
     fg.clearRect(0, 0, R.W, R.H); fg.imageSmoothingEnabled = false;
     fg.save(); fg.translate(0, oy);
+    if (G.S.sky) skyWorld(fg);      // 空のステージの足場と乗り物（端末より奥）
     // 端末
     for (i = 0; i < G.terminals.length; i++) { var tm = G.terminals[i], ty = tm.y; fg.drawImage(I.terminal[tm.on ? ((G.t >> 4) % 2) : 0], Math.round(tm.x - cam - 17), ty - 56); if (!tm.on && (G.t >> 4) % 2) { fg.fillStyle = '#7af3ff'; fg.fillRect(Math.round(tm.x - cam) - 1, ty - 66, 2, 5); fg.fillRect(Math.round(tm.x - cam) - 3, ty - 62, 6, 1); } }
     if (G.S.vertical) towerGimmicks(fg);
@@ -372,6 +441,7 @@
     var MV = G.movers || [], SPG = G.springs || [], mx, my, k;
     for (i = 0; i < MV.length; i++) {
       mx = Math.round(MV[i].x - cam); my = Math.round(MV[i].y); k = MV[i].w;
+      if (MV[i].kind) continue;      // 飛空艇・エアカーは skyWorld で描いた
       if (mx > R.W + 10 || mx + k < -10) continue;
       fg.fillStyle = '#2f2b55'; fg.fillRect(mx, my, k, 7);
       fg.fillStyle = '#7af3ff'; fg.fillRect(mx, my, k, 1); fg.fillStyle = '#37e6ff'; fg.fillRect(mx, my + 1, k, 1);

@@ -997,6 +997,7 @@ function wrap(v, m) { return ((v % m) + m) % m; }
 var THEME = {
 city: { beam: '#9ae8ff', beams: 4, rain: 110, slant: 0.2, rainCol: ['#9ae8ff', '#ff9ad8', '#c8c0ff'], fog: ['255,60,170', '40,200,255'], cars: 4, blimp: true },
 tower: { beam: '#c8f4ff', beams: 3, rain: 80, slant: 0.55, rainCol: ['#c8f4ff', '#9ae8ff', '#ffb0e0'], fog: null, cars: 5, blimp: true },
+sky: { beam: '#ffb0e0', beams: 2, rain: 0, slant: 0, rainCol: [], fog: null, cars: 5, blimp: true },
 school: { beam: '#ff3a5a', beams: 3, rain: 40, slant: 0.12, rainCol: ['#ffb0c8', '#c8c0ff'], fog: ['255,40,90', '160,60,255'], cars: 3, blimp: false }
 };
 function theme(S) { return THEME[S.id] || THEME.city; }
@@ -1108,6 +1109,7 @@ city: [[120, 70, '電脳街', '#ff4fb0', 1, 15, 0.7], [380, 96, 'NEON MARKET', '
 [1050, 110, '電脳', '#b49cff', 0, 12, 0.95], [1180, 60, 'らぁめん 夜鳴き', '#ff9a3a', 0, 13, 0.6], [1500, 96, '立入禁止', '#ff3048', 0, 14, 0.9], [1760, 40, 'HOLO-BAR', '#ff4fb0', 0, 12, 0.5],
 [1900, 78, '24H 電脳診療所', '#7af3ff', 0, 12, 0.7], [2330, 70, '夜市', '#ff4fb0', 1, 17, 0.8], [2560, 104, '回線不通', '#ff3048', 0, 11, 0.95], [2700, 50, 'NEO KAGOSHIMA', '#b49cff', 0, 14, 0.6],
 [3100, 80, '回路', '#37e6ff', 1, 16, 0.85], [3300, 40, '義眼', '#7af3ff', 1, 12, 0.5], [3450, 96, 'DANGER', '#ff3048', 0, 14, 0.9]],
+sky: [[330, 70, 'SKY LANE 07', '#37e6ff', 0, 10, 1], [1290, -150, '結界まで 1.8 km', '#ff4fb0', 0, 11, 1], [2200, -420, '玉龍学園 →', '#ffd36a', 0, 12, 1], [3200, -660, '着艦デッキ', '#7af3ff', 0, 12, 1]],
 tower: [[40, 100, '電波塔', '#37e6ff', 1, 13, 1], [330, 120, 'TOWER-7', '#b49cff', 0, 10, 1], [380, -1530, '高電圧', '#ff3048', 1, 11, 1], [300, -2190, '屋上', '#ffd36a', 0, 12, 1]],
 school: [[260, 70, '夜間戒厳令', '#ff3048', 1, 13, 0.75], [700, 60, '警報：龍の出現', '#ff3048', 0, 13, 0.6], [1150, 96, '避難経路 →', '#7af3ff', 0, 12, 0.9],
 [1450, 36, '生徒は直ちに退避せよ', '#ffd36a', 0, 11, 0.55], [1700, 80, 'GYOKURYU ACADEMY', '#37e6ff', 0, 12, 0.5], [2150, 66, '結界', '#ff4fb0', 1, 17, 0.85],
@@ -1828,7 +1830,25 @@ items: [['crystal', 124, 129], ['crystal', 189, 82], ['crystal', 252, 35], ['cry
 checkpoints: [[219, -120], [205, -420], [121, -802], [230, -1150], [305, -1500], [219, -1810]]
 },
 {
-id: 'school', title: '第三章　玉龍学園　紅い月の下で', sub: 'STAGE 3  -  GYOKURYU ACADEMY', bgm: 'school', len: 3360, talk: 'school',
+id: 'sky', title: '第三章　紅月の空中回廊', sub: 'STAGE 3  -  SKY CORRIDOR', bgm: 'city', len: 3780, sky: true, talk: 'sky',
+speed: 0.5, startX: 80, startY: 176, pxPerM: 14, goalMsg: '着艦！ ― 結界の上を越えた',
+path: [[0, 0], [360, 0], [1000, 240], [1260, 240], [1900, 500], [2160, 500], [2800, 720], [3300, 720]],
+ground: [],
+plats: [[0, 176, 170], [210, 160, 60], [520, 150, 60], [600, 140, 50], [820, 84, 56], [1150, -30, 60], [1240, -64, 70],
+[1560, -96, 60], [1770, -176, 54], [1910, -250, 60], [2110, -320, 90], [2470, -352, 56], [2676, -426, 64], [3040, -544, 60], [3110, -548, 360]],
+movers: [[300, 170, 150, 60, -6, 320, 'ship'], [680, 110, 44, 72, 0, 200, 'car'], [900, 60, 40, 0, -50, 180], [960, 10, 170, 50, -10, 360, 'ship'],
+[1330, -60, 200, 70, -6, 400, 'ship'], [1640, -130, 44, 84, -24, 200, 'car'], [1850, -196, 40, 0, -46, 170], [1990, -276, 44, 80, -30, 210, 'car'],
+[2220, -318, 180, 80, -8, 380, 'ship'], [2550, -384, 44, 92, -30, 200, 'car'], [2770, -456, 40, 0, -44, 170], [2830, -506, 160, 60, -10, 360, 'ship']],
+enemies: [['drone', 450, 110], ['drone', 760, 50], ['drone', 1100, -80], ['robot', 1290, -64], ['drone', 1480, -130], ['drone', 1720, -210],
+['drone', 1990, -340], ['drone', 2420, -390], ['drone', 2640, -470], ['drone', 2950, -580]],
+items: [['crystal', 250, 140], ['crystal', 380, 150], ['crystal', 545, 130], ['crystal', 700, 90], ['crystal', 848, 64], ['crystal', 1050, -15], ['crystal', 1180, -50],
+['potion', 1300, -80], ['crystal', 1420, -80], ['crystal', 1590, -116], ['crystal', 1700, -150], ['crystal', 1797, -196], ['crystal', 1940, -270], ['crystal', 2050, -300],
+['chest', 2185, -320], ['crystal', 2300, -340], ['crystal', 2498, -372], ['crystal', 2610, -410], ['crystal', 2708, -446], ['crystal', 2900, -530], ['crystal', 3070, -564]],
+checkpoints: [[1262, -64], [2135, -320]],
+goal: [3110, -548, 360]
+},
+{
+id: 'school', title: '第四章　玉龍学園　紅い月の下で', sub: 'STAGE 4  -  GYOKURYU ACADEMY', bgm: 'school', len: 3360, talk: 'school',
 ground: [[0, 400], [990, 1090], [1560, 1640], [2090, 2764], [3046, 3360]],
 blocks: [[760, 48, 70], [1320, 44, 110], [1408, 44, 130]],
 spikes: [[1052, 24]],
@@ -2068,11 +2088,23 @@ tier(82, 10, 44, 8, ['#1e1a4c', '#262158', '#2e2866', '#3d3684', '#5a50a8'], 200
 tier(116, 16, 80, 12, ['#2a2462', '#352e78', '#40388c', '#5a50b0', '#9a8ae0'], 200, true);
 return cv;
 }
+function buildClouds(seed, col, sc) {
+var cv = R.mk(960, 150), c = cv.getContext('2d'), P = R.painter(c), r = R.rng(seed), L = [], i, k, q;
+for (i = 0; i < 34; i++) L.push([r() * 960, 50 + r() * 34, (16 + r() * 34) * sc, (7 + r() * 10) * sc]);
+[[0, 4, 1, 1], [1, 0, 1, 1], [2, -3, 0.7, 0.5]].forEach(function (s) {
+for (i = 0; i < L.length; i++) for (k = -1; k <= 1; k++) { q = L[i]; P.ell(Math.round(q[0] + k * 960), Math.round(q[1] + s[1]), Math.round(q[2] * s[2]), Math.round(q[3] * s[3]), col[s[0]]); }
+});
+var n = parseInt(col[0].slice(1), 16), rgb = (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255), gr = c.createLinearGradient(0, 84, 0, 150);
+gr.addColorStop(0, 'rgba(' + rgb + ',1)'); gr.addColorStop(0.35, 'rgba(' + rgb + ',.75)'); gr.addColorStop(1, 'rgba(' + rgb + ',0)');
+c.fillStyle = gr; c.fillRect(0, 84, 960, 66);
+return cv;
+}
 R.buildStages = function () {
 var BG = R.BG = window.REBELL_BG_SCHOOL.build();
 BG.viaduct = buildViaduct(); BG.lattice = buildLattice();
+BG.cloudFar = buildClouds(6101, ['#231d55', '#3a2f7a', '#6a4a9a'], 0.8); BG.cloudNear = buildClouds(6202, ['#2a2062', '#4a3a8c', '#c86aa8'], 1.25);
 R.STAGES.forEach(function (S) {
-S.layer = S.id === 'city' ? buildCity(S, BG) : S.vertical ? buildTower(S) : buildSchool(S, BG);
+S.layer = S.id === 'city' ? buildCity(S, BG) : S.vertical ? buildTower(S) : S.sky ? R.mk(4, 4) : buildSchool(S, BG);
 S.solids = S.ground.map(function (g) { return { x: g[0], y: GY, w: g[1] - g[0], h: 120 }; });
 S.blockRects = (S.blocks || []).map(function (b) { return { x: b[0], y: GY - b[2], w: b[1], h: b[2] + 60 }; });
 S.solids = S.solids.concat(S.blockRects);
@@ -2092,6 +2124,23 @@ g.drawImage(BG.far, -240, Math.round(Math.min(150, oy * 0.1)));
 if (CY) CY.mid(g, S, camX, t, oy);
 y = Math.round(oy * 0.4) % 384;
 g.globalAlpha = 0.9; g.drawImage(BG.lattice, 0, y - 384); g.drawImage(BG.lattice, 0, y); g.globalAlpha = 1;
+if (rage) { g.fillStyle = 'rgba(255,30,70,.1)'; g.fillRect(0, 0, R.W, R.H); }
+return;
+}
+if (S.sky) {
+oy = oy || 0;
+x = -Math.round(camX * 0.05) % 960; y = 40 + Math.round(oy * 0.22);
+g.drawImage(BG.far, x, y); g.drawImage(BG.far, x + 960, y);
+if (CY) CY.mid(g, S, camX, t, oy);
+[[BG.cloudFar, 0.12, 0.3, 120, 0.06], [BG.cloudNear, 0.3, 0.55, 190, 0.18]].forEach(function (L) {
+var cx = -Math.round(camX * L[1] + t * L[4]) % 960, cy = L[3] + Math.round(oy * L[2]);
+for (var k = 0; k < 3; k++) {
+var yy = cy - k * 330; if (yy > R.H || yy < -150) continue;
+g.drawImage(L[0], cx, yy); g.drawImage(L[0], cx + 960, yy);
+}
+});
+g.fillStyle = 'rgba(220,210,255,.22)';
+for (var i = 0; i < 9; i++) { var wx = ((i * 173 - t * (3 + i % 3)) % 560 + 560) % 560 - 40, wy = (i * 61 + 23) % 250 + 8; g.fillRect(wx, wy, 14 + (i % 4) * 8, 1); }
 if (rage) { g.fillStyle = 'rgba(255,30,70,.1)'; g.fillRect(0, 0, R.W, R.H); }
 return;
 }
@@ -2226,7 +2275,7 @@ function shake(n) { G.cam.shake = Math.max(G.cam.shake, n); }
 function box(b) { return { x: b.x - b.w / 2, y: b.y - b.h, w: b.w, h: b.h }; }
 function onScreen(x, m, y) {
 m = m || 40;
-if (y !== undefined && G.S && G.S.vertical && (y + G.cam.y < -m || y + G.cam.y > R.H + m)) return false;
+if (y !== undefined && G.S && (G.S.vertical || G.S.sky) && (y + G.cam.y < -m || y + G.cam.y > R.H + m)) return false;
 return x > G.cam.x - m && x < G.cam.x + R.W + m;
 }
 function standAt(x, y) {
@@ -3166,6 +3215,7 @@ var vy0 = p.vy;
 moveBody(p);
 var lo = 8, hi = G.S.len - 8;
 if (G.arena) { lo = G.arena[0] + 8; hi = G.arena[1] - 8; }
+if (G.S.sky) { lo = Math.max(lo, G.cam.x + 8); hi = Math.min(hi, G.cam.x + R.W - 8); }
 if ((p.x <= lo && p.vx < 0) || (p.x >= hi && p.vx > 0)) p.vx = 0;
 p.x = clamp(p.x, lo, hi);
 if (p.ground) {
@@ -3178,7 +3228,7 @@ if (groundAt(p.x - 10) && groundAt(p.x + 10)) p.safeX = p.x;
 }
 else if (p.coyote > 0) p.coyote--;
 if (p.flipT > 0 && p.flipT % 4 === 0) ghost(p, 9);
-if ((G.S.vertical ? p.y - p.h + G.cam.y > R.H + 6 : p.y > R.H + 60) && G.state === 'play') {
+if ((G.S.vertical || G.S.sky ? p.y - p.h + G.cam.y > R.H + 6 : p.y > R.H + 60) && G.state === 'play') {
 p.vx = 0; p.vy = 0; p.st = 'free'; p.flipT = 0; G.combo = 0; G.cross = null;
 toast('落下…', '#ff9db8'); R.snd('hurt');
 G.state = 'gameover'; G.stateT = 0; R.bgm('gameover');
@@ -3213,7 +3263,7 @@ e.face = R.sign(dx);
 if (ad < 42 && e.cd <= 0) { e.st = 'attack'; e.stT = 0; }
 else if (ad > 34) {
 var ahead = e.x + e.face * 14;
-e.vx = (G.S.vertical ? e.ground && standAt(ahead, e.y) : groundAt(ahead)) ? e.face * 0.75 : 0; e.st = e.vx ? 'walk' : 'idle';
+e.vx = (G.S.vertical || G.S.sky ? e.ground && standAt(ahead, e.y) : groundAt(ahead)) ? e.face * 0.75 : 0; e.st = e.vx ? 'walk' : 'idle';
 } else { e.vx *= 0.8; e.st = 'idle'; }
 } else { e.vx *= 0.8; e.st = 'idle'; }
 }
@@ -3330,7 +3380,7 @@ if (s.t === s.warn) { R.snd('fire'); shake(4); }
 hit = s.t > s.warn && s.t < s.life - 12 && R.overlap({ x: s.x - s.w / 2, y: s.y - s.h, w: s.w, h: s.h }, pb);
 } else if (s.upd) hit = s.upd(s, p, pb);
 if (hit) { if (hurtPlayer(s.dmg, R.sign(s.vx || (p.x - s.x)), s.type === 'shock' || !!s.big)) { if (s.type === 'bullet') s.dead = true; } }
-if (s.t > s.life || s.x < G.cam.x - 80 || s.x > G.cam.x + R.W + 80 || (G.S.vertical && !onScreen(s.x, 80, s.y))) s.dead = true;
+if (s.t > s.life || s.x < G.cam.x - 80 || s.x > G.cam.x + R.W + 80 || ((G.S.vertical || G.S.sky) && !onScreen(s.x, 80, s.y))) s.dead = true;
 }
 G.shots = G.shots.filter(function (s) { return !s.dead; });
 }
@@ -3409,14 +3459,14 @@ G.dragonEnd = false;
 S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });
 S.items.forEach(function (q) { G.items.push({ type: q[0], x: q[1], y: q[2], t: 0, open: false }); });
 G.terminals = S.checkpoints.map(function (q) { return typeof q === 'number' ? { x: q, y: GY, on: false } : { x: q[0], y: q[1], on: false }; });
-G.movers = (S.movers || []).map(function (q, n) { return { x0: q[0], y0: q[1], x: q[0], y: q[1], w: q[2], dx: q[3], dy: q[4], per: q[5], ph: n * 37 }; });
+G.movers = (S.movers || []).map(function (q, n) { return { x0: q[0], y0: q[1], x: q[0], y: q[1], w: q[2], dx: q[3], dy: q[4], per: q[5], ph: n * 37, kind: q[6] || null }; });
 G.crumbles = (S.crumbles || []).map(function (q) { return { x: q[0], y: q[1], y0: q[1], w: q[2], t: 0, gone: 0, crumble: true }; });
 G.rings = (S.rings || []).map(function (q) { return { x: q[0], y: q[1], t: 99 }; });
 G.fans = (S.fans || []).map(function (q) { return { x: q[0], y: q[1], w: q[2], h: q[3] }; });
 G.lasers = (S.lasers || []).map(function (q) { return { x: q[0], y: q[1], w: q[2], per: q[3], off: q[4] || 0, on: false, warn: false }; });
 G.plats = S.platRects.concat(G.movers, G.crumbles);
 G.springs = (S.springs || []).map(function (q) { if (typeof q !== 'number') return { x: q[0], y: q[1], t: 0 }; var y = floorAt(q); return { x: q, y: y === null ? GY : y, t: 0 }; });
-var sx = S.startX || 70, sy = GY;
+var sx = S.startX || 70, sy = S.startY === undefined ? GY : S.startY;
 if (fromCheckpoint && G.respawn && G.respawn.stage === idx) {
 sx = G.respawn.x; sy = G.respawn.y === undefined ? GY : G.respawn.y;
 if (S.vertical) {
@@ -3426,9 +3476,10 @@ G.enemies = G.enemies.filter(function (e) { return e.y < sy - 110; });
 G.terminals.forEach(function (tm) { if (tm.x <= sx) tm.on = true; });
 G.enemies = G.enemies.filter(function (e) { return e.x > sx + 200; });
 }
-} else { G.respawn = { x: sx, y: GY, stage: idx }; }
+} else { G.respawn = { x: sx, y: sy, stage: idx }; }
 p.x = sx; p.y = sy; p.vx = 0; p.vy = 0; p.st = 'free'; p.inv = 60; p.face = 1; p.safeX = sx; p.ground = true; p.slammed = false; p.entry = false; p.flipT = 0; p.landT = 0; p.skidT = 0; p.airAtk = 0; p.airDashed = 0; p.landAnim = null; p.battleT = 0; p.angerT = 0; p.hurtFaceT = 0; p.joyT = 0; p.mood = null; p.idleT = 0; p.rhythm = 0; p.rhythmT = 0; p.running = false; p.stopT = 0;
 G.cam.x = clamp(sx - 180, 0, S.len - R.W); G.cam.y = S.vertical ? towerCam(sy) : 0;
+if (S.sky) { G.cam.x = clamp(sx - 110, 0, S.path[S.path.length - 1][0]); G.cam.y = skyY(G.cam.x); G.skyWait = 100; }
 G.goalT = 0;
 G.card = null; G.talk = null;
 G.state = 'play'; G.stateT = 0; G.fade = 1; G.fadeDir = -1;
@@ -3446,9 +3497,22 @@ p.who = 'kurenai'; p.potions = Math.max(p.potions, 2);
 R.startStage(G.stageIdx, true);
 };
 function towerCam(y) { return clamp(165 - y, 0, 165 - G.S.goal[1] + 20); }
+function skyY(cx) {
+var P = G.S.path, i, a, b;
+if (cx <= P[0][0]) return P[0][1];
+for (i = 1; i < P.length; i++) { a = P[i - 1]; b = P[i]; if (cx <= b[0]) return a[1] + (b[1] - a[1]) * (cx - a[0]) / (b[0] - a[0]); }
+return P[P.length - 1][1];
+}
+R.skyY = skyY;
+function skyScroll() {
+var S = G.S, end = S.path[S.path.length - 1][0], sl;
+if (G.skyWait > 0) G.skyWait--;
+else if (!G.bossDefeated && G.cam.x < end) { sl = skyY(G.cam.x + 1) - skyY(G.cam.x); G.cam.x = Math.min(end, G.cam.x + S.speed / Math.sqrt(1 + sl * sl)); }
+G.cam.y = skyY(G.cam.x);
+}
 function summit(p) {
 var q = G.S.goal;
-toast('登頂！ ― 鉄塔のてっぺんに着いた', '#ffe04a'); R.snd('levelup'); p.joyT = 120; p.joyAll = true;
+toast(G.S.goalMsg || '登頂！ ― 鉄塔のてっぺんに着いた', '#ffe04a'); R.snd('levelup'); p.joyT = 120; p.joyAll = true;
 fx({ type: 'ring', x: p.x, y: p.y - MID, life: 30, r: 70, col: '#ffe04a' });
 }
 function updGoal() {
@@ -3543,6 +3607,7 @@ if (G.slow > 0) G.slow--;
 if (G.cross) updCross(); else if (!(G.slow > 0) || G.t % 3 === 0) { updEnemies(); updShots(); }
 if (!G.cross) updTouch();
 updItems(); updFx(); updBossTrigger(); updSpikes();
+if (G.S.sky) { skyScroll(); return; }
 var p = G.pl, tx = p.x - R.W * 0.42 + p.face * 26, lo = 0, hi = G.S.len - R.W;
 if (G.arena && G.arena[1] - G.arena[0] >= R.W) { lo = G.arena[0]; hi = G.arena[1] - R.W; }
 G.cam.x += (clamp(tx, lo, hi) - G.cam.x) * 0.1;
@@ -5092,6 +5157,63 @@ fg.strokeStyle = hot ? '#fff3b0' : '#ffc83e'; fg.lineWidth = 2; fg.beginPath(); 
 fg.fillStyle = '#3d3684'; fg.fillRect(x - 1, y - 12, 2, 6);
 }
 }
+function skyWorld(fg) {
+var t = G.t, i, q, x, y, w, k, vis = function (xx, ww, yy) { return xx + ww > -40 && xx < R.W + 40 && yy + oy > -60 && yy + oy < R.H + 60; };
+function jet(jx, jy, n) {
+var h = 2 + ((t + jx) >> 2) % 3;
+fg.fillStyle = '#24213f'; fg.fillRect(jx, jy, n, 3);
+fg.fillStyle = '#37e6ff'; fg.fillRect(jx + 1, jy + 3, n - 2, h); fg.fillStyle = '#c0f8ff'; fg.fillRect(jx + (n >> 1) - 1, jy + 3, 2, h - 1);
+}
+function plate(px, py, pw) {
+fg.fillStyle = '#2f2b55'; fg.fillRect(px, py, pw, 6);
+fg.fillStyle = '#e8e0ff'; fg.fillRect(px, py, pw, 1); fg.fillStyle = '#8078b8'; fg.fillRect(px, py + 1, pw, 1);
+fg.fillStyle = '#ffd36a'; for (k = px + 4; k < px + pw - 6; k += 10) fg.fillRect(k, py + 3, 5, 1);
+fg.fillStyle = '#1c1846'; fg.fillRect(px + 3, py + 6, pw - 6, 3);
+jet(px + 4, py + 9, 6); jet(px + pw - 10, py + 9, 6); if (pw > 90) jet(px + (pw >> 1) - 3, py + 9, 6);
+}
+function ship(sx, sy, sw, big) {
+var hd = big ? 40 : 26;
+fg.fillStyle = '#3d3684'; fg.fillRect(sx + sw - 18, sy - 24, 2, 24);
+fg.fillStyle = (t >> 4) % 2 ? '#ff4fb0' : '#ff7ad1'; fg.beginPath(); fg.moveTo(sx + sw - 16, sy - 24); fg.lineTo(sx + sw - 4 + Math.sin(t * 0.15) * 2, sy - 20); fg.lineTo(sx + sw - 16, sy - 16); fg.fill();
+fg.fillStyle = '#241f56'; fg.beginPath(); fg.moveTo(sx - 6, sy + 2); fg.lineTo(sx + sw + 16, sy + 2); fg.lineTo(sx + sw - 4, sy + hd * 0.6); fg.lineTo(sx + sw - 24, sy + hd); fg.lineTo(sx + 16, sy + hd); fg.lineTo(sx + 2, sy + hd * 0.55); fg.closePath(); fg.fill();
+fg.fillStyle = '#4a4396'; fg.fillRect(sx - 4, sy + 6, sw + 16, 2);
+fg.fillStyle = '#17143a'; fg.fillRect(sx + 14, sy + hd - 6, sw - 36, 4);
+for (k = sx + 12; k < sx + sw - 8; k += 18) { fg.fillStyle = (k + (t >> 5)) % 3 ? '#ffd36a' : '#ff9a3a'; fg.fillRect(k, sy + 11, 4, 3); }
+fg.fillStyle = '#37e6ff'; fg.fillRect(sx + 10, sy + hd * 0.55 + 2, sw - 24, 1);
+fg.fillStyle = '#2f2b55'; fg.fillRect(sx - 16, sy + 4, 14, 12); fg.fillStyle = '#655e9e'; fg.fillRect(sx - 16, sy + 4, 14, 1);
+var fl = 6 + ((t >> 1) % 3) * 2; fg.fillStyle = '#ff4fb0'; fg.fillRect(sx - 16 - fl, sy + 7, fl, 6); fg.fillStyle = '#ffd0ec'; fg.fillRect(sx - 16 - (fl >> 1), sy + 9, fl >> 1, 2);
+[0.3, 0.7].forEach(function (u) { var px = Math.round(sx + sw * u), pw = Math.round(9 * Math.abs(Math.sin(t * 0.5 + u * 3))) + 1; fg.fillStyle = '#3d3684'; fg.fillRect(px - 1, sy + hd, 2, 4); fg.fillStyle = '#a39bd0'; fg.fillRect(px - pw, sy + hd + 4, pw * 2, 1); });
+fg.fillStyle = '#3d3868'; fg.fillRect(sx, sy, sw, 4);
+fg.fillStyle = '#e8e0ff'; fg.fillRect(sx, sy, sw, 1); fg.fillStyle = '#a39bd0'; fg.fillRect(sx, sy + 1, sw, 1);
+fg.fillStyle = '#24213f'; for (k = sx + 8; k < sx + sw - 4; k += 14) fg.fillRect(k, sy + 2, 1, 2);
+}
+function car(cx, cy, cw, dir) {
+fg.fillStyle = '#2a1640'; fg.fillRect(cx - 2, cy + 3, cw + 4, 8); fg.fillStyle = '#1c1846'; fg.fillRect(cx, cy, cw, 4);
+fg.fillStyle = '#ffb0e0'; fg.fillRect(cx, cy, cw, 1);
+fg.fillStyle = '#7af3ff'; fg.fillRect(cx + 6, cy + 4, cw - 12, 3); fg.fillStyle = '#1c1846'; fg.fillRect(cx + (cw >> 1), cy + 4, 1, 3);
+fg.fillStyle = '#ffffff'; fg.fillRect(dir > 0 ? cx + cw + 1 : cx - 3, cy + 7, 2, 2);
+fg.fillStyle = '#ff3048'; fg.fillRect(dir > 0 ? cx - 3 : cx + cw + 1, cy + 7, 2, 2);
+fg.fillStyle = (t >> 2) % 2 ? '#ff4fb0' : '#d9368f'; fg.fillRect(cx + 2, cy + 11, cw - 4, 2);
+jet(cx + 3, cy + 11, 5); jet(cx + cw - 8, cy + 11, 5);
+}
+var S = G.S, gl = S.goal;
+for (i = 0; i < S.plats.length; i++) {
+q = S.plats[i]; if (q[0] === gl[0] && q[1] === gl[1]) continue;
+x = Math.round(q[0] - cam); if (!vis(x, q[2], q[1])) continue;
+plate(x, q[1], q[2]);
+}
+x = Math.round(gl[0] - cam);
+if (vis(x, gl[2], gl[1])) {
+ship(x, gl[1], gl[2], true);
+for (k = 0; k < gl[2]; k += 16) { fg.fillStyle = ((k >> 4) + (t >> 3)) % 6 === 0 ? '#ffe04a' : '#5a50a8'; fg.fillRect(x + k + 4, gl[1] - 2, 4, 2); }
+}
+for (i = 0; i < (G.movers || []).length; i++) {
+q = G.movers[i]; if (!q.kind) continue;
+x = Math.round(q.x - cam); y = Math.round(q.y); w = q.w; if (!vis(x - 40, w + 80, y)) continue;
+if (q.kind === 'ship') ship(x, y, w, false);
+else car(x, y, w, Math.sin((G.time + q.ph) / q.per * Math.PI * 2) >= 0 ? 1 : -1);
+}
+}
 var cam = 0, oy = 0;
 R.renderBack = function (bg) {
 var S = G.S, sh = G.cam.shake;
@@ -5115,12 +5237,14 @@ R.renderMid = function (fg) {
 var I = R.SPR.items, i, e;
 fg.clearRect(0, 0, R.W, R.H); fg.imageSmoothingEnabled = false;
 fg.save(); fg.translate(0, oy);
+if (G.S.sky) skyWorld(fg);
 for (i = 0; i < G.terminals.length; i++) { var tm = G.terminals[i], ty = tm.y; fg.drawImage(I.terminal[tm.on ? ((G.t >> 4) % 2) : 0], Math.round(tm.x - cam - 17), ty - 56); if (!tm.on && (G.t >> 4) % 2) { fg.fillStyle = '#7af3ff'; fg.fillRect(Math.round(tm.x - cam) - 1, ty - 66, 2, 5); fg.fillRect(Math.round(tm.x - cam) - 3, ty - 62, 6, 1); } }
 if (G.S.vertical) towerGimmicks(fg);
 if (G.S.vertical && (G.t >> 5) % 2 === 0) { var gl = G.S.goal; fg.globalAlpha = 0.5; fg.fillStyle = '#ff2e48'; fg.fillRect(gl[0] + gl[2] / 2 - 9 - cam, gl[1] - 162, 18, 18); fg.globalAlpha = 1; }
 var MV = G.movers || [], SPG = G.springs || [], mx, my, k;
 for (i = 0; i < MV.length; i++) {
 mx = Math.round(MV[i].x - cam); my = Math.round(MV[i].y); k = MV[i].w;
+if (MV[i].kind) continue;
 if (mx > R.W + 10 || mx + k < -10) continue;
 fg.fillStyle = '#2f2b55'; fg.fillRect(mx, my, k, 7);
 fg.fillStyle = '#7af3ff'; fg.fillRect(mx, my, k, 1); fg.fillStyle = '#37e6ff'; fg.fillRect(mx, my + 1, k, 1);
@@ -5512,6 +5636,19 @@ g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(px, py - r - 3); g.lineTo(px + 
 g.fillStyle = '#ff2e48'; g.beginPath(); g.moveTo(px, py - r); g.lineTo(px + r, py); g.lineTo(px, py + r); g.lineTo(px - r, py); g.fill();
 T(g, 'TOP ' + top + ' m', x + w - 24, y + 132, 20, '#8a7ac8', 'right', UI, '#120a30', 4);
 }
+function skyRoute(g, S, x, y, w, h) {
+var gx0 = S.goal[0], pm = S.pxPerM || 14, bx = x + 24, bw = w - 70, by = y + 118, rise = 40;
+var f = function (wx) { return clamp(wx / gx0, 0, 1); }, left = Math.max(0, Math.round((gx0 - G.pl.x) / pm));
+T(g, 'SKY ROUTE', x + 24, y + 46, 26, '#c8b8ff', 'left', UI, '#120a30', 5);
+T(g, 'あと ' + left + ' m', x + w - 24, y + 50, 34, '#ffffff', 'right', UI, '#120a30', 6);
+g.strokeStyle = '#2a2266'; g.lineWidth = 12; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx + bw, by - rise); g.stroke();
+var u = f(G.pl.x); g.strokeStyle = '#8a70e0'; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx + bw * u, by - rise * u); g.stroke();
+G.terminals.forEach(function (tm) { var v = f(tm.x); g.fillStyle = tm.on ? CYAN : '#5a8ab0'; g.fillRect(bx + bw * v - 2, by - rise * v - 20, 5, 12); });
+var fx = bx + bw + 4, fy = by - rise; g.fillStyle = '#ffffff'; g.fillRect(fx, fy - 30, 3, 36); g.fillStyle = '#ffe04a'; g.beginPath(); g.moveTo(fx + 3, fy - 30); g.lineTo(fx + 26, fy - 22); g.lineTo(fx + 3, fy - 14); g.fill();
+var px = bx + bw * u, py = by - rise * u, r = 11 + ((G.t >> 4) % 2);
+g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(px, py - r - 3); g.lineTo(px + r + 3, py); g.lineTo(px, py + r + 3); g.lineTo(px - r - 3, py); g.fill();
+g.fillStyle = '#ff2e48'; g.beginPath(); g.moveTo(px, py - r); g.lineTo(px + r, py); g.lineTo(px, py + r); g.lineTo(px - r, py); g.fill();
+}
 function minimap(g) {
 var S = G.S, x = 1552, y = 20, w = 343, h = 143, i;
 panel(g, x, y, w, h, 10, 'rgba(22,16,60,.86)', '#ffffff', 5);
@@ -5520,6 +5657,7 @@ g.strokeStyle = 'rgba(120,100,220,.35)'; g.lineWidth = 2;
 for (i = 1; i < 12; i++) { g.beginPath(); g.moveTo(x + i * 29, y); g.lineTo(x + i * 29, y + h); g.stroke(); }
 for (i = 1; i < 5; i++) { g.beginPath(); g.moveTo(x, y + i * 29); g.lineTo(x + w, y + i * 29); g.stroke(); }
 if (S.vertical) { altimeter(g, S, x, y, w, h); g.restore(); return; }
+if (S.sky) { skyRoute(g, S, x, y, w, h); g.restore(); return; }
 var sx = (w - 30) / S.len, bx = x + 15, by = y + 96;
 g.fillStyle = '#8a70e0';
 S.ground.forEach(function (q) { g.fillRect(bx + q[0] * sx, by, (q[1] - q[0]) * sx, 22); });
@@ -6512,6 +6650,15 @@ tower: [
 { who: 'shikaku', face: 'smile', text: ['その意気だ。てっぺんで、また通信する。', '――行って、二人とも！'] },
 { who: 'aoi', face: 'joy', pose: 'stance', text: ['ええ。行きましょう、紅。', '姫さまは、この塔の、もっと先。'] }
 ],
+sky: [
+{ who: 'kurenai', face: 'silly', text: ['うわぁ……下、雲しか見えない……。', 'ここ、鉄塔のてっぺんより高くない！？'] },
+{ who: 'shikaku', face: 'serious', text: ['――聞こえる？　こちら四角。', '学園の結界の上を、飛空艇の航路が通ってる。'] },
+{ who: 'shikaku', face: 'serious', text: ['飛空艇、エアカー、浮き足場。', '乗り継いでいけば、結界を越えて学園に着ける。'] },
+{ who: 'aoi', face: 'normal', text: ['……風が強い。それに、景色が流れていく。', '立ち止まっている時間は、なさそうね。'] },
+{ who: 'shikaku', face: 'shout', text: ['そう、航路の流れは止まらない。', '足もとが消える前に、次の足場へ跳んで！'] },
+{ who: 'kurenai', face: 'anger', pose: 'event', text: ['高いのは、もう慣れた！……たぶん。', 'よーし、全部まとめて乗り継いでやる！'] },
+{ who: 'aoi', face: 'joy', pose: 'stance', text: ['ふふ。右上へ、まっすぐ。', '流れに乗りましょう、紅。'] }
+],
 school: [
 { who: 'kurenai', face: 'joy', text: ['――よっ、と！　着地成功！', 'ここが、玉龍学園……。'] },
 { who: 'aoi', face: 'normal', text: ['月が、さっきよりずっと紅い。', '……空気が重い。何かが、すぐ近くにいる。'] },
@@ -6576,7 +6723,7 @@ idachi_end: [
 { who: 'kurenai', face: 'joy', text: ['へへっ、だから言ったでしょ！', 'じゃあ、通してもらうよ！'] },
 { who: 'aoi', face: 'normal', text: ['……教えて。', 'あなたは、どうして《龍》を守っていたの？'] },
 { who: 'idachi', face: 'close', text: ['……行けば、わかる。', '龍は、学園のいちばん奥だ。'] },
-{ who: 'idachi', face: 'smile', text: ['結界の上は、ここから跳べば越えられる。', '――その拳で、確かめてこい。'] },
+{ who: 'idachi', face: 'smile', text: ['結界の上の空を、飛空艇が渡っている。', '――その拳で、確かめてこい。'] },
 { who: 'kurenai', face: 'shy', text: ['……なんか、悪い人じゃなさそう？'] },
 { who: 'aoi', face: 'joy', text: ['ふふ。行きましょう、紅。', '答えは、あの龍のところに。'] }
 ]

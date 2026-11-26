@@ -82,7 +82,31 @@
       checkpoints: [[219, -120], [205, -420], [121, -802], [230, -1150], [305, -1500], [219, -1810]]
     },
     {
-      id: 'school', title: '第三章　玉龍学園　紅い月の下で', sub: 'STAGE 3  -  GYOKURYU ACADEMY', bgm: 'school', len: 3360, talk: 'school',
+      // 空中のステージ（強制スクロール）: 鉄塔のてっぺんから、結界の上の空を、飛空艇・エアカー・浮き足場を乗り継いで学園へ渡る。
+      //   画面は path に沿って、右上へゆっくり進み続ける（止まらない）。画面の左端に押し出され、画面の下へ落ちたらゲームオーバー（つづきは最後の端末から）。
+      //   path = カメラの道のり [カメラの左端の x, カメラの上向きの量 cam.y]（間は直線でつなぐ。cam.y が増えるほど、上の景色が映る）。speed = 1 フレームに進む量
+      //   plats = 浮き足場 [x, y, 幅]（下からすり抜けられる）。y は世界の y（上ほど小さい）
+      //   movers = 乗り物 [x, y, 幅, dx, dy, 周期, 種類]（2 点の間を往復）。種類: 'ship' = 飛空艇（広い甲板）、'car' = エアカー（屋根に乗る）、省略 = 浮きリフト
+      //   goal = 学園の手前に浮かぶ、大きな飛空艇の着艦デッキ（乗るとステージクリア）
+      id: 'sky', title: '第三章　紅月の空中回廊', sub: 'STAGE 3  -  SKY CORRIDOR', bgm: 'city', len: 3780, sky: true, talk: 'sky',
+      speed: 0.5, startX: 80, startY: 176, pxPerM: 14, goalMsg: '着艦！ ― 結界の上を越えた',
+      path: [[0, 0], [360, 0], [1000, 240], [1260, 240], [1900, 500], [2160, 500], [2800, 720], [3300, 720]],
+      ground: [],
+      plats: [[0, 176, 170], [210, 160, 60], [520, 150, 60], [600, 140, 50], [820, 84, 56], [1150, -30, 60], [1240, -64, 70],
+      [1560, -96, 60], [1770, -176, 54], [1910, -250, 60], [2110, -320, 90], [2470, -352, 56], [2676, -426, 64], [3040, -544, 60], [3110, -548, 360]],
+      movers: [[300, 170, 150, 60, -6, 320, 'ship'], [680, 110, 44, 72, 0, 200, 'car'], [900, 60, 40, 0, -50, 180], [960, 10, 170, 50, -10, 360, 'ship'],
+      [1330, -60, 200, 70, -6, 400, 'ship'], [1640, -130, 44, 84, -24, 200, 'car'], [1850, -196, 40, 0, -46, 170], [1990, -276, 44, 80, -30, 210, 'car'],
+      [2220, -318, 180, 80, -8, 380, 'ship'], [2550, -384, 44, 92, -30, 200, 'car'], [2770, -456, 40, 0, -44, 170], [2830, -506, 160, 60, -10, 360, 'ship']],
+      enemies: [['drone', 450, 110], ['drone', 760, 50], ['drone', 1100, -80], ['robot', 1290, -64], ['drone', 1480, -130], ['drone', 1720, -210],
+      ['drone', 1990, -340], ['drone', 2420, -390], ['drone', 2640, -470], ['drone', 2950, -580]],
+      items: [['crystal', 250, 140], ['crystal', 380, 150], ['crystal', 545, 130], ['crystal', 700, 90], ['crystal', 848, 64], ['crystal', 1050, -15], ['crystal', 1180, -50],
+      ['potion', 1300, -80], ['crystal', 1420, -80], ['crystal', 1590, -116], ['crystal', 1700, -150], ['crystal', 1797, -196], ['crystal', 1940, -270], ['crystal', 2050, -300],
+      ['chest', 2185, -320], ['crystal', 2300, -340], ['crystal', 2498, -372], ['crystal', 2610, -410], ['crystal', 2708, -446], ['crystal', 2900, -530], ['crystal', 3070, -564]],
+      checkpoints: [[1262, -64], [2135, -320]],
+      goal: [3110, -548, 360]
+    },
+    {
+      id: 'school', title: '第四章　玉龍学園　紅い月の下で', sub: 'STAGE 4  -  GYOKURYU ACADEMY', bgm: 'school', len: 3360, talk: 'school',
       // 足場だけの過酷なステージ: 地面があるのは、出発点（〜400）・小さな島 2 つ・中ボスの区間・龍の岸だけ。
       // あとは底なしの穴の上を、小さな足場・動く足場・石の柱（blocks。穴の底から立つ）で渡る。落ちると即ゲームオーバー。
       // 足場の間は 16〜50 ドット、上がり幅は 40 ドットまで（紅のふつうのジャンプで届く）。動く足場は、近づくのを待って乗る。
@@ -356,11 +380,25 @@
     tier(116, 16, 80, 12, ['#2a2462', '#352e78', '#40388c', '#5a50b0', '#9a8ae0'], 200, true);
     return cv;
   }
+  // 空のステージの雲の帯（左右がつながる 960x110）。col = [影, 本体, 月に照らされた上のふち]、sc = 雲の大きさ
+  function buildClouds(seed, col, sc) {
+    var cv = R.mk(960, 150), c = cv.getContext('2d'), P = R.painter(c), r = R.rng(seed), L = [], i, k, q;
+    for (i = 0; i < 34; i++) L.push([r() * 960, 50 + r() * 34, (16 + r() * 34) * sc, (7 + r() * 10) * sc]);
+    [[0, 4, 1, 1], [1, 0, 1, 1], [2, -3, 0.7, 0.5]].forEach(function (s) {      // 影 → 本体 → 上のふち
+      for (i = 0; i < L.length; i++) for (k = -1; k <= 1; k++) { q = L[i]; P.ell(Math.round(q[0] + k * 960), Math.round(q[1] + s[1]), Math.round(q[2] * s[2]), Math.round(q[3] * s[3]), col[s[0]]); }
+    });
+    // 雲の底は平らにつなげて、下へ行くほど薄くする（下の雲海。帯の下の端で、景色がまっすぐ切れないように）
+    var n = parseInt(col[0].slice(1), 16), rgb = (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255), gr = c.createLinearGradient(0, 84, 0, 150);
+    gr.addColorStop(0, 'rgba(' + rgb + ',1)'); gr.addColorStop(0.35, 'rgba(' + rgb + ',.75)'); gr.addColorStop(1, 'rgba(' + rgb + ',0)');
+    c.fillStyle = gr; c.fillRect(0, 84, 960, 66);
+    return cv;
+  }
   R.buildStages = function () {
     var BG = R.BG = window.REBELL_BG_SCHOOL.build();
     BG.viaduct = buildViaduct(); BG.lattice = buildLattice();
+    BG.cloudFar = buildClouds(6101, ['#231d55', '#3a2f7a', '#6a4a9a'], 0.8); BG.cloudNear = buildClouds(6202, ['#2a2062', '#4a3a8c', '#c86aa8'], 1.25);
     R.STAGES.forEach(function (S) {
-      S.layer = S.id === 'city' ? buildCity(S, BG) : S.vertical ? buildTower(S) : buildSchool(S, BG);
+      S.layer = S.id === 'city' ? buildCity(S, BG) : S.vertical ? buildTower(S) : S.sky ? R.mk(4, 4) : buildSchool(S, BG);      // 空のステージの足場と乗り物は、55_render.js が毎フレーム描く
       S.solids = S.ground.map(function (g) { return { x: g[0], y: GY, w: g[1] - g[0], h: 120 }; });
       S.blockRects = (S.blocks || []).map(function (b) { return { x: b[0], y: GY - b[2], w: b[1], h: b[2] + 60 }; });      // 石の段も、ぶつかる地形に入れる
       S.solids = S.solids.concat(S.blockRects);
@@ -384,6 +422,24 @@
       if (CY) CY.mid(g, S, camX, t, oy);      // 空を走るエアカー
       y = Math.round(oy * 0.4) % 384;
       g.globalAlpha = 0.9; g.drawImage(BG.lattice, 0, y - 384); g.drawImage(BG.lattice, 0, y); g.globalAlpha = 1;
+      if (rage) { g.fillStyle = 'rgba(255,30,70,.1)'; g.fillRect(0, 0, R.W, R.H); }
+      return;
+    }
+    if (S.sky) {      // 空のステージ: 上へ進むほど、下の街の灯りと雲海が沈んでいく。雲は 2 層で、手前ほど速く流れる
+      oy = oy || 0;
+      x = -Math.round(camX * 0.05) % 960; y = 40 + Math.round(oy * 0.22);
+      g.drawImage(BG.far, x, y); g.drawImage(BG.far, x + 960, y);
+      if (CY) CY.mid(g, S, camX, t, oy);      // 空を走るエアカー
+      [[BG.cloudFar, 0.12, 0.3, 120, 0.06], [BG.cloudNear, 0.3, 0.55, 190, 0.18]].forEach(function (L) {
+        var cx = -Math.round(camX * L[1] + t * L[4]) % 960, cy = L[3] + Math.round(oy * L[2]);
+        for (var k = 0; k < 3; k++) {      // 同じ帯を、上に 330 ずつずらして重ねる（上へ進むと、次の雲の層をくぐる）
+          var yy = cy - k * 330; if (yy > R.H || yy < -150) continue;
+          g.drawImage(L[0], cx, yy); g.drawImage(L[0], cx + 960, yy);
+        }
+      });
+      // 風の筋（右から左へ、速く流れる）
+      g.fillStyle = 'rgba(220,210,255,.22)';
+      for (var i = 0; i < 9; i++) { var wx = ((i * 173 - t * (3 + i % 3)) % 560 + 560) % 560 - 40, wy = (i * 61 + 23) % 250 + 8; g.fillRect(wx, wy, 14 + (i % 4) * 8, 1); }
       if (rage) { g.fillStyle = 'rgba(255,30,70,.1)'; g.fillRect(0, 0, R.W, R.H); }
       return;
     }
