@@ -1127,23 +1127,56 @@
     if (on !== before && since < 18 && fhash(i * 7 + 3) < 0.7) return ((since >> 2) & 1) ? before : on;      // 切り替わりのちらつき
     return on;
   }
-  function titleWindows(g, t, ox, oy, k) {
-    var W = R.BG.far.wins, i, w, x, rep = 960 * k, gl = [];
+  function titleWindows(g, t, ox, oy, k, vw) {
+    var W = R.BG.far.wins, i, w, x, rep = 960 * k;
     if (!W) return;
     for (i = 0; i < W.length; i++) {
       w = W[i];
       if (fhash(i * 7 + 5) < 0.4) continue;      // 4 割はずっと点いたまま
-      var lit = winLit(i, t);
+      if (winLit(i, t)) continue;
       for (var s = 0; s < 2; s++) {
         x = ox + s * rep + w[0] * k;
-        if (x + w[2] * k < 0 || x > 1920) continue;
-        if (!lit) { g.fillStyle = w[5]; g.fillRect(x, oy + w[1] * k, w[2] * k, w[3] * k); }
-        else gl.push(x, oy + w[1] * k, w[2] * k, w[3] * k, w[4]);
+        if (x + w[2] * k < 0 || x > vw) continue;
+        g.fillStyle = w[5]; g.fillRect(x, oy + w[1] * k, w[2] * k, w[3] * k);
       }
     }
-    // 点いている窓には、ほんのりにじむ光
-    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.22;
-    for (i = 0; i < gl.length; i += 5) { g.fillStyle = gl[i + 4]; g.fillRect(gl[i] - 3, gl[i + 1] - 3, gl[i + 2] + 6, gl[i + 3] + 6); }
+  }
+
+  // ---- タイトル画面の、ネオンがにじむ街 ----
+  //   街（遠景 + 窓の点け消し）を 1/4 の大きさの画面 cityC に描き、それをドットのまま 4 倍で出す。
+  //   さらに cityC を小さく縮めた絵（bl1・bl2）を、なめらかに引き伸ばして加算で重ねると、ネオンの光がぼやけてにじむ。
+  //   最後に、地平線のあたりの桃色のもやと、ゆっくり漂う玉ボケ
+  var cityC = null, bl1 = null, bl2 = null;
+  function titleCity(g, t) {
+    if (!cityC) { cityC = R.mk(480, 270); bl1 = R.mk(160, 90); bl2 = R.mk(60, 34); }
+    var c = cityC.getContext('2d'), ox = -((t * 0.6) % 3840) / 4, i;
+    c.clearRect(0, 0, 480, 270); c.imageSmoothingEnabled = false;
+    c.drawImage(R.BG.far, Math.round(ox), 45); c.drawImage(R.BG.far, Math.round(ox) + 960, 45);
+    titleWindows(c, t, Math.round(ox), 45, 1, 480);
+    g.save();
+    g.globalAlpha = 0.8; pix(g, cityC, 0, 0, 1920, 1080);
+    g.globalAlpha = 1; dim(g, 0.35);      // 街は少し暗く沈め、光だけを上から重ねる
+    // にじむ光（縮めてから、なめらかに引き伸ばす）
+    var b1 = bl1.getContext('2d'), b2 = bl2.getContext('2d');
+    b1.clearRect(0, 0, 160, 90); b1.imageSmoothingEnabled = true; b1.drawImage(cityC, 0, 0, 160, 90);
+    b2.clearRect(0, 0, 60, 34); b2.imageSmoothingEnabled = true; b2.drawImage(bl1, 0, 0, 60, 34);
+    var pulse = 0.92 + 0.08 * Math.sin(t * 0.021);
+    g.globalCompositeOperation = 'lighter'; g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    g.globalAlpha = 0.5 * pulse; g.drawImage(bl1, 0, 0, 1920, 1080);
+    g.globalAlpha = 0.55 * pulse; g.drawImage(bl2, 0, 0, 1920, 1080);
+    // 地平線のあたりの、桃色と紫のもや
+    var hz = g.createLinearGradient(0, 560, 0, 1080);
+    hz.addColorStop(0, 'rgba(255,60,170,0)'); hz.addColorStop(0.55, 'rgba(255,70,170,.16)'); hz.addColorStop(1, 'rgba(120,60,255,.22)');
+    g.globalAlpha = 1; g.fillStyle = hz; g.fillRect(0, 560, 1920, 520);
+    // 玉ボケ（大きくぼやけた光の粒が、ゆっくり右から左へ漂う）
+    for (i = 0; i < 18; i++) {
+      var r = 18 + fhash(i * 5 + 1) * 46, sp = 0.15 + fhash(i * 5 + 2) * 0.35;
+      var bx = 1960 - ((t * sp + fhash(i * 5 + 3) * 2200) % 2200), by = 420 + fhash(i * 5 + 4) * 560 + Math.sin(t * 0.01 + i) * 14;
+      var col = i % 3 === 0 ? '55,230,255' : i % 3 === 1 ? '255,79,176' : '200,140,255';
+      var bk = g.createRadialGradient(bx, by, 0, bx, by, r);
+      bk.addColorStop(0, 'rgba(' + col + ',.20)'); bk.addColorStop(0.7, 'rgba(' + col + ',.12)'); bk.addColorStop(1, 'rgba(' + col + ',0)');
+      g.globalAlpha = 0.6 + 0.4 * Math.sin(t * 0.03 + i * 1.7); g.fillStyle = bk; g.beginPath(); g.arc(bx, by, r, 0, PI * 2); g.fill();
+    }
     g.restore();
   }
 
@@ -1151,10 +1184,8 @@
     var t = G.t, i;
     var gr = g.createLinearGradient(0, 0, 0, 1080); gr.addColorStop(0, '#0b0a26'); gr.addColorStop(0.6, '#2a1a66'); gr.addColorStop(1, '#5a2470');
     g.fillStyle = gr; g.fillRect(0, 0, 1920, 1080);
-    g.globalAlpha = 0.55; pix(g, R.BG.sky, 0, 0, 1920, 1080); g.globalAlpha = 0.8; pix(g, R.BG.far, -((t * 0.6) % 3840), 180, 3840, 1080); pix(g, R.BG.far, 3840 - ((t * 0.6) % 3840), 180, 3840, 1080);
-    titleWindows(g, t, -((t * 0.6) % 3840), 180, 4);      // ビルの窓の明かりが、ついたり消えたりする
-    g.globalAlpha = 1;
-    dim(g, 0.35);
+    g.globalAlpha = 0.55; pix(g, R.BG.sky, 0, 0, 1920, 1080); g.globalAlpha = 1;
+    titleCity(g, t);      // ネオンがにじむ街（窓の明かりは、ついたり消えたりする）
     titleMoon(g, t);      // 紅い月と、羽ばたく龍の影
     // ポスター
     var img = R.IMG.poster, pw = 664, ph = 996, px = 110, py = 42;
