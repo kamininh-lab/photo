@@ -6291,7 +6291,7 @@ window.REBELL_SHIKAKU = {
 
   // ---- 起動時のロゴ（GYOKURYU → PHOTO TEAM → presents By KONOMI → タイトル）----
   // 時間はフレーム数（60 で 1 秒）。l1・l2・l3 = それぞれのロゴが始まる時刻
-  var SP = { l1: 22, len1: 158, gap: 14, len2: 168, len3: 200, tail: 14 };
+  var SP = { l1: 22, len1: 186, gap: 14, len2: 168, len3: 200, tail: 14 };
   SP.l2 = SP.l1 + SP.len1 + SP.gap; SP.l3 = SP.l2 + SP.len2 + SP.gap; SP.total = SP.l3 + SP.len3 + SP.tail;
   R.SPLASH_LEN = SP.total;
   var SANS = '"Segoe UI","Yu Gothic UI","Meiryo",sans-serif', JADE = '#4be8c0', JADE_L = '#c8fff2', embC = null;
@@ -6307,7 +6307,8 @@ window.REBELL_SHIKAKU = {
 
   // ロゴ 1 の龍が吐く炎。u だけで決まる（状態を持たない）。mx, my = 口の位置（画面の座標）
   //   BR.charge〜BR.fire: 口に光が集まる（火の粉が吸い込まれる）→ BR.fire: 着火の閃光 → BR.end まで炎を吐き続け、BR.end + 炎の寿命で消える
-  var MOUTH = [184, 22], BR = { charge: 36, fire: 58, end: 112, life: 32, dir: -0.62 };      // MOUTH = 龍の影の中の口の位置（emblem のドット）、dir = 吐く向き（右上。白い翼に重ならないように）
+  //   炎は、下の漢字「玉龍」をめがけて吐く（TGT = ねらう点）。文字に当たった炎は、文字に沿って左右へはじける
+  var MOUTH = [184, 22], BR = { charge: 36, fire: 58, end: 112, life: 32 }, TGT = [960, 810];      // MOUTH = 龍の影の中の口の位置（emblem のドット）
   function fhash(n) { n = Math.imul(n ^ 0x2545f491, 0x9e3779b1); n ^= n >>> 15; n = Math.imul(n, 0x85ebca6b); n ^= n >>> 13; return (n >>> 0) / 4294967296; }
   function breath(g, u, a, mx, my) {
     var i, k;
@@ -6325,17 +6326,19 @@ window.REBELL_SHIKAKU = {
         g.fillRect(mx + Math.cos(ang) * d - 1.5, my + Math.sin(ang) * d - 1.5, 3, 3);
       }
     }
-    // 炎: 口から右やや上へ、粒が広がりながら流れる（白 → 黄 → 橙 → 赤 → 煙）
-    //   1 回目はふつうに重ねて（白い翼の上でも炎の色が見えるように）、2 回目は光として足す
-    var dx = Math.cos(BR.dir), dy = Math.sin(BR.dir), nx = -dy, ny = dx, pass;
+    // 炎: 口から「玉龍」の文字へ、粒が広がりながら流れる（白 → 黄 → 橙 → 赤 → 煙）。文字に届いた粒は、左右へはじけて立ちのぼる
+    //   1 回目はふつうに重ねて（白い翼や文字の上でも炎の色が見えるように）、2 回目は光として足す
+    var L = Math.hypot(TGT[0] - mx, TGT[1] - my), dx = (TGT[0] - mx) / L, dy = (TGT[1] - my) / L, nx = -dy, ny = dx, pass;
     for (pass = 0; pass < 2; pass++) {
       g.globalCompositeOperation = pass ? 'lighter' : 'source-over';
       for (i = 0; ; i++) {
         var ts = BR.fire + i * 0.4; if (ts > BR.end) break;
         var age = u - ts; if (age < 0 || age > BR.life) continue;
-        var q = age / BR.life, sp = 11 + 5 * fhash(i * 11), wob = (fhash(i * 5 + 2) - 0.5) * (0.35 + q * 1.3);
-        var dist = sp * age * (1 - 0.3 * q), px = mx + dx * dist + nx * wob * dist * 0.6, py = my + dy * dist + ny * wob * dist * 0.6 - q * q * 50;
-        var rr = (pass ? 1.3 : 0.8) * (7 + 34 * q + 9 * fhash(i * 13)), al = a * (1 - q) * (q < 0.06 ? q / 0.06 : 1);
+        var q = age / BR.life, sp = 32 + 8 * fhash(i * 11), wob = (fhash(i * 5 + 2) - 0.5) * (0.22 + q * 0.5);
+        var dist = sp * age * (1 - 0.3 * q), px, py;
+        if (dist < L) { px = mx + dx * dist + nx * wob * dist * 0.6; py = my + dy * dist + ny * wob * dist * 0.6; }
+        else { var over = dist - L, side = fhash(i * 5 + 2) < 0.5 ? -1 : 1; px = TGT[0] + side * over * (0.35 + 0.5 * fhash(i * 17)); py = TGT[1] - over * 0.28 - q * q * 30; }      // はじけて、文字に沿って広がる
+        var rr = (pass ? 1.3 : 0.8) * (12 + 40 * q + 10 * fhash(i * 13)), al = a * (1 - q) * (q < 0.06 ? q / 0.06 : 1);
         var col = q < 0.15 ? '255,248,215' : q < 0.38 ? '255,196,60' : q < 0.65 ? '255,100,24' : '180,30,24';
         var pg = g.createRadialGradient(px, py, 0, px, py, rr);
         pg.addColorStop(0, 'rgba(' + col + ',' + ((pass ? 0.5 : 0.8) * al) + ')'); pg.addColorStop(pass ? 1 : 0.7, 'rgba(' + col + ',0)');
@@ -6380,6 +6383,45 @@ window.REBELL_SHIKAKU = {
     }
     return wingC;
   }
+  // 炎を浴びた「玉龍」の文字が焦げていく。BURN.start で炎が届き、BURN.full で焦げきる。焦げた文字には、くすぶる火の粉と煙が残る
+  var BURN = { start: 70, full: 108 }, burnC = null;
+  function scorch(g, u, a, font) {
+    var b = clamp((u - BURN.start) / (BURN.full - BURN.start), 0, 1);
+    if (!burnC) burnC = R.mk(440, 110);
+    var c = burnC.getContext('2d'), W = burnC.width, H = burnC.height, by = 80, i;
+    c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1; c.clearRect(0, 0, W, H);
+    spaced(c, '玉龍', W / 2, font, 26, function (ch, x) { c.fillStyle = JADE_L; c.fillText(ch, x, by); });
+    if (b > 0) {
+      c.globalCompositeOperation = 'source-atop';
+      // 下から焦げが広がる（焦げの境目は熱で赤く光る）。焦げた色は、黒い背景でも字が読める焦げ茶
+      var fy = H - (H + 20) * R.ease(b), cg = c.createLinearGradient(0, fy - 16, 0, fy + 12);
+      cg.addColorStop(0, 'rgba(0,0,0,0)'); cg.addColorStop(0.45, 'rgba(255,150,40,1)'); cg.addColorStop(1, 'rgba(120,70,44,1)');
+      c.fillStyle = cg; c.fillRect(0, fy - 16, W, 28);
+      var bg = c.createLinearGradient(0, 20, 0, H); bg.addColorStop(0, '#8a5a3a'); bg.addColorStop(1, '#5a3424');
+      c.fillStyle = bg; c.fillRect(0, fy + 12, W, H);
+      // 焦げのむら（黒い点）と、くすぶる火の粉（明滅する橙の点）
+      for (i = 0; i < 260; i++) {
+        var x = fhash(i * 3) * W, y = fhash(i * 3 + 1) * H; if (y < fy + 6) continue;
+        if (i % 3) { c.fillStyle = 'rgba(20,8,4,.85)'; c.fillRect(x | 0, y | 0, 2 + (i % 3), 2 + (i % 2)); }
+        else { var fl = 0.5 + 0.5 * Math.sin(u * (0.2 + fhash(i) * 0.3) + i); c.fillStyle = 'rgba(255,' + (110 + Math.round(100 * fl)) + ',40,' + (0.5 + 0.5 * fl) + ')'; c.fillRect(x | 0, y | 0, 2, 2); }
+      }
+    }
+    var dx0 = 960 - W / 2, dy0 = 826 - by;
+    g.save(); g.globalAlpha = a * R.ease(clamp((u - 44) / 24, 0, 1));
+    g.drawImage(burnC, dx0, dy0);
+    if (b > 0) {      // 焦げた文字のまわりの、くすぶる熱の光と、立ちのぼる煙
+      g.globalCompositeOperation = 'lighter'; g.globalAlpha = a * b * (0.4 + 0.15 * Math.sin(u * 0.31));
+      g.shadowColor = '#ff6a20'; g.shadowBlur = 24; g.drawImage(burnC, dx0, dy0); g.shadowBlur = 0;
+      g.globalCompositeOperation = 'source-over';
+      for (i = 0; i < 18; i++) {
+        var per = 46 + Math.floor(fhash(i * 7) * 30), ph = ((u - BURN.start + fhash(i * 9) * per) % per) / per;
+        var sx = 960 + (fhash(i * 5) - 0.5) * 150 + Math.sin(ph * 5 + i) * 8, sy = 812 - ph * 90, sr = 6 + ph * 16;
+        g.globalAlpha = a * b * (1 - ph) * 0.3; g.fillStyle = 'rgb(110,100,96)';
+        g.beginPath(); g.arc(sx, sy, sr, 0, PI * 2); g.fill();
+      }
+    }
+    g.restore();
+  }
   // 炎を吐いている間の、画面の小さな揺れ（drawSplash から）
   function breathShake(u) { return u >= BR.fire && u < BR.end ? (u - BR.fire < 12 ? 5 : 1.6) : 0; }
 
@@ -6409,7 +6451,6 @@ window.REBELL_SHIKAKU = {
     var ex0 = cx - embC.width / 2 * s, ey0 = cy - embC.height * 0.46 * s, wd = wings(embC, u);
     g.drawImage(wd, ex0, ey0 - WG.pad * s, wd.width * s, wd.height * s);
     g.shadowBlur = 0;
-    breath(g, u, a, ex0 + MOUTH[0] * s, ey0 + MOUTH[1] * s);
     // 文字: 1 文字ずつ浮かび上がる
     spaced(g, 'GYOKURYU', 960, font, 22, function (ch, x, i) {
       var k = R.ease(clamp((u - 16 - i * 3) / 16, 0, 1)), y = 716 + (1 - k) * 16;
@@ -6429,8 +6470,9 @@ window.REBELL_SHIKAKU = {
     var lw = 660 * R.ease(Math.min(1, u / 36));
     g.globalAlpha = a; g.fillStyle = JADE; g.fillRect(960 - lw / 2, 754, lw, 3);
     g.save(); g.translate(960, 755.5); g.rotate(PI / 4); g.fillStyle = JADE_L; g.fillRect(-7, -7, 14, 14); g.restore();
-    g.globalAlpha = a * R.ease(clamp((u - 44) / 24, 0, 1));
-    spaced(g, '玉龍', 960, '44px ' + MIN, 72, function (ch, x) { g.fillStyle = JADE_L; g.fillText(ch, x, 826); });
+    scorch(g, u, a, '62px ' + MIN);      // 「玉龍」（炎を浴びると焦げる）
+    g.globalAlpha = 1;
+    breath(g, u, a, ex0 + MOUTH[0] * s, ey0 + MOUTH[1] * s);      // 炎は、文字より手前に
     g.restore();
   }
 
