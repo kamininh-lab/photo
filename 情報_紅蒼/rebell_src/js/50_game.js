@@ -213,10 +213,14 @@
       airShot: 0, kusari: null,      // 空中で遠距離攻撃を出した回数 / 紅の鎖鎌のようす
       chT: 0, chLv: 0, chQ: 0, chQT: 0,      // チャージ: 押している時間 / たまった段 / 放つのを待っている段と、待つ残り時間
       battleT: 0, angerT: 0, hurtFaceT: 0, joyT: 0, joyAll: false, hurtBig: false, landAnim: null,      // 構えを続ける時間 / 顔グラフィックの表情
+      mood: null, idleT: 0,      // 気持ちの表情 { expr: sad / shy / silly, who: 'kurenai' / 'aoi' / 'both', t: 残り } / 何も操作していない時間（60_hud.js の exprOf）
       chars: { kurenai: { hp: BASE.kurenai.hp, max: BASE.kurenai.hp, sp: 60, maxsp: 100, down: false }, aoi: { hp: BASE.aoi.hp, max: BASE.aoi.hp, sp: 60, maxsp: 100, down: false } },
       lv: 1, exp: 0, potions: 3, crystals: 0, cross: 0, safeX: 80, hurtFlash: 0, spHits: {}
     };
   }
+  // 顔グラフィックに、しばらく気持ちの表情を出す（悲しみ・照れ・おとぼけ）
+  function mood(expr, who, t) { G.pl.mood = { expr: expr, who: who, t: t }; }
+  R.mood = mood;
   function needExp(lv) { return 24 + lv * 20; }
   function atkMul() { return 1 + (G.pl.lv - 1) * 0.1; }
   function gainExp(n) {
@@ -369,7 +373,7 @@
     if (c.hp <= 0) {
       c.hp = 0; c.down = true;
       var o = p.who === 'kurenai' ? 'aoi' : 'kurenai';
-      if (!p.chars[o].down) { p.who = o; p.inv = 110; p.switchCd = 30; G.cutin = { who: o, t: 0 }; toast(R.NAMES[o] + ' に交代！', o === 'aoi' ? '#7af3ff' : '#ff7ad1'); R.snd('switch'); fx({ type: 'ring', x: p.x, y: p.y - MID, life: 20, r: 40, col: o === 'aoi' ? '#37e6ff' : '#ff4fb0' }); }
+      if (!p.chars[o].down) { mood('sad', o, 150); p.who = o; p.inv = 110; p.switchCd = 30; G.cutin = { who: o, t: 0 }; toast(R.NAMES[o] + ' に交代！', o === 'aoi' ? '#7af3ff' : '#ff7ad1'); R.snd('switch'); fx({ type: 'ring', x: p.x, y: p.y - MID, life: 20, r: 40, col: o === 'aoi' ? '#37e6ff' : '#ff4fb0' }); }
       else { G.state = 'gameover'; G.stateT = 0; R.bgm('gameover'); }
     }
     return true;
@@ -381,7 +385,7 @@
   function doSwitch() {
     var p = G.pl, o = p.who === 'kurenai' ? 'aoi' : 'kurenai', blue = o === 'aoi', T = ATK[o];
     if (p.switchCd > 0) return;
-    if (p.chars[o].down) { R.snd('deny'); toast(R.NAMES[o] + ' は戦闘不能（端末か薬で復帰）', '#ff9db8'); p.switchCd = 20; return; }
+    if (p.chars[o].down) { R.snd('deny'); toast(R.NAMES[o] + ' は戦闘不能（端末か薬で復帰）', '#ff9db8'); p.switchCd = 20; mood('sad', p.who, 60); return; }
     var chain = p.st === 'attack' && p.hitSet.length > 0, col = blue ? '#37e6ff' : '#ff4fb0';
     ghost(p, 26, { leave: true, vx: -p.face * 2.4, vy: -3.6, f: R.frame(p.who, 'djump', 1) });
     p.chT = 0; p.chLv = 0; p.chQ = 0;      // ためた力は、交代で消える
@@ -399,7 +403,7 @@
   }
   function startSpecial() {
     var p = G.pl, c = p.chars[p.who];
-    if (c.sp < 30) { R.snd('deny'); toast('SP が足りない', '#9adfff'); return; }
+    if (c.sp < 30) { R.snd('deny'); toast('SP が足りない', '#9adfff'); mood('silly', p.who, 70); return; }
     c.sp -= 30; p.st = 'special'; p.stT = 0; p.slammed = false; p.slamT = 0; p.entry = false; p.flipT = 0; p.hitSet = []; p.spHits = {}; p.inv = Math.max(p.inv, 50);
     p.battleT = 150; p.angerT = 90;
     if (p.who === 'kurenai') { R.snd('slash_red2'); toast('紅蓮砕！', '#ff7ad1'); fx({ type: 'ring', x: p.x, y: p.y - MID, life: 14, r: 36, col: '#ff7ad1' }); }
@@ -407,7 +411,7 @@
   }
   function startCross() {
     var p = G.pl;
-    if (p.cross < 100) { R.snd('deny'); toast('交錯ゲージが足りない', '#ffb8e6'); return; }
+    if (p.cross < 100) { R.snd('deny'); toast('交錯ゲージが足りない', '#ffb8e6'); mood('silly', p.who, 70); return; }
     if (p.chars.kurenai.down || p.chars.aoi.down) { R.snd('deny'); toast('二人そろっていないと使えない', '#ffb8e6'); return; }
     p.cross = 0; p.st = 'cross'; p.stT = 0; p.vx = 0; p.inv = 200; p.entry = false; p.flipT = 0; p.battleT = 150; p.angerT = 130;
     G.cross = { t: 0, x: p.x, y: p.y, face: p.face }; R.snd('cross');
@@ -418,7 +422,7 @@
       if (p.potions <= 0 || (c.hp >= c.max && !o.down)) { R.snd('deny'); }
       else {
         p.potions--; R.snd('potion');
-        if (o.down) { o.down = false; o.hp = Math.round(o.max * 0.5); toast((p.who === 'kurenai' ? '蒼' : '紅') + ' が復帰した！', '#9dffb0'); }
+        if (o.down) { o.down = false; o.hp = Math.round(o.max * 0.5); mood('shy', p.who === 'kurenai' ? 'aoi' : 'kurenai', 150); toast((p.who === 'kurenai' ? '蒼' : '紅') + ' が復帰した！', '#9dffb0'); }
         c.hp = Math.min(c.max, c.hp + Math.round(c.max * 0.6));
         p.joyT = 50; p.joyAll = false;
         text(p.x, p.y - 40, '+HP', '#9dffb0', true); burst(p.x, p.y - MID, 16, ['#9dffb0', '#ffffff'], 2.4, 30, -0.05);
@@ -764,6 +768,9 @@
     var jumpHit = I.hit.jump || I.hit.up, jumpHeld = I.down.jump || I.down.up, wasGround = p.ground, grav = 0.45;
     p.animT++;
     ['inv', 'dashCd', 'switchCd', 'drop', 'hurtFlash', 'flipT', 'landT', 'stretchT', 'dashWin', 'justCd', 'battleT', 'angerT', 'hurtFaceT', 'joyT', 'stopT', 'wallT', 'kickT'].forEach(function (k) { if (p[k] > 0) p[k]--; });
+    if (p.mood && --p.mood.t <= 0) p.mood = null;
+    var anyKey = false, ik; for (ik in I.down) if (I.down[ik]) { anyKey = true; break; }
+    p.idleT = anyKey || p.st !== 'free' ? 0 : p.idleT + 1;      // 何も押さずに立っている時間（顔がぼんやりしてくる）
     if (p.st !== 'free') p.running = false;
     // 待機中の回復
     ['kurenai', 'aoi'].forEach(function (k) { var q = p.chars[k]; if (q.down) return; q.sp = Math.min(q.maxsp, q.sp + (k === p.who ? 0.03 : 0.07)); if (k !== p.who) q.hp = Math.min(q.max, q.hp + 0.025); });
@@ -1125,7 +1132,7 @@
       if (!tm.on && Math.abs(p.x - tm.x) < 22 && p.ground && Math.abs(p.y - tm.y) < 4) {
         tm.on = true; G.respawn = { x: tm.x, y: tm.y, stage: G.stageIdx }; R.snd('checkpoint'); p.joyT = 70; p.joyAll = true; toast('CHECKPOINT ― 記録した', '#7af3ff');
         fx({ type: 'ring', x: tm.x, y: tm.y - 30, life: 26, r: 50, col: '#37e6ff' });
-        ['kurenai', 'aoi'].forEach(function (k) { var c = p.chars[k]; if (c.down) { c.down = false; c.hp = Math.round(c.max * 0.5); } else c.hp = Math.min(c.max, c.hp + Math.round(c.max * 0.35)); });
+        ['kurenai', 'aoi'].forEach(function (k) { var c = p.chars[k]; if (c.down) { c.down = false; c.hp = Math.round(c.max * 0.5); mood('shy', k, 130); } else c.hp = Math.min(c.max, c.hp + Math.round(c.max * 0.35)); });
       }
     }
   }
@@ -1166,7 +1173,7 @@
       });
       shake(fin ? 12 : 4); if (fin) { G.flash = 0.9; R.snd('explosion'); }
     }
-    if (X.t >= 118) { G.cross = null; p.st = 'free'; p.inv = Math.max(p.inv, 40); }
+    if (X.t >= 118) { G.cross = null; p.st = 'free'; p.inv = Math.max(p.inv, 40); p.angerT = 0; mood('shy', 'both', 110); }      // 力を重ねたあと、二人とも少し照れる
   }
 
   // ---- 進行 ----
@@ -1199,7 +1206,7 @@
         G.enemies = G.enemies.filter(function (e) { return e.x > sx + 200; });
       }
     } else { G.respawn = { x: sx, y: GY, stage: idx }; }
-    p.x = sx; p.y = sy; p.vx = 0; p.vy = 0; p.st = 'free'; p.inv = 60; p.face = 1; p.safeX = sx; p.ground = true; p.slammed = false; p.entry = false; p.flipT = 0; p.landT = 0; p.skidT = 0; p.airAtk = 0; p.airDashed = 0; p.landAnim = null; p.battleT = 0; p.angerT = 0; p.hurtFaceT = 0; p.joyT = 0; p.running = false; p.stopT = 0;
+    p.x = sx; p.y = sy; p.vx = 0; p.vy = 0; p.st = 'free'; p.inv = 60; p.face = 1; p.safeX = sx; p.ground = true; p.slammed = false; p.entry = false; p.flipT = 0; p.landT = 0; p.skidT = 0; p.airAtk = 0; p.airDashed = 0; p.landAnim = null; p.battleT = 0; p.angerT = 0; p.hurtFaceT = 0; p.joyT = 0; p.mood = null; p.idleT = 0; p.running = false; p.stopT = 0;
     G.cam.x = clamp(sx - 180, 0, S.len - R.W); G.cam.y = S.vertical ? towerCam(sy) : 0;
     G.goalT = 0;
     G.card = null; G.talk = null;

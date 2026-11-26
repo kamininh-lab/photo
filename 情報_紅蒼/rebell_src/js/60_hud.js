@@ -50,7 +50,7 @@
   }
   R.drawLogo = logo;
 
-  // ---- 顔グラフィック（用意された表情一覧。expr = normal / damage / anger / joy）----
+  // ---- 顔グラフィック（用意された表情一覧。expr = normal / damage / anger / joy、2 枚目の sad（悲しみ）/ silly（おとぼけ）/ shy（照れ））----
   function faceKey(who, expr) { return (who === 'kurenai' ? 'k_' : 'a_') + expr; }
   // 枠（x, y, w, h）を埋めるように顔を描く。kind = 'hud'（顔のアップ）か 'band'（目のあたりの横長）。縦横比が違うぶんは中央で切る
   function drawFace(g, who, expr, kind, x, y, w, h) {
@@ -63,18 +63,24 @@
     return true;
   }
   R.UI.drawFace = drawFace;
-  // いまの表情。やられた直後・体力わずか = ダメージ、攻撃中 = 怒り、アイテムやレベルアップ = 喜び
+  // いまの表情。やられた直後・体力わずか = ダメージ、攻撃中 = 怒り、アイテムやレベルアップ = 喜び、
+  //   ゲームオーバー・相棒が倒れた直後 = 悲しみ、合体技のあと・薬で復帰した子 = 照れ、
+  //   SP やゲージが足りないのに技を出そうとした・しばらく何も操作しない = おとぼけ（気持ちの表情は 50_game.js の R.mood で付ける）
   function exprOf(who) {
-    var p = G.pl, c = p.chars[who], act = p.who === who;
-    if (c.down || G.state === 'gameover') return 'damage';
+    var p = G.pl, c = p.chars[who], act = p.who === who, m = p.mood;
+    if (G.state === 'gameover') return 'sad';
+    if (c.down) return 'damage';
     if (G.state === 'clear') return 'joy';
     if (act && p.hurtFaceT > 0) return 'damage';
+    if (m && m.t > 0 && (m.who === 'both' || m.who === who)) return m.expr;
     if (p.joyT > 0 && (act || p.joyAll)) return 'joy';
     if (G.cross) return 'anger';
     if (act && p.angerT > 0) return 'anger';
     if (act && c.hp <= c.max * 0.25) return 'damage';
+    if (p.idleT > IDLE && (act || p.idleT > IDLE * 2)) return 'silly';      // 放っておくと、ぼんやりし始める（長いと相棒も）
     return 'normal';
   }
+  var IDLE = 420;      // 7 秒
   // 八角形の枠つきの顔
   function faceFrame(g, who, expr, x, y, w, h, col, glow, shade) {
     g.save();
@@ -853,7 +859,7 @@
   };
   R.drawGameOver = function (g) {
     var a = Math.min(1, G.stateT / 40); dim(g, 0.72 * a); g.globalAlpha = a;
-    faceFrame(g, 'kurenai', 'damage', 636, 150, 300, 204, PINK, false, 'rgba(40,0,10,.25)'); faceFrame(g, 'aoi', 'damage', 984, 150, 300, 204, CYAN, false, 'rgba(40,0,10,.25)');
+    faceFrame(g, 'kurenai', 'sad', 636, 150, 300, 204, PINK, false, 'rgba(40,0,10,.25)'); faceFrame(g, 'aoi', 'sad', 984, 150, 300, 204, CYAN, false, 'rgba(40,0,10,.25)');
     T(g, 'GAME OVER', 960, 530, 130, '#ff5a6a', 'center', SERIF, '#2a0818', 12);
     T(g, '二人の色は、まだ消えていない。', 960, 620, 40, '#ffffff', 'center', MIN, '#2a0818', 8);
     g.globalAlpha = 1; if (G.stateT > 50) blinkText(g, 'ENTER でチェックポイントから再開', 960, 750, 38);
