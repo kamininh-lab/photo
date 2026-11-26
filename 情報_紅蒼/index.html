@@ -6355,14 +6355,17 @@ window.REBELL_SHIKAKU = {
   // 炎に合わせた翼の動き: ためで大きく振り上げ → 吐く瞬間に打ち下ろす → 吐いている間は小さく羽ばたき → 元に戻る。
   //   龍の影は 1 枚の絵なので、上半分（翼）を縦 2 ドットの帯に切り、体の中心から離れるほど上端を上下させて（伸び縮み）曲げる。
   //   下半分（脚と尾）と、体のまん中（頭）は動かさない。lift = 翼の先の上がり幅（ドット。正 = 上）
-  var WG = { pad: 30, cut: 54, xc: 172, body: 22, len: 150 }, wingC = null;
+  //   動きはゆっくり大きく: 龍が出てすぐから約 0.7 秒かけて振り上げ（38）→ 吐く瞬間から約 0.27 秒で打ち下ろし（-22）→
+  //   約 0.87 秒で 1 回、大きくゆったり羽ばたき → 0.4 秒で元の形へ。WF = 各区切りの時刻（ロゴが始まってからのフレーム数）
+  var WG = { pad: 44, cut: 54, xc: 172, body: 22, len: 150 }, wingC = null;
+  var WF = { up: 14, down: BR.fire, flap: BR.fire + 16, back: BR.fire + 16 + 52, end: BR.fire + 16 + 52 + 24 }, WUP = 38, WDN = 22;
   function wingLift(u) {
     var e = R.ease;
-    if (u < BR.charge) return 0;
-    if (u < BR.fire) return 26 * e((u - BR.charge) / (BR.fire - BR.charge));
-    if (u < BR.fire + 6) return 26 - 40 * e((u - BR.fire) / 6);
-    if (u < BR.end) { var v = (u - BR.fire - 6) / (BR.end - BR.fire - 6); return -14 * (1 - v) + 10 * Math.sin((u - BR.fire - 6) * 0.42) * (1 - 0.6 * v); }
-    if (u < BR.end + 20) return wingLift(BR.end - 1) * (1 - e((u - BR.end) / 20));      // 吐き終わりの形から、なめらかに戻す
+    if (u < WF.up) return 0;
+    if (u < WF.down) return WUP * e((u - WF.up) / (WF.down - WF.up));                          // ゆっくり振り上げる
+    if (u < WF.flap) return WUP - (WUP + WDN) * e((u - WF.down) / (WF.flap - WF.down));        // 炎と同時に打ち下ろす
+    if (u < WF.back) return -WDN * Math.cos(2 * PI * (u - WF.flap) / (WF.back - WF.flap));     // 大きく 1 回羽ばたく（下 → 上 → 下）
+    if (u < WF.end) return -WDN * (1 - e((u - WF.back) / (WF.end - WF.back)));                  // 元の形へ
     return 0;
   }
   function wings(src, u) {
