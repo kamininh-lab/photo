@@ -374,6 +374,7 @@
   R.drawBackdrop = function (g, S, camX, t, rage, oy) {
     var BG = R.BG, x, y, CY = R.Cyber;
     g.drawImage(BG.sky, 0, 0);
+    if (R.Moon) R.Moon.draw(g, S, camX, t, oy || 0);      // 紅い月: 最終ステージへ向かうほど大きく、不気味に（15_moon.js）
     if (CY) CY.sky(g, S, camX, t, oy || 0);      // サーチライト・広告飛行船（14_cyber.js）
     if (S.vertical) {      // 鉄塔: 登るほど、街の灯りが下へ沈んでいく。奥の塔の骨組みは、ゆっくり流れる
       oy = oy || 0;
@@ -389,7 +390,7 @@
     if (S.id === 'city') {
       x = -Math.round(camX * 0.32) % 960; g.drawImage(BG.viaduct, x, 0); g.drawImage(BG.viaduct, x + 960, 0);
     } else {
-      g.drawImage(BG.school, R.schoolX(camX), -7);
+      g.drawImage(BG.school, R.schoolX(camX), 19);      // 校舎は少し沈めて、屋根の上に巨大な紅い月をのぞかせる（15_moon.js）
     }
     if (CY) CY.mid(g, S, camX, t, oy || 0);      // 空を走るエアカー（水道橋・校舎の手前を横切る）
     if (rage) { g.fillStyle = 'rgba(255,30,70,' + (0.10 + 0.05 * Math.sin(t * 0.08)) + ')'; g.fillRect(0, 0, R.W, R.H); }

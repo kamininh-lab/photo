@@ -20,7 +20,7 @@
     var S = G.S; if (S.id !== 'school') return;
     var BG = R.BG, cam = R.viewCam, gp = BG.gatePlaque, sg = BG.schoolSign, f = '"Yu Gothic","Yu Gothic UI","Meiryo",sans-serif';
     F.save(); F.setTransform(SCALE, 0, 0, SCALE, 0, 0); F.textBaseline = 'middle'; F.textAlign = 'center';
-    var sx = R.schoolX(cam) + sg.x, sy = -7 + sg.y;
+    var sx = R.schoolX(cam) + sg.x, sy = 19 + sg.y;      // 校舎の絵と同じ高さ（40_stage.js の drawBackdrop）
     if (sx > -sg.w && sx < R.W) {
       F.font = 'bold 10.5px ' + f; F.fillStyle = 'rgba(20,14,50,.9)'; F.fillText('鹿児島玉龍中学校・高等学校', sx + sg.w / 2 + 0.5, sy + sg.h / 2 + 1.2, sg.w - 6);
       F.fillStyle = '#ffffff'; F.fillText('鹿児島玉龍中学校・高等学校', sx + sg.w / 2, sy + sg.h / 2 + 0.6, sg.w - 6);
