@@ -231,15 +231,15 @@
   // 中ボス（黒瀬）の、戦いの最中のカットイン: 左上から紫の帯がすべり込み、シートのカットインの絵と、ひとことを出す（52_karate.js の bossCut）
   function bossCut(g) {
     var c = G.bossCut, u = c.t / 84, k = u < 0.14 ? R.ease(u / 0.14) : (u > 0.82 ? 1 - R.ease((u - 0.82) / 0.18) : 1), off = -(1 - k) * 1300;
-    var y = 270, h = 230, x0 = -40, w = 1180, sk = 90, im = R.IMG['midPic_' + c.pic], i, gr;      // 左上の HP の表示にかからない高さ
+    var y = 270, h = 230, x0 = -40, w = 1180, sk = 90, im = R.IMG[(c.img || 'midPic_') + c.pic], i, gr, nm = c.name || '黒瀬', bl = !!c.blue;      // 左上の HP の表示にかからない高さ。img・name・blue = 黒瀬以外のボス（井立は青い帯）
     g.save(); g.translate(off, 0);
     g.beginPath(); g.moveTo(x0, y); g.lineTo(x0 + w + sk, y); g.lineTo(x0 + w, y + h); g.lineTo(x0, y + h); g.closePath();
     g.save(); g.clip();
-    var gd = !!c.gold, acc = gd ? '#ffc83e' : '#c98bff';      // gold = 覚醒のカットイン（金色の帯）
-    gr = g.createLinearGradient(x0, 0, x0 + w, 0); gr.addColorStop(0, gd ? '#6a4210' : '#3a1470'); gr.addColorStop(1, gd ? '#1e1006' : '#12052a');
+    var gd = !!c.gold, acc = gd ? '#ffc83e' : bl ? '#7af3ff' : '#c98bff', dk = bl ? '#081a40' : '#2a0c50';      // gold = 覚醒のカットイン（金色の帯）
+    gr = g.createLinearGradient(x0, 0, x0 + w, 0); gr.addColorStop(0, gd ? '#6a4210' : bl ? '#123a86' : '#3a1470'); gr.addColorStop(1, gd ? '#1e1006' : bl ? '#050d26' : '#12052a');
     g.fillStyle = gr; g.fillRect(x0, y, w + sk, h);
     if (im && im.complete && im.naturalWidth) { g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(im, 40, y, h * 450 / 306, h); }
-    gr = g.createLinearGradient(40 + h * 450 / 306 - 120, 0, 40 + h * 450 / 306, 0); gr.addColorStop(0, gd ? 'rgba(60,36,8,0)' : 'rgba(18,5,42,0)'); gr.addColorStop(1, gd ? '#4a2e0a' : '#1c0838');      // 絵の右端をなじませる
+    gr = g.createLinearGradient(40 + h * 450 / 306 - 120, 0, 40 + h * 450 / 306, 0); gr.addColorStop(0, gd ? 'rgba(60,36,8,0)' : bl ? 'rgba(8,26,64,0)' : 'rgba(18,5,42,0)'); gr.addColorStop(1, gd ? '#4a2e0a' : bl ? '#0c2456' : '#1c0838');      // 絵の右端をなじませる
     g.fillStyle = gr; g.fillRect(40 + h * 450 / 306 - 120, y, 122, h);
     g.globalCompositeOperation = 'lighter';
     for (i = 0; i < 5; i++) { g.fillStyle = i % 2 ? acc : '#ffffff'; g.globalAlpha = 0.3; g.fillRect(x0 + ((c.t * 44 + i * 300) % (w + 200)), y + 22 + i * 48, 260, 4 + i % 2 * 4); }
@@ -249,12 +249,12 @@
     g.lineWidth = 3; g.strokeStyle = acc;
     g.beginPath(); g.moveTo(x0, y + 9); g.lineTo(x0 + w + sk - 9, y + 9); g.moveTo(x0, y + h - 9); g.lineTo(x0 + w - 4, y + h - 9); g.stroke();
     if (c.line2) {      // 2 行の台詞（覚醒）: 名前を小さく上へ
-      T(g, '黒瀬', 1020, y + 72, 64, acc, 'right', MIN, '#ffffff', 6);
-      T(g, c.line, 1030, y + 136, 42, '#ffffff', 'right', MIN, gd ? '#4a2a06' : '#2a0c50', 8);
-      T(g, c.line2, 1030, y + 194, 46, gd ? '#fff3b0' : '#ffffff', 'right', MIN, gd ? '#4a2a06' : '#2a0c50', 8);
+      T(g, nm, 1020, y + 72, 64, acc, 'right', MIN, '#ffffff', 6);
+      T(g, c.line, 1030, y + 136, 42, '#ffffff', 'right', MIN, gd ? '#4a2a06' : dk, 8);
+      T(g, c.line2, 1030, y + 194, 46, gd ? '#fff3b0' : '#ffffff', 'right', MIN, gd ? '#4a2a06' : dk, 8);
     } else {
-      T(g, '黒瀬', 1020, y + 100, 90, '#c98bff', 'right', MIN, '#ffffff', 7);
-      T(g, c.line, 1030, y + 180, 44, '#ffffff', 'right', MIN, '#2a0c50', 8);
+      T(g, nm, 1020, y + 100, 90, acc, 'right', MIN, '#ffffff', 7);
+      T(g, c.line, 1030, y + 180, 44, '#ffffff', 'right', MIN, dk, 8);
     }
     g.restore();
   }
@@ -367,14 +367,14 @@
       T(g, b.name, 520, 968, 38, '#ffffff', 'left', MIN, mid ? '#1e0a3c' : '#2a0818', 8); T(g, b.sub, 1400, 968, 20, mid ? '#d9b8ff' : '#ffb0c0', 'right', UI, mid ? '#1e0a3c' : '#2a0818', 5);
       if (mid && b.phase === 3) bar(g, 510, 978, 900, 30, b.hp / b.max * ba, (G.t >> 3) % 2 ? '#fff3b0' : '#ffd36a', '#c07818');      // 覚醒中は金色の帯
       else if (mid) bar(g, 510, 978, 900, 30, b.hp / b.max * ba, '#c98bff', '#7a2be0'); else bar(g, 510, 978, 900, 30, b.hp / b.max * ba, '#ff9a6a', '#e02a5a');
-      if (mid) midFace(g, b, 392, 906, 104, 114);
+      if (mid || b.iconOf) midFace(g, b, 392, 906, 104, 114);      // 中ボスと、顔のアイコンを持つボス（井立）
       g.globalAlpha = 1;
       if (G.bossIntro > 20 && G.bossIntro <= 110) {
         var ia = Math.min(1, (110 - G.bossIntro) / 14) * Math.min(1, (G.bossIntro - 20) / 14);
         g.globalAlpha = ia; g.fillStyle = 'rgba(8,2,24,.6)'; g.fillRect(0, 430, 1920, 200);
         g.fillStyle = mid ? '#a050ff' : '#ff2e60'; g.fillRect(0, 430, 1920, 5); g.fillRect(0, 625, 1920, 5);
         if (mid) T(g, 'MID BOSS　―　空手使い', 960, 500, 40, (G.t >> 3) % 2 ? '#c98bff' : '#f0e0ff', 'center', UI, '#1e0a3c', 8);
-        else T(g, b.type === 'dragon' ? '囚われの姫を救え！' : 'WARNING', 960, 500, 44, (G.t >> 3) % 2 ? '#ff5a6a' : '#ffd0d6', 'center', SERIF, '#2a0818', 8);
+        else T(g, b.banner || (b.type === 'dragon' ? '囚われの姫を救え！' : 'WARNING'), 960, 500, 44, (G.t >> 3) % 2 ? '#ff5a6a' : '#ffd0d6', 'center', SERIF, '#2a0818', 8);
         T(g, b.name, 960, 584, 78, '#ffffff', 'center', MIN, mid ? '#5a1ea8' : '#a8183c', 10); g.globalAlpha = 1;
       }
     }
@@ -408,7 +408,7 @@
   };
   // 中ボスの顔（シートの表情アイコン）。八角形の枠に入れる
   function midFace(g, b, x, y, w, h) {
-    var im = R.IMG.midIcons, D = window.REBELL_MIDBOSS, i = R.Karate.icon(b);
+    var own = !!b.iconOf, im = own ? R.IMG[b.iconImg] : R.IMG.midIcons, D = own ? b.iconData : window.REBELL_MIDBOSS, i = own ? b.iconOf(b) : R.Karate.icon(b);
     if (!im || !im.complete || !im.naturalWidth || !D) return;
     g.save();
     cham(g, x, y, w, h, 14); g.fillStyle = '#1e0a3c'; g.fill();
@@ -418,7 +418,7 @@
     if (b.flash > 0) { g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(x, y, w, h); }
     g.restore();
     g.lineJoin = 'miter'; cham(g, x, y, w, h, 14); g.lineWidth = 5; g.strokeStyle = '#ffffff'; g.stroke();
-    cham(g, x + 4, y + 4, w - 8, h - 8, 11); g.lineWidth = 2; g.strokeStyle = '#c98bff'; g.stroke();
+    cham(g, x + 4, y + 4, w - 8, h - 8, 11); g.lineWidth = 2; g.strokeStyle = own ? '#7af3ff' : '#c98bff'; g.stroke();
     g.restore();
   }
 

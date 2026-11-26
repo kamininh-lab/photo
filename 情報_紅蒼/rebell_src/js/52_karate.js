@@ -691,6 +691,7 @@
       e.expr = 'smirk'; e.exprT = 0; e.pending = false;
       e.animT = 0;      // 敵の共通の初期値は小数なので、整数から数え直す（「n フレームごと」の判定が効くように）
       e.onHit = onHit; e.afterHit = afterHit; e.onKill = onKill; e.upd = update; e.draw = draw;
+      e.talkWho = 'kurose'; e.talkPose = talkPose;      // 会話のあいだの身ぶり（65_talk.js）
       return true;
     }
     if (e.type === 'photo') {

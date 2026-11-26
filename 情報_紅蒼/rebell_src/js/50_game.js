@@ -1022,7 +1022,7 @@
         if (p.running && p.ground && !move && p.skidT <= 0) p.stopT = 7;                  // 止まるときは、足をそろえる 1 歩をはさむ
         p.running = false;
       }
-      if (jumpHit) { if (I.down.down && p.ground && onPlat(p)) { p.drop = 10; p.y += 2; } else if (!p.ground && p.coyote <= 0 && p.wallT > 0) wallKick(p); else doJump(p); }
+      if (jumpHit) { if (I.down.down && p.ground && onPlat(p) && !(G.S.goal && G.arena)) { p.drop = 10; p.y += 2; } else if (!p.ground && p.coyote <= 0 && p.wallT > 0) wallKick(p); else doJump(p); }      // てっぺんのボス戦では、足場をすり抜けて下りられない（落ちてしまうので）
       if (!jumpHeld && p.vy < -3 && !p.rose) p.vy = -3;
       if (I.hit.attack) {
         if (I.down.down) startAttack(p.ground ? T.up : T.dive);              // ↓+攻撃: 斬り上げ / 急降下
@@ -1185,6 +1185,7 @@
     else if (type === 'drone') { e.w = 18; e.h = 18; e.hp = e.max = 30; e.exp = 9; e.armor = true; e.baseY = e.y; e.homeX = x; }
     else if (type === 'guard') { e.w = 36; e.h = 66; e.hp = e.max = 620; e.exp = 160; e.armor = true; }
     else if (type === 'dragon') R.Dragon.init(e);      // ボス「玉龍」。空を飛び回る。中身は 35_dragon.js
+    else if (type === 'idachi') { if (R.Idachi) R.Idachi.init(e); }      // ステージ 2 のボス「井立 快晴」。中身は 53_idachi.js
     else if (R.Karate) R.Karate.init(e);      // 中ボス「黒瀬 龍士」（karate）と、その写し身（photo）。中身は 52_karate.js
     return e;
   }
@@ -1286,7 +1287,7 @@
   }
   // 敵の体に触れると、のけぞってダメージを受ける。
   //   こちらが攻撃している間・ダッシュや技の最中・無敵の間は受けない。斬られてひるんでいる敵（白く光っている間）にも当たらない
-  var TOUCH = { robot: 6, drone: 5, guard: 10, dragon: 10, karate: 8 };
+  var TOUCH = { robot: 6, drone: 5, guard: 10, dragon: 10, karate: 8, idachi: 8 };
   function updTouch() {
     var p = G.pl, pb, i, j, e, parts, b;
     if (p.inv > 0 || p.st === 'attack' || p.st === 'dash' || p.st === 'special' || p.st === 'cross' || p.st === 'hurt') return;
@@ -1405,7 +1406,7 @@
     G.stageIdx = idx; G.S = S; G.enemies = []; G.shots = []; G.pshots = []; G.items = []; G.fx = []; G.parts = []; G.texts = []; G.ghosts = [];
     G.boss = null; G.arena = null; G.cross = null; G.bossCut = null; G.bossDefeated = false; G.rage = false; G.combo = 0; G.hitstop = 0; G.slow = 0;
     G.dazzle = 0; G.bossIntro = 0;
-    if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; G.tHint = {}; }      // 中ボスを倒したか・もう会ったか（やり直しても覚えておく。ステージを最初から始めるときだけ戻す）
+    if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; G.tHint = {}; G.idaMet = false; G.idaHint = null; }      // 中ボスを倒したか・もう会ったか（やり直しても覚えておく。ステージを最初から始めるときだけ戻す）
     S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });
     S.items.forEach(function (q) { G.items.push({ type: q[0], x: q[1], y: q[2], t: 0, open: false }); });
     // 端末・バネは、x だけ（地面の上）か、[x, y]（縦のステージの足場の上）
@@ -1449,17 +1450,34 @@
   };
   // 縦のステージのカメラ: 足もとが画面の下から 105 ドット（y = 165）に来る高さ。下の地面より下は映さず、てっぺんより上へも行かない
   function towerCam(y) { return clamp(165 - y, 0, 165 - G.S.goal[1] + 20); }
-  // 縦のステージ: てっぺんの足場に立ったら、登りきってステージクリア
-  function updGoal() {
-    var S = G.S, q = S.goal, p = G.pl;
-    if (!G.bossDefeated && p.ground && Math.abs(p.y - q[1]) < 2 && p.x > q[0] && p.x < q[0] + q[2]) {
-      G.bossDefeated = true; G.stateT = 0; G.shots = [];
-      G.enemies.forEach(function (e) { if (!e.dead) { e.dead = true; burst(e.x, e.y - 10, 12, ['#ffe04a', '#ffffff'], 2.4, 22); } });
-      toast('登頂！ ― 鉄塔のてっぺんに着いた', '#ffe04a'); R.snd('levelup'); p.joyT = 120; p.joyAll = true;
-      fx({ type: 'ring', x: p.x, y: p.y - MID, life: 30, r: 70, col: '#ffe04a' });
-    }
-    if (G.bossDefeated) { G.stateT++; if (G.stateT === 90) { R.bgm('clear'); G.state = 'clear'; G.stateT = 0; } }
+  // 縦のステージ: てっぺんの足場に立ったら、登りきってステージクリア。
+  //   ボス（S.boss）がいれば、てっぺんに着いたところでボス戦になり（足場の上だけで戦う）、倒すとクリア
+  function summit(p) {
+    var q = G.S.goal;
+    toast('登頂！ ― 鉄塔のてっぺんに着いた', '#ffe04a'); R.snd('levelup'); p.joyT = 120; p.joyAll = true;
+    fx({ type: 'ring', x: p.x, y: p.y - MID, life: 30, r: 70, col: '#ffe04a' });
   }
+  function updGoal() {
+    var S = G.S, q = S.goal, p = G.pl, b = S.boss;
+    if (!G.bossDefeated && !G.boss && p.ground && Math.abs(p.y - q[1]) < 2 && p.x > q[0] && p.x < q[0] + q[2]) {
+      G.shots = [];
+      G.enemies.forEach(function (e) { if (!e.dead) { e.dead = true; burst(e.x, e.y - 10, 12, ['#ffe04a', '#ffffff'], 2.4, 22); } });
+      if (b && R.Idachi && R.Idachi.ok()) {      // ボス戦: 足場の両端までを戦いの場にする（落ちないように）
+        G.arena = [q[0] + 4, q[0] + q[2] - 4];
+        G.boss = spawn(b.type, b.x, q[1]); G.boss.name = b.name; G.boss.sub = b.sub;
+        G.enemies = [G.boss];
+        R.Idachi.enter(G.boss, b);
+      } else { G.bossDefeated = true; G.stateT = 0; summit(p); }
+    }
+    if (G.bossIntro > 0) G.bossIntro--;
+    if (G.bossDefeated) { G.stateT++; if (G.stateT === 90) { G.arena = null; R.bgm('clear'); G.state = 'clear'; G.stateT = 0; } }
+  }
+  // ステージ 2 のボス（井立）が、会話を終えて去ったあと（53_idachi.js から）: 登頂して、ステージクリアへ
+  R.idachiDone = function (e) {
+    if (G.boss === e) G.boss = null;
+    G.bossDefeated = true; G.stateT = 0; G.shots = [];
+    summit(G.pl);
+  };
   function updBossTrigger() {
     var S = G.S, b = S.boss, m = S.mid, p = G.pl;
     if (S.goal) { updGoal(); return; }
@@ -1538,7 +1556,7 @@
     updItems(); updFx(); updBossTrigger(); updSpikes();
     // カメラ
     var p = G.pl, tx = p.x - R.W * 0.42 + p.face * 26, lo = 0, hi = G.S.len - R.W;
-    if (G.arena) { lo = G.arena[0]; hi = G.arena[1] - R.W; }
+    if (G.arena && G.arena[1] - G.arena[0] >= R.W) { lo = G.arena[0]; hi = G.arena[1] - R.W; }      // 画面より狭い戦いの場（鉄塔のてっぺん）では、カメラは動かさない
     G.cam.x += (clamp(tx, lo, hi) - G.cam.x) * 0.1;
     if (G.cam.x < lo) G.cam.x += Math.min(4, lo - G.cam.x); if (G.cam.x > hi) G.cam.x -= Math.min(4, G.cam.x - hi);
     if (G.S.vertical) {

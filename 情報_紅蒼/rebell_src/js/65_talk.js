@@ -65,13 +65,40 @@
       { who: 'kurose', face: 'grin', text: ['いい読みだ。拳も、蹴りも、光も――', '全部見切れたら、通してやる。'] },
       { who: 'kurose', face: 'reach', text: ['黒瀬 龍士。通りすがりの、ただの空手使いだ。', 'さあ――二人まとめて、かかってこい。'] },
       { who: 'kurenai', face: 'anger', pose: 'stance', text: ['言ったね！　行くよ、蒼！'] }
+    ],
+    // ステージ 2 のボス「井立 快晴」: 鉄塔のてっぺんで、《龍》を守るために立ちはだかる（53_idachi.js の stIntro から）。
+    //   シートの決め台詞「守るために、強くなる。…それが、今の俺の答えだ。」に沿わせた。龍を守る理由は、ここでは明かさない
+    //   井立の face: smile / close / shout / kick
+    idachi: [
+      { who: 'idachi', face: 'smile', text: ['――ここまで登ってきたか。', '風の中、よく落ちなかったな。いい根性だ。'] },
+      { who: 'kurenai', face: 'anger', text: ['誰！？　そこ、どいて！', 'あたしたち、この先の《龍》に用があるの！'] },
+      { who: 'idachi', face: 'close', text: ['知ってる。だから、俺がここにいる。', '井立 快晴。……《龍》を守る者だ。'] },
+      { who: 'shikaku', face: 'serious', text: ['――二人とも、気をつけて。彼の動き、データにない。', '空手……それも、相当な使い手だ。'] },
+      { who: 'aoi', face: 'normal', text: ['《龍》を、守る……？', 'あの龍は、姫さまを囚えているのよ。'] },
+      { who: 'idachi', face: 'close', text: ['事情は、それぞれだ。', '俺には俺の、守ると決めたものがある。'] },
+      { who: 'kurenai', face: 'anger', text: ['意味わかんない！', '姫さまを、返してもらうだけだよ！'] },
+      { who: 'idachi', face: 'shout', text: ['なら、拳で語れ。', '守るために、強くなる。……それが、今の俺の答えだ。'] },
+      { who: 'aoi', face: 'normal', pose: 'stance', text: ['……紅、本気で行きましょう。', 'この人、迷いがない。'] },
+      { who: 'kurenai', face: 'anger', pose: 'stance', text: ['上等！　てっぺんまで来て、', '負けるわけにはいかないんだから！'] }
+    ],
+    // 井立を倒したあと（53_idachi.js の stDie から）。終わると、登頂してステージクリア
+    idachi_end: [
+      { who: 'idachi', face: 'smile', text: ['……ふっ。完敗だ。', '二人で、ひとつ。……いい拳だった。'] },
+      { who: 'kurenai', face: 'joy', text: ['へへっ、だから言ったでしょ！', 'じゃあ、通してもらうよ！'] },
+      { who: 'aoi', face: 'normal', text: ['……教えて。', 'あなたは、どうして《龍》を守っていたの？'] },
+      { who: 'idachi', face: 'close', text: ['……行けば、わかる。', '龍は、学園のいちばん奥だ。'] },
+      { who: 'idachi', face: 'smile', text: ['結界の上は、ここから跳べば越えられる。', '――その拳で、確かめてこい。'] },
+      { who: 'kurenai', face: 'shy', text: ['……なんか、悪い人じゃなさそう？'] },
+      { who: 'aoi', face: 'joy', text: ['ふふ。行きましょう、紅。', '答えは、あの龍のところに。'] }
     ]
   };
   // 話し手ごとの見た目。side = カットインがすべり込んでくる側（-1 = 左、1 = 右）。portrait = 顔グラフィックの代わりに、シートの大きな絵を使う
   var WHO = {
     kurenai: { side: -1, col: PINK, dark: '#40103c', lite: '#8a2062', mid: '#6a1a58', plate: '#5a1650', name: '紅', kana: 'くれない', en: 'KURENAI', icon: 'iconKurenai' },
     aoi: { side: 1, col: CYAN, dark: '#0c1450', lite: '#1a36a8', mid: '#152a80', plate: '#12246e', name: '蒼', kana: 'あおい', en: 'AOI', icon: 'iconAoi' },
-    kurose: { side: 1, col: '#c98bff', dark: '#170a30', lite: '#4a2890', mid: '#2e1960', plate: '#2a1650', name: '黒瀬', kana: 'くろせ', en: 'KUROSE RYUJI', icon: null, portrait: true, pics: true },
+    kurose: { side: 1, col: '#c98bff', dark: '#170a30', lite: '#4a2890', mid: '#2e1960', plate: '#2a1650', name: '黒瀬', kana: 'くろせ', en: 'KUROSE RYUJI', icon: null, portrait: true, pics: true, img: 'midPic_' },
+    // 井立: ステージ 2 のボス。絵は smile（左上の大きな絵）/ close（真剣な寄り）/ shout（拳を突き出して叫ぶ）/ kick（蹴り）
+    idachi: { side: 1, col: '#7af3ff', dark: '#050d26', lite: '#1a4aa8', mid: '#0e2a66', plate: '#0c2458', name: '井立', kana: 'いだち', en: 'IDACHI KAISEI', icon: null, pics: true, img: 'idaPic_' },
     // 四角: 通信で話す。pics = 表情ごとの絵（09_shikaku_art.js）、tag = 帯に出す小さな札
     shikaku: { side: 1, col: '#ffc84a', dark: '#07122e', lite: '#1c4a86', mid: '#123260', plate: '#143058', name: '四角', kana: 'よすみ', en: 'YOSUMI AKIHIRO', icon: null, pics: true, tag: '通信中  ‐  SUPPORT' }
   };
@@ -105,7 +132,7 @@
     var tk = G.talk, ln;
     if (!tk) { G.state = 'play'; return; }
     G.t++; tk.T++; tk.inT++;
-    if (tk.vs && R.Karate) R.Karate.talkPose(tk.vs, tk.inT >= IN && tk.outT < 0 && tk.lines[tk.i].who === 'kurose', tk.T);      // 中ボスは、話すときだけ手招きする
+    if (tk.vs && tk.vs.talkPose) tk.vs.talkPose(tk.vs, tk.inT >= IN && tk.outT < 0 && tk.lines[tk.i].who === tk.vs.talkWho, tk.T);      // 向かい合う相手（黒瀬・井立）は、話すときだけ身ぶりをする
     if (G.fadeDir) { G.fade = R.clamp(G.fade + G.fadeDir * 0.04, 0, 1); if (G.fade === 0 || G.fade === 1) G.fadeDir = 0; }
     if (tk.prev && ++tk.prev.t > 8) tk.prev = null;
     if (tk.outT >= 0) { if (++tk.outT >= OUT) finish(); return; }
@@ -126,7 +153,7 @@
     var ln = tk.lines[tk.i], p = G.pl, kx = p.x, started = tk.inT >= IN;
     // leap = 終わりに跳び去る距離（0 なら、その場に残る）
     function actor(who, x, face, ph, leap) {
-      var S = R.STAND[who], st = S.idle, f, br, y = R.GY, a = 1, v;
+      var S = R.STAND[who], st = S.idle, f, br, y = p.y, a = 1, v;      // いま立っている高さ（鉄塔のてっぺんでも）
       var speaking = started && tk.outT < 0 && ln.who === who;
       if (speaking && ln.pose === 'event') { f = R.frame(who, 'event', 1); st = null; }
       else { if (speaking && ln.pose === 'stance') st = S.stance; f = R.frame(who, st === S.idle ? 'idle' : 'stance', st.i); }
@@ -175,7 +202,7 @@
     // 顔（出た瞬間は少し大きく、すぐ戻る）
     var fw = 450, fh = 306, fx = K ? x0 + 150 : x0 + w + sk - 150 - fw, pop = 1 + 0.07 * Math.max(0, 1 - pt / 9);
     g.save(); g.translate(fx + fw / 2, y + h / 2); g.scale(pop, pop);
-    im = W.pics ? (who === 'kurose' ? R.IMG['midPic_' + expr] : (PICS[who + '_' + expr] || PICS[who + '_smile'])) : null;      // 黒瀬の絵は 52_karate.js が読み込む
+    im = W.pics ? (W.img ? R.IMG[W.img + expr] : (PICS[who + '_' + expr] || PICS[who + '_smile'])) : null;      // 黒瀬・井立の絵は 52_karate.js / 53_idachi.js が読み込む（img = R.IMG の名前の頭）
     if (im && im.complete && im.naturalWidth) { g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(im, -fw / 2, -fh / 2, fw, fh); }
     else if (W.portrait) drawPortrait(g, -fw / 2, -fh / 2, fw, fh); else U.drawFace(g, who, expr, 'hud', -fw / 2, -fh / 2, fw, fh);
     g.restore();
