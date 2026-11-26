@@ -135,6 +135,17 @@
     }
     g.restore();
   }
+  // 血華葬: 地面から一本ずつ突き上がる紅の牙（すぐ伸びきり、少しとどまってから細って消える）
+  function spike(g, e, cam) {
+    var u = e.t / e.life, up = Math.min(1, e.t / 4), h = e.h * (u < 0.6 ? up : 1 - (u - 0.6) / 0.4 * 0.5), w = 8 * (u < 0.6 ? 1 : 1 - (u - 0.6) / 0.4), x = e.x - cam, y = e.y, s = e.face || 1;
+    if (h < 1 || w < 0.5) return;
+    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = u < 0.6 ? 1 : 1 - (u - 0.6) / 0.4;
+    g.fillStyle = '#a81868'; g.beginPath(); g.moveTo(x - w - 2, y); g.lineTo(x + s * 4, y - h - 4); g.lineTo(x + w + 2, y); g.fill();
+    g.fillStyle = '#ff2e88'; g.beginPath(); g.moveTo(x - w, y); g.lineTo(x + s * 3, y - h); g.lineTo(x + w, y); g.fill();
+    g.fillStyle = '#ffd0ec'; g.beginPath(); g.moveTo(x - w * 0.4, y); g.lineTo(x + s * 2, y - h * 0.8); g.lineTo(x + w * 0.4, y); g.fill();
+    if (e.t < 3) { g.fillStyle = '#ffffff'; g.fillRect(Math.round(x - 10), y - 2, 20, 2); }
+    g.restore();
+  }
   function crack(g, e, cam) {
     var u = e.t / e.life, x = Math.round(e.x - cam);
     g.save(); g.globalAlpha = 1 - u; g.fillStyle = '#ffd0ec';
@@ -426,6 +437,7 @@
     else if (st) br = R.lastBreath || null;      // ポーズ中は、止めた瞬間の姿のまま
     R.lastBreath = br;
     var blink = p.inv > 0 && p.st !== 'dash' && p.st !== 'special' && p.st !== 'cross' && !X && (G.t >> 1) % 2 === 0 && p.inv < 70 && G.state === 'play';
+    if (p.vanish && p.st === 'special') blink = true;      // 瞬影斬: 姿を消している間は描かない（残像だけ）
     if (!blink) {
       var psx = 1, psy = 1;
       if (p.landT > 0 && p.ground && p.st === 'free') { psy = 1 - 0.1 * p.landT / 7; psx = 1 + 0.08 * p.landT / 7; }      // 着地でつぶれる
@@ -455,6 +467,7 @@
       e = G.fx[i];
       if (e.type === 'spark') spark(fg, e, cam); else if (e.type === 'boom') boom(fg, e, cam); else if (e.type === 'quake') quake(fg, e, cam);
       else if (e.type === 'crack') crack(fg, e, cam); else if (e.type === 'xflash') xflash(fg, e, cam);
+      else if (e.type === 'spike') spike(fg, e, cam);      // 血華葬の紅の牙
       else if (e.type === 'kfx') R.Karate.drawFx(fg, e, cam);      // 中ボスの地裂撃
     }
     for (i = 0; i < G.parts.length; i++) {
