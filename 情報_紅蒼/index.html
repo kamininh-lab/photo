@@ -3776,6 +3776,7 @@ window.REBELL_SHIKAKU = {
     R.snd('hurt');
     if (armor && c.hp > 0) { p.inv = 28; shake(2.5); return true; }
     p.st = 'hurt'; p.stT = 0; p.hurtBig = !!big; p.flipT = 0; p.entry = false; p.vx = dir * (big ? 4.5 : 3); p.vy = big ? -4.5 : -3; p.inv = 75;
+    if (G.S.sky) p.vx *= 0.35;      // 空のステージ: 足場が細く、下は空なので、のけぞりで足場から弾き出されないように弱める
     shake(big ? 6 : 3.5); G.flash = Math.max(G.flash, 0.25);
     G.combo = 0;
     if (c.hp <= 0) {
@@ -3987,6 +3988,7 @@ window.REBELL_SHIKAKU = {
   }
   function startCross() {
     var p = G.pl;
+    if (G.bossDefeated) return;      // ボスを倒した後・ゴールの後は出さない（クリアの画面に幕が残る）
     if (p.cross < 100) { R.snd('deny'); toast('交錯ゲージが足りない', '#ffb8e6'); mood('silly', p.who, 70); return; }
     if (p.chars.kurenai.down || p.chars.aoi.down) { R.snd('deny'); toast('二人そろっていないと使えない', '#ffb8e6'); return; }
     p.cross = 0; p.st = 'cross'; p.stT = 0; p.vx = 0; p.inv = 200; p.entry = false; p.flipT = 0; p.battleT = 150; p.angerT = 130;
@@ -4308,7 +4310,7 @@ window.REBELL_SHIKAKU = {
       }
     } else if (q.st === 'back') {
       q.len = q.len0 * (1 - R.ease(Math.min(1, q.t / k.back)));
-      if (q.t >= k.back) { q.st = 'done'; q.len = 0; if (!air) dust(p.x + q.face * 8, p.y, 3); }
+      if (q.t >= k.back) { q.st = 'done'; q.len = 0; q.missed = true; if (!air) dust(p.x + q.face * 8, p.y, 3); }      // missed = 何にも刺さらずに戻った
     }
     if (q.st === 'done') return air ? 0.45 : grav;
     // 鎌の頭の当たり（同じ敵には、少し間をあけて 3 回まで）
@@ -4453,7 +4455,7 @@ window.REBELL_SHIKAKU = {
       var locked = !!a.kusari && p.stT < a.cancel;      // 鎖鎌は、投げたら戻るまで動けない（大振りの代わりに、ひるまない）
       if (a.dive || (a.kusari && a.kusari.pull)) {
         if (p.ground && p.stT >= a.h0) diveLand(p, a, mult);
-        else if (p.stT >= a.dur) { p.st = 'free'; p.entry = false; }
+        else if (p.stT >= a.dur || (a.kusari && p.kusari && p.kusari.missed)) { p.st = 'free'; p.entry = false; }      // 空中の鎖鎌が外れて戻ったら、すぐ動ける（穴の上で落ちるだけにならない）
       }
       else if (I.hit.switch && open) doSwitch();
       else if (!locked && I.hit.dash && open && canDash(p)) startDash(move);
@@ -4546,11 +4548,32 @@ window.REBELL_SHIKAKU = {
     else if (p.coyote > 0) p.coyote--;
     if (p.flipT > 0 && p.flipT % 4 === 0) ghost(p, 9);
     // ステージから落ちたら、その場でゲームオーバー（つづきは、最後に記録した端末から）。縦のステージでは、画面の下へ消えたら
-    if ((G.S.vertical || G.S.sky ? p.y - p.h + G.cam.y > R.H + 6 : p.y > R.H + 60) && G.state === 'play') {
+    if ((G.S.vertical || G.S.sky ? p.y - p.h + G.cam.y > R.H + 6 : p.y > R.H + 60) && G.state === 'play' && !G.bossDefeated && !(G.S.sky && skyRescue(p))) {      // ボスを倒した後・ゴールの後は、落ちてもやり直しにしない
       p.vx = 0; p.vy = 0; p.st = 'free'; p.flipT = 0; G.combo = 0; G.cross = null;
       toast('落下…', '#ff9db8'); R.snd('hurt');
       G.state = 'gameover'; G.stateT = 0; R.bgm('gameover');
     }
+  }
+  // 空のステージで落ちたとき: 四角のドローンが拾い上げて、画面に映っている足場へ戻す（HP を 20 使う）。
+  //   画面は止まらずに進むので、撃ち落とされるたびにゲームオーバーでは厳しすぎるため。HP が足りないとき・戻せる足場がないときは false（ふつうに落下）
+  var RESCUE_DMG = 20;
+  function skyRescue(p) {
+    var c = p.chars[p.who], P = G.plats || [], best = null, bs = 1e9, i, s, sx, sy, sc;
+    if (c.hp <= RESCUE_DMG || G.bossDefeated) return false;
+    for (i = 0; i < P.length; i++) {
+      s = P[i]; if (s.gone || s.w < 30 || (s.x === G.S.goal[0] && s.y === G.S.goal[1])) continue;      // ゴールのデッキへは運ばない
+      sx = s.x + Math.min(s.w / 2, 24); sy = s.y + G.cam.y;
+      if (sx < G.cam.x + 30 || sx > G.cam.x + R.W - 40 || sy < 70 || sy > R.H - 40) continue;      // 画面の中ほどに見えている足場だけ
+      sc = Math.abs(sx - G.cam.x - 170) + Math.abs(sy - 170) * 0.5;
+      if (sc < bs) { bs = sc; best = s; }
+    }
+    if (!best) return false;
+    c.hp -= RESCUE_DMG; p.hurtFlash = 8; p.hurtFaceT = 55;
+    p.x = best.x + Math.min(best.w / 2, 24); p.y = best.y; p.vx = 0; p.vy = 0; if (!G.cross) p.st = 'free'; p.ground = true; p.inv = 100; p.flipT = 0; p.jumps = 0; p.airDashed = 0; p.kusari = null;
+    text(p.x, p.y - 40, '-' + RESCUE_DMG, '#ff5a6a');
+    fx({ type: 'ring', x: p.x, y: p.y - MID, life: 24, r: 46, col: '#ffd36a' }); burst(p.x, p.y - MID, 14, ['#ffd36a', '#7af3ff', '#ffffff'], 2.6, 26);
+    toast('四角のドローンが拾い上げた！', '#ffd36a'); R.snd('switch'); shake(3);
+    return true;
   }
   function onPlat(p) { var P = G.plats || G.S.platRects; for (var i = 0; i < P.length; i++) if (!P[i].gone && Math.abs(p.y - P[i].y) < 1 && p.x > P[i].x - 6 && p.x < P[i].x + P[i].w + 6) return true; return false; }
   function dust(x, y, n) { for (var i = 0; i < n; i++) part(x + rand(-6, 6), y - 1, rand(-1.2, 1.2), rand(-1.2, -0.2), rand(12, 22), i % 2 ? '#a39bd0' : '#655e9e', 2, 0.02); }
@@ -4713,11 +4736,11 @@ window.REBELL_SHIKAKU = {
       it = G.items[i]; it.t++;
       if (it.loose) {
         it.vy += 0.25; it.x += it.vx; it.y += it.vy;
-        var fy = floorAt(it.x), PL = G.S.platRects, pi;      // 石の段の上にも、足場の上にも乗る
-        for (pi = 0; pi < PL.length; pi++) if (it.vy >= 0 && it.x > PL[pi].x && it.x < PL[pi].x + PL[pi].w && it.y - it.vy + 12 <= PL[pi].y + 0.01 && it.y + 12 >= PL[pi].y && (fy === null || PL[pi].y < fy)) fy = PL[pi].y;
-        if (fy !== null && it.vy >= 0 && it.y >= fy - 12) { it.y = fy - 12; it.vy = 0; it.vx = 0; it.loose = false; }
-        if (it.y > R.H + 30) it.dead = true;
-      }
+        var fy = floorAt(it.x), PL = G.plats || G.S.platRects, pi, on = null;      // 石の段の上にも、足場の上にも、動く足場（乗り物）の上にも乗る
+        for (pi = 0; pi < PL.length; pi++) if (!PL[pi].gone && it.vy >= 0 && it.x > PL[pi].x && it.x < PL[pi].x + PL[pi].w && it.y - it.vy + 12 <= PL[pi].y + 0.01 && it.y + 12 >= PL[pi].y && (fy === null || PL[pi].y < fy)) { fy = PL[pi].y; on = PL[pi]; }
+        if (fy !== null && it.vy >= 0 && it.y >= fy - 12) { it.y = fy - 12; it.vy = 0; it.vx = 0; it.loose = false; it.on = on && on.per ? on : null; }
+        if (it.y > R.H + 30 - (G.cam.y || 0)) it.dead = true;      // 画面の下へ落ちたら消える（縦・空のステージは、カメラの高さに合わせる）
+      } else if (it.on) { it.x += it.on.dxl || 0; it.y = it.on.y - 12; }      // 乗り物の上の落とし物は、一緒に運ばれる
       if (it.type === 'chest') continue;
       if (it.t > 12 && R.overlap({ x: it.x - 9, y: it.y - 12, w: 18, h: 24 }, pb)) {
         it.dead = true; R.snd('pickup'); p.joyT = 45; p.joyAll = false;
@@ -4768,7 +4791,7 @@ window.REBELL_SHIKAKU = {
       G.enemies.forEach(function (e) {
         if (e.dead || !onScreen(e.x, 10, e.y)) return;
         var hbs = hurtboxes(e), h = hbs[0];
-        if (fin) fx({ type: 'sprfx', who: 'aoi', group: 'ougi', i0: 2, i1: 3, x: e.x, y: e.type === 'drone' ? GY : e.y, life: 30 });
+        if (fin) fx({ type: 'sprfx', who: 'aoi', group: 'ougi', i0: 2, i1: 3, x: e.x, y: e.type === 'drone' ? (G.S.vertical || G.S.sky ? e.y + 20 : GY) : e.y, life: 30 });
         damageEnemy(e, fin ? 80 : 20, R.sign(e.x - p.x) || 1, fin ? 5 : 0.4, { heavy: fin, noGain: true, cross: true, col: X.t % 4 ? 'blue' : 'gold', weak: !!h.weak, lift: fin ? -5 : 0, cx: h.x + h.w / 2 + rand(-10, 10), cy: h.y + h.h / 2 + rand(-10, 10), stop: fin ? 8 : 2 });
       });
       shake(fin ? 12 : 4); if (fin) { G.flash = 0.9; R.snd('explosion'); }
@@ -4904,7 +4927,7 @@ window.REBELL_SHIKAKU = {
     for (i = 0; i < M.length; i++) {
       m = M[i]; ox = m.x; oy = m.y; m.py = oy;
       u = 0.5 - 0.5 * Math.cos((G.time + m.ph) / m.per * PI * 2);
-      m.x = m.x0 + m.dx * u; m.y = m.y0 + m.dy * u;
+      m.x = m.x0 + m.dx * u; m.y = m.y0 + m.dy * u; m.dxl = m.x - ox;      // dxl = このフレームに動いた横の量（落とし物を運ぶ）
       if (p.ground && !(p.drop > 0) && Math.abs(p.y - oy) < 1.6 && p.x + p.w / 2 > ox && p.x - p.w / 2 < ox + m.w) { p.x += m.x - ox; p.y = m.y; }
     }
   }
@@ -8351,96 +8374,96 @@ window.REBELL_SHIKAKU = {
     //   四角の face は smile / serious / shout（シートの大きな絵と、カットインの絵）。台詞の中身はシートの説明と決め台詞に沿わせた
     //   後半は、武器を作った四角が「おさらい」として、連続攻撃・チャージ攻撃・交代（切り替え）・合体技を自然に教える
     stage1: [
-      { who: 'kurenai', face: 'silly', text: ['うわ、機械兵だらけ……。', 'ねえ蒼、まとめて薙ぎ払っちゃっていい？'] },
-      { who: 'aoi', face: 'normal', text: ['待って、紅。まずは流れを読ませて。', '姫さまを助ける前に、こちらが倒れたら意味がないから。'] },
+      { who: 'kurenai', face: 'silly', text: ['うわ、機械兵がいっぱい！', 'ねえ蒼、まとめて薙ぎ払っちゃっていい？'] },
+      { who: 'aoi', face: 'normal', text: ['待って、紅。先に流れを読ませて。', '姫さまを助ける前に倒れたら、意味がないよ。'] },
       { who: 'shikaku', face: 'smile', text: ['――二人とも、聞こえる？　こちら四角。', '解析が終わった。ここからは、ぼくも通信で手伝うよ。'] },
-      { who: 'kurenai', face: 'joy', text: ['四角！　いいところに！', 'この大鎌、今日もすっごく調子いいよ！'] },
+      { who: 'kurenai', face: 'joy', text: ['四角！　ナイスタイミング！', 'この大鎌、今日もぜっこうちょうだよ！'] },
       { who: 'shikaku', face: 'smile', text: ['当然。その大鎌も、蒼の刀も、ぼくが作ったんだから。', '壊れたら、直せばいい。……あ、もっといいものに改良しよう。'] },
-      { who: 'aoi', face: 'joy', text: ['ふふ、頼りにしてる。', 'それで四角、姫さまの居場所は？'] },
+      { who: 'aoi', face: 'joy', text: ['ふふっ、頼りにしてるね。', 'それで四角、姫さまの居場所は？'] },
       { who: 'shikaku', face: 'serious', text: ['この水道橋を抜けた先、玉龍学園のいちばん奥。', '姫さまは、あの《龍》に囚われている。'] },
-      { who: 'kurenai', face: 'anger', text: ['だったら急がなきゃ！', '月がもっと紅くなる前に、助け出すんだから！'] },
+      { who: 'kurenai', face: 'joy', text: ['よーし、だったら急ごう！', '月がもっと紅くなる前に、ぱぱっと助け出すよ！'] },
       // ここから、武器のおさらい（連続攻撃 → チャージ攻撃 → 交代 → 合体技）
       { who: 'shikaku', face: 'serious', text: ['焦らないで。急ぐなら、武器のおさらいをしておこう。', '攻撃は、続けて振るほど技がつながって連撃になる。'] },
-      { who: 'kurenai', face: 'silly', text: ['それなら得意！　どんどん振ればいいんだよね？', 'あたしの大鎌、止まらないよ！'] },
+      { who: 'kurenai', face: 'silly', text: ['それなら得意！　どんどん振ればいいんだよね？', 'あたしの大鎌、止まらないよー！'] },
       { who: 'shikaku', face: 'smile', text: ['それと、攻撃ボタンを押したまま、力をためてみて。', '刃が光ったら離す。――大技のチャージ攻撃が出るよ。'] },
-      { who: 'aoi', face: 'normal', text: ['重くて強い大鎌と、軽くて速い刀。', '正反対だから、相手に合わせて入れ替われるのね。'] },
+      { who: 'aoi', face: 'normal', text: ['重くて強い大鎌と、軽くて速い刀。', '正反対だから、相手に合わせて入れ替われるね。'] },
       { who: 'shikaku', face: 'serious', text: ['そう。二人の武器は、魔法陣でつないである。', '切り替えれば一瞬で交代。疲れた方は後ろで休める。'] },
-      { who: 'kurenai', face: 'shy', text: ['へへっ、やることは、いつもどおりだね。', 'あたしが道をこじ開けて、蒼がその隙を縫う！'] },
+      { who: 'kurenai', face: 'joy', text: ['へへっ、やることはいつもどおり！', 'あたしが道をこじ開けて、蒼がその隙を縫う！'] },
       { who: 'shikaku', face: 'serious', text: ['敵に攻撃を当てるほど、二人の交錯ゲージがたまる。', '満ちたら、力を重ねるんだ。――『紅蒼交錯』を。'] },
-      { who: 'aoi', face: 'shy', text: ['二人の技を、ひとつに……。', 'ふふ、正反対だから、噛み合うんだよ。'] },
+      { who: 'aoi', face: 'shy', text: ['二人の技を、ひとつに……。', 'うん。正反対だから、噛み合うんだよね。'] },
       { who: 'shikaku', face: 'shout', text: ['機械兵、来るよ！　道案内と解析は、ぼくに任せて。', '行って、二人とも！'] },
-      { who: 'kurenai', face: 'anger', pose: 'event', text: ['よーし、行くよ、蒼！', '待ってて、姫さま。いま助けに行く！'] },
-      { who: 'aoi', face: 'joy', pose: 'stance', text: ['ええ、紅。背中は任せて。', '四角、案内をお願い。'] }
+      { who: 'kurenai', face: 'joy', pose: 'event', text: ['よーし、行っくよー、蒼！', '待ってて、姫さま。いま助けに行くからね！'] },
+      { who: 'aoi', face: 'joy', pose: 'stance', text: ['うん。背中は任せて、紅。', '四角、案内をお願いね。'] }
     ],
     // ステージ 2（鉄塔）の前: 見上げるほど高い塔を前に二人がためらい、四角が通信で励ます
     tower: [
-      { who: 'kurenai', face: 'silly', text: ['……え、ちょっと待って。', 'これ、てっぺんが見えないんだけど……。'] },
-      { who: 'aoi', face: 'normal', text: ['足場は細くて、風も強い。', '一度踏み外したら、もう戻れない高さね。'] },
-      { who: 'kurenai', face: 'sad', text: ['あたし、高いところは、ちょっと……。', 'ねえ、回り道とか、ないのかな？'] },
+      { who: 'kurenai', face: 'silly', text: ['うわー……てっぺん、見えない！', 'これ、雲の上まで続いてるんじゃない？'] },
+      { who: 'aoi', face: 'normal', text: ['足場は細くて、風も強い。', '踏み外したら、戻れない高さだね。'] },
+      { who: 'kurenai', face: 'silly', text: ['あはは……高いところ、ちょっとだけ苦手かも。', 'ねえ、回り道とか、ないかな？'] },
       { who: 'shikaku', face: 'serious', text: ['――聞こえる？　こちら四角。', '学園へ渡る橋は、《龍》の結界で塞がれてる。'] },
       { who: 'shikaku', face: 'serious', text: ['この鉄塔のてっぺんから、結界の上を越えるしかない。', '道は、ここだけなんだ。'] },
-      { who: 'aoi', face: 'sad', text: ['……でも、四角。', 'もし途中で、足を踏み外したら……。'] },
+      { who: 'aoi', face: 'normal', text: ['……四角、ひとつ確認させて。', '途中で足を踏み外したら、どうなるの？'] },
       { who: 'shikaku', face: 'smile', text: ['大丈夫。足場は全部、下からすり抜けられる。', '真下から跳べば、上の足場に乗れるよ。'] },
       { who: 'shikaku', face: 'smile', text: ['それに、その大鎌も刀も、ぼくが軽く作ってある。', '二人の跳ぶ力を、いちばん活かせるように。'] },
-      { who: 'kurenai', face: 'shy', text: ['……四角の作った武器なら、信じられる。', 'でも、やっぱり下は見たくないなぁ。'] },
+      { who: 'kurenai', face: 'joy', text: ['四角の作った武器なら、ぜったい大丈夫！', '……でも、下はなるべく見ないでおこっと。'] },
       { who: 'shikaku', face: 'shout', text: ['なら、上だけ見て！　下は、ぼくが見張ってる。', '途中の端末に触れれば、そこからやり直せる。'] },
-      { who: 'aoi', face: 'joy', text: ['……ふふ。上だけ見て、か。', '紅、わたしが先に流れを読む。ついてきて。'] },
-      { who: 'kurenai', face: 'anger', pose: 'event', text: ['ううん、先に行くのは、あたし！', '怖いのは、てっぺんに着いてから叫ぶ！'] },
+      { who: 'aoi', face: 'joy', text: ['上だけ見る、か。……うん、それならできそう。', '紅、私が先に流れを読むね。ついてきて。'] },
+      { who: 'kurenai', face: 'joy', pose: 'event', text: ['ううん、先に行くのは、あたし！', 'てっぺんで、思いっきり叫んでやるんだから！'] },
       { who: 'shikaku', face: 'smile', text: ['その意気だ。てっぺんで、また通信する。', '――行って、二人とも！'] },
-      { who: 'aoi', face: 'joy', pose: 'stance', text: ['ええ。行きましょう、紅。', '姫さまは、この塔の、もっと先。'] }
+      { who: 'aoi', face: 'joy', pose: 'stance', text: ['うん、行こう、紅。', '姫さまは、この塔の先だよ。'] }
     ],
     // ステージ 3（空中回廊）の前: 鉄塔のてっぺんから見下ろす雲海。結界の上を通る飛空艇の航路を、乗り継いで学園へ渡る
     //   四角は、止まらない流れ（強制スクロール）と、乗り物を乗り継ぐことを教える
     sky: [
-      { who: 'kurenai', face: 'silly', text: ['うわぁ……下、雲しか見えない……。', 'ここ、鉄塔のてっぺんより高くない！？'] },
+      { who: 'kurenai', face: 'joy', text: ['わぁ……！　下、ぜんぶ雲だよ！', 'ここ、鉄塔のてっぺんより高くない！？'] },
       { who: 'shikaku', face: 'serious', text: ['――聞こえる？　こちら四角。', '学園の結界の上を、飛空艇の航路が通ってる。'] },
       { who: 'shikaku', face: 'serious', text: ['飛空艇、エアカー、浮き足場。', '乗り継いでいけば、結界を越えて学園に着ける。'] },
-      { who: 'aoi', face: 'normal', text: ['……風が強い。それに、景色が流れていく。', '立ち止まっている時間は、なさそうね。'] },
+      { who: 'aoi', face: 'normal', text: ['……風が強いね。景色も流れていく。', '立ち止まってる時間は、なさそう。'] },
       { who: 'shikaku', face: 'shout', text: ['そう、航路の流れは止まらない。', '足もとが消える前に、次の足場へ跳んで！'] },
-      { who: 'kurenai', face: 'anger', pose: 'event', text: ['高いのは、もう慣れた！……たぶん。', 'よーし、全部まとめて乗り継いでやる！'] },
-      { who: 'aoi', face: 'joy', pose: 'stance', text: ['ふふ。右上へ、まっすぐ。', '流れに乗りましょう、紅。'] }
+      { who: 'kurenai', face: 'joy', pose: 'event', text: ['高いのは、もう慣れっこ！……たぶん！', 'よーし、全部まとめて乗り継いじゃおう！'] },
+      { who: 'aoi', face: 'joy', pose: 'stance', text: ['右上へ、まっすぐ。', 'ふふっ、流れに乗っていこう、紅。'] }
     ],
     // ステージ 4（玉龍学園）の前: 鉄塔から結界を越えて降り立つ。《龍》はもうすぐそこにいる、と四角が知らせる
     school: [
-      { who: 'kurenai', face: 'joy', text: ['――よっ、と！　着地成功！', 'ここが、玉龍学園……。'] },
-      { who: 'aoi', face: 'normal', text: ['月が、さっきよりずっと紅い。', '……空気が重い。何かが、すぐ近くにいる。'] },
+      { who: 'kurenai', face: 'joy', text: ['――よっ、と！　着地成功！', 'ここが玉龍学園かぁ！'] },
+      { who: 'aoi', face: 'normal', text: ['月が、さっきより紅い……。', '空気が重いね。何かが、すぐ近くにいる。'] },
       { who: 'shikaku', face: 'serious', text: ['――二人とも、聞こえる？　こちら四角。', '結界の上、無事に越えられたみたいだね。'] },
       { who: 'shikaku', face: 'serious', text: ['でも、気をつけて。反応がとても大きい。', '《龍》は、もうすぐそこにいる。'] },
-      { who: 'kurenai', face: 'sad', text: ['え、すぐそこって……どれくらい？', 'まだ、心の準備が……。'] },
+      { who: 'kurenai', face: 'silly', text: ['えっ、すぐそこって……どのくらい！？', 'ま、まだ心の準備が……なんてね、へへっ！'] },
       { who: 'shikaku', face: 'shout', text: ['学園のいちばん奥、桜の並木の先だ。', '息づかいまで、こっちの計器に届いてる。'] },
-      { who: 'aoi', face: 'normal', text: ['井立さんの言っていたこと……。', '「行けば、わかる」――もう、すぐなのね。'] },
-      { who: 'aoi', face: 'sad', text: ['姫さまも、そこにいる。', '……やっと、ここまで来た。'] },
+      { who: 'aoi', face: 'normal', text: ['「行けば、わかる」――井立さんの言葉。', 'その答えも、きっとこの先にあるね。'] },
+      { who: 'aoi', face: 'shy', text: ['姫さまも、そこにいる。', '……やっと、ここまで来たね。'] },
       { who: 'shikaku', face: 'serious', text: ['ただ、足もとは穴だらけだ。落ちたら戻れない。', '足場をひとつずつ、確かめて渡って。'] },
-      { who: 'kurenai', face: 'anger', pose: 'event', text: ['龍がすぐそこにいるなら、もう迷わない！', '待ってて、姫さま！'] },
+      { who: 'kurenai', face: 'joy', pose: 'event', text: ['龍がすぐそこなら、迷ってるヒマなんてない！', '待ってて、姫さま！'] },
       { who: 'shikaku', face: 'smile', text: ['その意気だ。最後まで、ぼくが見てる。', '――行って、二人とも！'] },
-      { who: 'aoi', face: 'joy', pose: 'stance', text: ['ええ。紅、四角。', '――ここで、終わらせましょう。'] }
+      { who: 'aoi', face: 'normal', pose: 'stance', text: ['うん。紅、四角。', '――ここで、終わらせよう。'] }
     ],
     // ステージ 4 のボス「玉龍」と会ったとき（35_dragon.js の intro から）。龍は話さない。紅・蒼・四角が龍を前に話す
     //   四角は、龍の動き（空を飛び、岸に降りて羽を休める・突進の光の帯）を知らせる
     dragon: [
-      { who: 'kurenai', face: 'damage', text: ['出た……！　これが、《龍》……！', 'ちょっと、おっきすぎるでしょ！？'] },
-      { who: 'aoi', face: 'normal', text: ['紅い月と、同じ色の瞳……。', 'あの奥に、姫さまの気配がある。'] },
+      { who: 'kurenai', face: 'damage', text: ['出たっ……！　これが、《龍》……！', 'ちょっと、おっきすぎない！？'] },
+      { who: 'aoi', face: 'normal', text: ['紅い月と、同じ色の瞳……。', 'あの奥に、姫さまの気配がする。'] },
       { who: 'shikaku', face: 'shout', text: ['――反応、最大！　まちがいない、玉龍だ。', '姫さまは、あの龍の結界の中にいる。'] },
       { who: 'shikaku', face: 'serious', text: ['龍は空を飛び回って、ときどき岸に降りて羽を休める。', '降りたときが、攻めどきだよ。'] },
       { who: 'shikaku', face: 'serious', text: ['足もとは穴の上だ。突進の前の、光の帯に気をつけて。', '落ちたら、そこで終わりだからね。'] },
-      { who: 'aoi', face: 'sad', text: ['……井立さんが、守っていた龍。', '何があるのかは、倒してから確かめましょう。'] },
-      { who: 'kurenai', face: 'anger', pose: 'stance', text: ['龍でもなんでも、関係ない！', '姫さまを、返してもらうよ！'] },
-      { who: 'aoi', face: 'normal', pose: 'stance', text: ['ええ、紅。二人で、ひとつ。', '――行くわよ！'] }
+      { who: 'aoi', face: 'normal', text: ['……井立さんが、守っていた龍。', '理由は、倒してから確かめよう。'] },
+      { who: 'kurenai', face: 'anger', pose: 'stance', text: ['龍でもなんでも、どーんと来い！', '姫さまは、返してもらうよ！'] },
+      { who: 'aoi', face: 'normal', pose: 'stance', text: ['二人で、ひとつ。', '――行くよ、紅！'] }
     ],
     // 玉龍が怒ったとき（HP が半分を切ったとき。35_dragon.js の roar から。はじめての 1 回だけ）
     dragon_rage: [
       { who: 'shikaku', face: 'shout', text: ['龍の力が跳ね上がった！　怒ってるよ！', '攻撃が速くなる。足もとの光の柱にも気をつけて！'] },
-      { who: 'kurenai', face: 'anger', text: ['怒ってるのは、こっちだって同じ！'] },
-      { who: 'aoi', face: 'normal', pose: 'stance', text: ['落ち着いて、紅。流れは、もう読めてる。', 'あと半分――押し切りましょう！'] }
+      { who: 'kurenai', face: 'joy', text: ['怒った？　こっちは、まだまだ元気いっぱいだよ！'] },
+      { who: 'aoi', face: 'normal', pose: 'stance', text: ['落ち着いて、紅。流れは、もう読めてる。', 'あと半分――一緒に押し切ろう！'] }
     ],
     // 玉龍を倒したあと（50_game.js の updBossTrigger から）。終わると、ステージクリア → エンディング
     dragon_end: [
-      { who: 'kurenai', face: 'joy', text: ['やった……！', '龍、倒したよ！'] },
+      { who: 'kurenai', face: 'joy', text: ['やったぁ……！', '龍、倒したよー！'] },
       { who: 'shikaku', face: 'smile', text: ['龍の反応、消失……。', 'そして――姫さまの反応、確認！　無事だよ！'] },
-      { who: 'aoi', face: 'shy', text: ['よかった……。', '本当に、よかった。'] },
-      { who: 'kurenai', face: 'shy', text: ['へへっ……四角、ありがと。', '最後まで、見ててくれて。'] },
+      { who: 'aoi', face: 'shy', text: ['……よかった。', '間に合ったんだね。'] },
+      { who: 'kurenai', face: 'joy', text: ['へへっ、四角、ありがとね！', '最後まで、ずーっと見ててくれて！'] },
       { who: 'shikaku', face: 'smile', text: ['お礼はいいよ。武器の手入れは、帰ってからね。', '――二人とも、おつかれさま。'] },
-      { who: 'aoi', face: 'normal', text: ['……紅い月が、沈んでいく。', '井立さんの言っていた答えも、きっとこの先に。'] },
+      { who: 'aoi', face: 'normal', text: ['……紅い月が、沈んでいく。', '井立さんの言っていた答えも、この先にあるはず。'] },
       { who: 'kurenai', face: 'joy', pose: 'event', text: ['うん！　姫さまを迎えに行こう、蒼！'] }
     ],
     // 中ボス「黒瀬 龍士」と初めて会ったとき（52_karate.js の enter から）。
@@ -8448,37 +8471,37 @@ window.REBELL_SHIKAKU = {
     //   黒瀬の face: camera（カメラを構えた笑み）/ old（1 枚目のシートの絵）/ grin（不敵な笑みの寄り）/ reach（手を突き出す）
     kurose: [
       { who: 'kurose', face: 'camera', text: ['――そこまでだ。', 'いい月、いい顔だ。一枚、撮らせてもらう。'] },
-      { who: 'kurenai', face: 'anger', text: ['誰！？　こっちは急いでるの！', '姫さまが、あの《龍》に捕まってるんだから！'] },
+      { who: 'kurenai', face: 'anger', text: ['だれ！？　ごめん、こっちは急いでるの！', '姫さまが、あの《龍》に捕まってるんだから！'] },
       { who: 'kurose', face: 'old', text: ['知っている。だから、ここで確かめる。', '姫を取り戻せるだけの腕が、あるのかどうかをな。'] },
       { who: 'aoi', face: 'normal', text: ['……紅、気をつけて。この人、流れが読めない。', '構えは空手。でも、あのカメラ……何かある。'] },
       { who: 'kurose', face: 'grin', text: ['いい読みだ。拳も、蹴りも、光も――', '全部見切れたら、通してやる。'] },
       { who: 'kurose', face: 'reach', text: ['黒瀬 龍士。通りすがりの、ただの空手使いだ。', 'さあ――二人まとめて、かかってこい。'] },
-      { who: 'kurenai', face: 'anger', pose: 'stance', text: ['言ったね！　行くよ、蒼！'] }
+      { who: 'kurenai', face: 'anger', pose: 'stance', text: ['言ったね！　よーし、行くよ、蒼！'] }
     ],
     // ステージ 2 のボス「井立 快晴」: 鉄塔のてっぺんで、《龍》を守るために立ちはだかる（53_idachi.js の stIntro から）。
     //   シートの決め台詞「守るために、強くなる。…それが、今の俺の答えだ。」に沿わせた。龍を守る理由は、ここでは明かさない
     //   井立の face: smile / close / shout / kick
     idachi: [
       { who: 'idachi', face: 'smile', text: ['――ここまで登ってきたか。', '風の中、よく落ちなかったな。いい根性だ。'] },
-      { who: 'kurenai', face: 'anger', text: ['誰！？　そこ、どいて！', 'あたしたち、この先の《龍》に用があるの！'] },
+      { who: 'kurenai', face: 'anger', text: ['だれ！？　ちょっと、そこどいて！', 'あたしたち、この先の《龍》に用があるの！'] },
       { who: 'idachi', face: 'close', text: ['知ってる。だから、俺がここにいる。', '井立 快晴。……《龍》を守る者だ。'] },
       { who: 'shikaku', face: 'serious', text: ['――二人とも、気をつけて。彼の動き、データにない。', '空手……それも、相当な使い手だ。'] },
-      { who: 'aoi', face: 'normal', text: ['《龍》を、守る……？', 'あの龍は、姫さまを囚えているのよ。'] },
+      { who: 'aoi', face: 'normal', text: ['《龍》を、守る……？', 'あの龍は、姫さまを囚えているのに。'] },
       { who: 'idachi', face: 'close', text: ['事情は、それぞれだ。', '俺には俺の、守ると決めたものがある。'] },
-      { who: 'kurenai', face: 'anger', text: ['意味わかんない！', '姫さまを、返してもらうだけだよ！'] },
+      { who: 'kurenai', face: 'anger', text: ['うーん、ぜんぜんわかんない！', 'とにかく、姫さまは返してもらうよ！'] },
       { who: 'idachi', face: 'shout', text: ['なら、拳で語れ。', '守るために、強くなる。……それが、今の俺の答えだ。'] },
-      { who: 'aoi', face: 'normal', pose: 'stance', text: ['……紅、本気で行きましょう。', 'この人、迷いがない。'] },
-      { who: 'kurenai', face: 'anger', pose: 'stance', text: ['上等！　てっぺんまで来て、', '負けるわけにはいかないんだから！'] }
+      { who: 'aoi', face: 'normal', pose: 'stance', text: ['……紅、本気で行こう。', 'この人、迷いがない。'] },
+      { who: 'kurenai', face: 'anger', pose: 'stance', text: ['上等！　てっぺんまで来たんだもん、', 'ここで負けるわけにはいかないよ！'] }
     ],
     // 井立を倒したあと（53_idachi.js の stDie から）。終わると、登頂してステージクリア
     idachi_end: [
       { who: 'idachi', face: 'smile', text: ['……ふっ。完敗だ。', '二人で、ひとつ。……いい拳だった。'] },
-      { who: 'kurenai', face: 'joy', text: ['へへっ、だから言ったでしょ！', 'じゃあ、通してもらうよ！'] },
-      { who: 'aoi', face: 'normal', text: ['……教えて。', 'あなたは、どうして《龍》を守っていたの？'] },
+      { who: 'kurenai', face: 'joy', text: ['へへっ、だから言ったでしょ！', 'じゃあ、通してもらうね！'] },
+      { who: 'aoi', face: 'normal', text: ['……ひとつ、聞かせて。', 'どうして、《龍》を守っていたの？'] },
       { who: 'idachi', face: 'close', text: ['……行けば、わかる。', '龍は、学園のいちばん奥だ。'] },
       { who: 'idachi', face: 'smile', text: ['結界の上の空を、飛空艇が渡っている。', '――その拳で、確かめてこい。'] },
-      { who: 'kurenai', face: 'shy', text: ['……なんか、悪い人じゃなさそう？'] },
-      { who: 'aoi', face: 'joy', text: ['ふふ。行きましょう、紅。', '答えは、あの龍のところに。'] }
+      { who: 'kurenai', face: 'silly', text: ['……あれ？　なんか、悪い人じゃなさそう？'] },
+      { who: 'aoi', face: 'joy', text: ['ふふっ。行こう、紅。', '答えは、あの龍のところにあるよ。'] }
     ]
   };
   // 話し手ごとの見た目。side = カットインがすべり込んでくる側（-1 = 左、1 = 右）。portrait = 顔グラフィックの代わりに、シートの大きな絵を使う

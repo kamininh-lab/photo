@@ -400,6 +400,7 @@
     R.snd('hurt');
     if (armor && c.hp > 0) { p.inv = 28; shake(2.5); return true; }
     p.st = 'hurt'; p.stT = 0; p.hurtBig = !!big; p.flipT = 0; p.entry = false; p.vx = dir * (big ? 4.5 : 3); p.vy = big ? -4.5 : -3; p.inv = 75;
+    if (G.S.sky) p.vx *= 0.35;      // 空のステージ: 足場が細く、下は空なので、のけぞりで足場から弾き出されないように弱める
     shake(big ? 6 : 3.5); G.flash = Math.max(G.flash, 0.25);
     G.combo = 0;
     if (c.hp <= 0) {
@@ -611,6 +612,7 @@
   }
   function startCross() {
     var p = G.pl;
+    if (G.bossDefeated) return;      // ボスを倒した後・ゴールの後は出さない（クリアの画面に幕が残る）
     if (p.cross < 100) { R.snd('deny'); toast('交錯ゲージが足りない', '#ffb8e6'); mood('silly', p.who, 70); return; }
     if (p.chars.kurenai.down || p.chars.aoi.down) { R.snd('deny'); toast('二人そろっていないと使えない', '#ffb8e6'); return; }
     p.cross = 0; p.st = 'cross'; p.stT = 0; p.vx = 0; p.inv = 200; p.entry = false; p.flipT = 0; p.battleT = 150; p.angerT = 130;
@@ -932,7 +934,7 @@
       }
     } else if (q.st === 'back') {
       q.len = q.len0 * (1 - R.ease(Math.min(1, q.t / k.back)));
-      if (q.t >= k.back) { q.st = 'done'; q.len = 0; if (!air) dust(p.x + q.face * 8, p.y, 3); }
+      if (q.t >= k.back) { q.st = 'done'; q.len = 0; q.missed = true; if (!air) dust(p.x + q.face * 8, p.y, 3); }      // missed = 何にも刺さらずに戻った
     }
     if (q.st === 'done') return air ? 0.45 : grav;
     // 鎌の頭の当たり（同じ敵には、少し間をあけて 3 回まで）
@@ -1077,7 +1079,7 @@
       var locked = !!a.kusari && p.stT < a.cancel;      // 鎖鎌は、投げたら戻るまで動けない（大振りの代わりに、ひるまない）
       if (a.dive || (a.kusari && a.kusari.pull)) {
         if (p.ground && p.stT >= a.h0) diveLand(p, a, mult);
-        else if (p.stT >= a.dur) { p.st = 'free'; p.entry = false; }
+        else if (p.stT >= a.dur || (a.kusari && p.kusari && p.kusari.missed)) { p.st = 'free'; p.entry = false; }      // 空中の鎖鎌が外れて戻ったら、すぐ動ける（穴の上で落ちるだけにならない）
       }
       else if (I.hit.switch && open) doSwitch();
       else if (!locked && I.hit.dash && open && canDash(p)) startDash(move);
@@ -1170,11 +1172,32 @@
     else if (p.coyote > 0) p.coyote--;
     if (p.flipT > 0 && p.flipT % 4 === 0) ghost(p, 9);
     // ステージから落ちたら、その場でゲームオーバー（つづきは、最後に記録した端末から）。縦のステージでは、画面の下へ消えたら
-    if ((G.S.vertical || G.S.sky ? p.y - p.h + G.cam.y > R.H + 6 : p.y > R.H + 60) && G.state === 'play') {
+    if ((G.S.vertical || G.S.sky ? p.y - p.h + G.cam.y > R.H + 6 : p.y > R.H + 60) && G.state === 'play' && !G.bossDefeated && !(G.S.sky && skyRescue(p))) {      // ボスを倒した後・ゴールの後は、落ちてもやり直しにしない
       p.vx = 0; p.vy = 0; p.st = 'free'; p.flipT = 0; G.combo = 0; G.cross = null;
       toast('落下…', '#ff9db8'); R.snd('hurt');
       G.state = 'gameover'; G.stateT = 0; R.bgm('gameover');
     }
+  }
+  // 空のステージで落ちたとき: 四角のドローンが拾い上げて、画面に映っている足場へ戻す（HP を 20 使う）。
+  //   画面は止まらずに進むので、撃ち落とされるたびにゲームオーバーでは厳しすぎるため。HP が足りないとき・戻せる足場がないときは false（ふつうに落下）
+  var RESCUE_DMG = 20;
+  function skyRescue(p) {
+    var c = p.chars[p.who], P = G.plats || [], best = null, bs = 1e9, i, s, sx, sy, sc;
+    if (c.hp <= RESCUE_DMG || G.bossDefeated) return false;
+    for (i = 0; i < P.length; i++) {
+      s = P[i]; if (s.gone || s.w < 30 || (s.x === G.S.goal[0] && s.y === G.S.goal[1])) continue;      // ゴールのデッキへは運ばない
+      sx = s.x + Math.min(s.w / 2, 24); sy = s.y + G.cam.y;
+      if (sx < G.cam.x + 30 || sx > G.cam.x + R.W - 40 || sy < 70 || sy > R.H - 40) continue;      // 画面の中ほどに見えている足場だけ
+      sc = Math.abs(sx - G.cam.x - 170) + Math.abs(sy - 170) * 0.5;
+      if (sc < bs) { bs = sc; best = s; }
+    }
+    if (!best) return false;
+    c.hp -= RESCUE_DMG; p.hurtFlash = 8; p.hurtFaceT = 55;
+    p.x = best.x + Math.min(best.w / 2, 24); p.y = best.y; p.vx = 0; p.vy = 0; if (!G.cross) p.st = 'free'; p.ground = true; p.inv = 100; p.flipT = 0; p.jumps = 0; p.airDashed = 0; p.kusari = null;
+    text(p.x, p.y - 40, '-' + RESCUE_DMG, '#ff5a6a');
+    fx({ type: 'ring', x: p.x, y: p.y - MID, life: 24, r: 46, col: '#ffd36a' }); burst(p.x, p.y - MID, 14, ['#ffd36a', '#7af3ff', '#ffffff'], 2.6, 26);
+    toast('四角のドローンが拾い上げた！', '#ffd36a'); R.snd('switch'); shake(3);
+    return true;
   }
   function onPlat(p) { var P = G.plats || G.S.platRects; for (var i = 0; i < P.length; i++) if (!P[i].gone && Math.abs(p.y - P[i].y) < 1 && p.x > P[i].x - 6 && p.x < P[i].x + P[i].w + 6) return true; return false; }
   function dust(x, y, n) { for (var i = 0; i < n; i++) part(x + rand(-6, 6), y - 1, rand(-1.2, 1.2), rand(-1.2, -0.2), rand(12, 22), i % 2 ? '#a39bd0' : '#655e9e', 2, 0.02); }
@@ -1337,11 +1360,11 @@
       it = G.items[i]; it.t++;
       if (it.loose) {
         it.vy += 0.25; it.x += it.vx; it.y += it.vy;
-        var fy = floorAt(it.x), PL = G.S.platRects, pi;      // 石の段の上にも、足場の上にも乗る
-        for (pi = 0; pi < PL.length; pi++) if (it.vy >= 0 && it.x > PL[pi].x && it.x < PL[pi].x + PL[pi].w && it.y - it.vy + 12 <= PL[pi].y + 0.01 && it.y + 12 >= PL[pi].y && (fy === null || PL[pi].y < fy)) fy = PL[pi].y;
-        if (fy !== null && it.vy >= 0 && it.y >= fy - 12) { it.y = fy - 12; it.vy = 0; it.vx = 0; it.loose = false; }
-        if (it.y > R.H + 30) it.dead = true;
-      }
+        var fy = floorAt(it.x), PL = G.plats || G.S.platRects, pi, on = null;      // 石の段の上にも、足場の上にも、動く足場（乗り物）の上にも乗る
+        for (pi = 0; pi < PL.length; pi++) if (!PL[pi].gone && it.vy >= 0 && it.x > PL[pi].x && it.x < PL[pi].x + PL[pi].w && it.y - it.vy + 12 <= PL[pi].y + 0.01 && it.y + 12 >= PL[pi].y && (fy === null || PL[pi].y < fy)) { fy = PL[pi].y; on = PL[pi]; }
+        if (fy !== null && it.vy >= 0 && it.y >= fy - 12) { it.y = fy - 12; it.vy = 0; it.vx = 0; it.loose = false; it.on = on && on.per ? on : null; }
+        if (it.y > R.H + 30 - (G.cam.y || 0)) it.dead = true;      // 画面の下へ落ちたら消える（縦・空のステージは、カメラの高さに合わせる）
+      } else if (it.on) { it.x += it.on.dxl || 0; it.y = it.on.y - 12; }      // 乗り物の上の落とし物は、一緒に運ばれる
       if (it.type === 'chest') continue;
       if (it.t > 12 && R.overlap({ x: it.x - 9, y: it.y - 12, w: 18, h: 24 }, pb)) {
         it.dead = true; R.snd('pickup'); p.joyT = 45; p.joyAll = false;
@@ -1392,7 +1415,7 @@
       G.enemies.forEach(function (e) {
         if (e.dead || !onScreen(e.x, 10, e.y)) return;
         var hbs = hurtboxes(e), h = hbs[0];
-        if (fin) fx({ type: 'sprfx', who: 'aoi', group: 'ougi', i0: 2, i1: 3, x: e.x, y: e.type === 'drone' ? GY : e.y, life: 30 });
+        if (fin) fx({ type: 'sprfx', who: 'aoi', group: 'ougi', i0: 2, i1: 3, x: e.x, y: e.type === 'drone' ? (G.S.vertical || G.S.sky ? e.y + 20 : GY) : e.y, life: 30 });
         damageEnemy(e, fin ? 80 : 20, R.sign(e.x - p.x) || 1, fin ? 5 : 0.4, { heavy: fin, noGain: true, cross: true, col: X.t % 4 ? 'blue' : 'gold', weak: !!h.weak, lift: fin ? -5 : 0, cx: h.x + h.w / 2 + rand(-10, 10), cy: h.y + h.h / 2 + rand(-10, 10), stop: fin ? 8 : 2 });
       });
       shake(fin ? 12 : 4); if (fin) { G.flash = 0.9; R.snd('explosion'); }
@@ -1528,7 +1551,7 @@
     for (i = 0; i < M.length; i++) {
       m = M[i]; ox = m.x; oy = m.y; m.py = oy;
       u = 0.5 - 0.5 * Math.cos((G.time + m.ph) / m.per * PI * 2);
-      m.x = m.x0 + m.dx * u; m.y = m.y0 + m.dy * u;
+      m.x = m.x0 + m.dx * u; m.y = m.y0 + m.dy * u; m.dxl = m.x - ox;      // dxl = このフレームに動いた横の量（落とし物を運ぶ）
       if (p.ground && !(p.drop > 0) && Math.abs(p.y - oy) < 1.6 && p.x + p.w / 2 > ox && p.x - p.w / 2 < ox + m.w) { p.x += m.x - ox; p.y = m.y; }
     }
   }

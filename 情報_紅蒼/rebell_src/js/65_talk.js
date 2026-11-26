@@ -16,96 +16,96 @@
     //   四角の face は smile / serious / shout（シートの大きな絵と、カットインの絵）。台詞の中身はシートの説明と決め台詞に沿わせた
     //   後半は、武器を作った四角が「おさらい」として、連続攻撃・チャージ攻撃・交代（切り替え）・合体技を自然に教える
     stage1: [
-      { who: 'kurenai', face: 'silly', text: ['うわ、機械兵だらけ……。', 'ねえ蒼、まとめて薙ぎ払っちゃっていい？'] },
-      { who: 'aoi', face: 'normal', text: ['待って、紅。まずは流れを読ませて。', '姫さまを助ける前に、こちらが倒れたら意味がないから。'] },
+      { who: 'kurenai', face: 'silly', text: ['うわ、機械兵がいっぱい！', 'ねえ蒼、まとめて薙ぎ払っちゃっていい？'] },
+      { who: 'aoi', face: 'normal', text: ['待って、紅。先に流れを読ませて。', '姫さまを助ける前に倒れたら、意味がないよ。'] },
       { who: 'shikaku', face: 'smile', text: ['――二人とも、聞こえる？　こちら四角。', '解析が終わった。ここからは、ぼくも通信で手伝うよ。'] },
-      { who: 'kurenai', face: 'joy', text: ['四角！　いいところに！', 'この大鎌、今日もすっごく調子いいよ！'] },
+      { who: 'kurenai', face: 'joy', text: ['四角！　ナイスタイミング！', 'この大鎌、今日もぜっこうちょうだよ！'] },
       { who: 'shikaku', face: 'smile', text: ['当然。その大鎌も、蒼の刀も、ぼくが作ったんだから。', '壊れたら、直せばいい。……あ、もっといいものに改良しよう。'] },
-      { who: 'aoi', face: 'joy', text: ['ふふ、頼りにしてる。', 'それで四角、姫さまの居場所は？'] },
+      { who: 'aoi', face: 'joy', text: ['ふふっ、頼りにしてるね。', 'それで四角、姫さまの居場所は？'] },
       { who: 'shikaku', face: 'serious', text: ['この水道橋を抜けた先、玉龍学園のいちばん奥。', '姫さまは、あの《龍》に囚われている。'] },
-      { who: 'kurenai', face: 'anger', text: ['だったら急がなきゃ！', '月がもっと紅くなる前に、助け出すんだから！'] },
+      { who: 'kurenai', face: 'joy', text: ['よーし、だったら急ごう！', '月がもっと紅くなる前に、ぱぱっと助け出すよ！'] },
       // ここから、武器のおさらい（連続攻撃 → チャージ攻撃 → 交代 → 合体技）
       { who: 'shikaku', face: 'serious', text: ['焦らないで。急ぐなら、武器のおさらいをしておこう。', '攻撃は、続けて振るほど技がつながって連撃になる。'] },
-      { who: 'kurenai', face: 'silly', text: ['それなら得意！　どんどん振ればいいんだよね？', 'あたしの大鎌、止まらないよ！'] },
+      { who: 'kurenai', face: 'silly', text: ['それなら得意！　どんどん振ればいいんだよね？', 'あたしの大鎌、止まらないよー！'] },
       { who: 'shikaku', face: 'smile', text: ['それと、攻撃ボタンを押したまま、力をためてみて。', '刃が光ったら離す。――大技のチャージ攻撃が出るよ。'] },
-      { who: 'aoi', face: 'normal', text: ['重くて強い大鎌と、軽くて速い刀。', '正反対だから、相手に合わせて入れ替われるのね。'] },
+      { who: 'aoi', face: 'normal', text: ['重くて強い大鎌と、軽くて速い刀。', '正反対だから、相手に合わせて入れ替われるね。'] },
       { who: 'shikaku', face: 'serious', text: ['そう。二人の武器は、魔法陣でつないである。', '切り替えれば一瞬で交代。疲れた方は後ろで休める。'] },
-      { who: 'kurenai', face: 'shy', text: ['へへっ、やることは、いつもどおりだね。', 'あたしが道をこじ開けて、蒼がその隙を縫う！'] },
+      { who: 'kurenai', face: 'joy', text: ['へへっ、やることはいつもどおり！', 'あたしが道をこじ開けて、蒼がその隙を縫う！'] },
       { who: 'shikaku', face: 'serious', text: ['敵に攻撃を当てるほど、二人の交錯ゲージがたまる。', '満ちたら、力を重ねるんだ。――『紅蒼交錯』を。'] },
-      { who: 'aoi', face: 'shy', text: ['二人の技を、ひとつに……。', 'ふふ、正反対だから、噛み合うんだよ。'] },
+      { who: 'aoi', face: 'shy', text: ['二人の技を、ひとつに……。', 'うん。正反対だから、噛み合うんだよね。'] },
       { who: 'shikaku', face: 'shout', text: ['機械兵、来るよ！　道案内と解析は、ぼくに任せて。', '行って、二人とも！'] },
-      { who: 'kurenai', face: 'anger', pose: 'event', text: ['よーし、行くよ、蒼！', '待ってて、姫さま。いま助けに行く！'] },
-      { who: 'aoi', face: 'joy', pose: 'stance', text: ['ええ、紅。背中は任せて。', '四角、案内をお願い。'] }
+      { who: 'kurenai', face: 'joy', pose: 'event', text: ['よーし、行っくよー、蒼！', '待ってて、姫さま。いま助けに行くからね！'] },
+      { who: 'aoi', face: 'joy', pose: 'stance', text: ['うん。背中は任せて、紅。', '四角、案内をお願いね。'] }
     ],
     // ステージ 2（鉄塔）の前: 見上げるほど高い塔を前に二人がためらい、四角が通信で励ます
     tower: [
-      { who: 'kurenai', face: 'silly', text: ['……え、ちょっと待って。', 'これ、てっぺんが見えないんだけど……。'] },
-      { who: 'aoi', face: 'normal', text: ['足場は細くて、風も強い。', '一度踏み外したら、もう戻れない高さね。'] },
-      { who: 'kurenai', face: 'sad', text: ['あたし、高いところは、ちょっと……。', 'ねえ、回り道とか、ないのかな？'] },
+      { who: 'kurenai', face: 'silly', text: ['うわー……てっぺん、見えない！', 'これ、雲の上まで続いてるんじゃない？'] },
+      { who: 'aoi', face: 'normal', text: ['足場は細くて、風も強い。', '踏み外したら、戻れない高さだね。'] },
+      { who: 'kurenai', face: 'silly', text: ['あはは……高いところ、ちょっとだけ苦手かも。', 'ねえ、回り道とか、ないかな？'] },
       { who: 'shikaku', face: 'serious', text: ['――聞こえる？　こちら四角。', '学園へ渡る橋は、《龍》の結界で塞がれてる。'] },
       { who: 'shikaku', face: 'serious', text: ['この鉄塔のてっぺんから、結界の上を越えるしかない。', '道は、ここだけなんだ。'] },
-      { who: 'aoi', face: 'sad', text: ['……でも、四角。', 'もし途中で、足を踏み外したら……。'] },
+      { who: 'aoi', face: 'normal', text: ['……四角、ひとつ確認させて。', '途中で足を踏み外したら、どうなるの？'] },
       { who: 'shikaku', face: 'smile', text: ['大丈夫。足場は全部、下からすり抜けられる。', '真下から跳べば、上の足場に乗れるよ。'] },
       { who: 'shikaku', face: 'smile', text: ['それに、その大鎌も刀も、ぼくが軽く作ってある。', '二人の跳ぶ力を、いちばん活かせるように。'] },
-      { who: 'kurenai', face: 'shy', text: ['……四角の作った武器なら、信じられる。', 'でも、やっぱり下は見たくないなぁ。'] },
+      { who: 'kurenai', face: 'joy', text: ['四角の作った武器なら、ぜったい大丈夫！', '……でも、下はなるべく見ないでおこっと。'] },
       { who: 'shikaku', face: 'shout', text: ['なら、上だけ見て！　下は、ぼくが見張ってる。', '途中の端末に触れれば、そこからやり直せる。'] },
-      { who: 'aoi', face: 'joy', text: ['……ふふ。上だけ見て、か。', '紅、わたしが先に流れを読む。ついてきて。'] },
-      { who: 'kurenai', face: 'anger', pose: 'event', text: ['ううん、先に行くのは、あたし！', '怖いのは、てっぺんに着いてから叫ぶ！'] },
+      { who: 'aoi', face: 'joy', text: ['上だけ見る、か。……うん、それならできそう。', '紅、私が先に流れを読むね。ついてきて。'] },
+      { who: 'kurenai', face: 'joy', pose: 'event', text: ['ううん、先に行くのは、あたし！', 'てっぺんで、思いっきり叫んでやるんだから！'] },
       { who: 'shikaku', face: 'smile', text: ['その意気だ。てっぺんで、また通信する。', '――行って、二人とも！'] },
-      { who: 'aoi', face: 'joy', pose: 'stance', text: ['ええ。行きましょう、紅。', '姫さまは、この塔の、もっと先。'] }
+      { who: 'aoi', face: 'joy', pose: 'stance', text: ['うん、行こう、紅。', '姫さまは、この塔の先だよ。'] }
     ],
     // ステージ 3（空中回廊）の前: 鉄塔のてっぺんから見下ろす雲海。結界の上を通る飛空艇の航路を、乗り継いで学園へ渡る
     //   四角は、止まらない流れ（強制スクロール）と、乗り物を乗り継ぐことを教える
     sky: [
-      { who: 'kurenai', face: 'silly', text: ['うわぁ……下、雲しか見えない……。', 'ここ、鉄塔のてっぺんより高くない！？'] },
+      { who: 'kurenai', face: 'joy', text: ['わぁ……！　下、ぜんぶ雲だよ！', 'ここ、鉄塔のてっぺんより高くない！？'] },
       { who: 'shikaku', face: 'serious', text: ['――聞こえる？　こちら四角。', '学園の結界の上を、飛空艇の航路が通ってる。'] },
       { who: 'shikaku', face: 'serious', text: ['飛空艇、エアカー、浮き足場。', '乗り継いでいけば、結界を越えて学園に着ける。'] },
-      { who: 'aoi', face: 'normal', text: ['……風が強い。それに、景色が流れていく。', '立ち止まっている時間は、なさそうね。'] },
+      { who: 'aoi', face: 'normal', text: ['……風が強いね。景色も流れていく。', '立ち止まってる時間は、なさそう。'] },
       { who: 'shikaku', face: 'shout', text: ['そう、航路の流れは止まらない。', '足もとが消える前に、次の足場へ跳んで！'] },
-      { who: 'kurenai', face: 'anger', pose: 'event', text: ['高いのは、もう慣れた！……たぶん。', 'よーし、全部まとめて乗り継いでやる！'] },
-      { who: 'aoi', face: 'joy', pose: 'stance', text: ['ふふ。右上へ、まっすぐ。', '流れに乗りましょう、紅。'] }
+      { who: 'kurenai', face: 'joy', pose: 'event', text: ['高いのは、もう慣れっこ！……たぶん！', 'よーし、全部まとめて乗り継いじゃおう！'] },
+      { who: 'aoi', face: 'joy', pose: 'stance', text: ['右上へ、まっすぐ。', 'ふふっ、流れに乗っていこう、紅。'] }
     ],
     // ステージ 4（玉龍学園）の前: 鉄塔から結界を越えて降り立つ。《龍》はもうすぐそこにいる、と四角が知らせる
     school: [
-      { who: 'kurenai', face: 'joy', text: ['――よっ、と！　着地成功！', 'ここが、玉龍学園……。'] },
-      { who: 'aoi', face: 'normal', text: ['月が、さっきよりずっと紅い。', '……空気が重い。何かが、すぐ近くにいる。'] },
+      { who: 'kurenai', face: 'joy', text: ['――よっ、と！　着地成功！', 'ここが玉龍学園かぁ！'] },
+      { who: 'aoi', face: 'normal', text: ['月が、さっきより紅い……。', '空気が重いね。何かが、すぐ近くにいる。'] },
       { who: 'shikaku', face: 'serious', text: ['――二人とも、聞こえる？　こちら四角。', '結界の上、無事に越えられたみたいだね。'] },
       { who: 'shikaku', face: 'serious', text: ['でも、気をつけて。反応がとても大きい。', '《龍》は、もうすぐそこにいる。'] },
-      { who: 'kurenai', face: 'sad', text: ['え、すぐそこって……どれくらい？', 'まだ、心の準備が……。'] },
+      { who: 'kurenai', face: 'silly', text: ['えっ、すぐそこって……どのくらい！？', 'ま、まだ心の準備が……なんてね、へへっ！'] },
       { who: 'shikaku', face: 'shout', text: ['学園のいちばん奥、桜の並木の先だ。', '息づかいまで、こっちの計器に届いてる。'] },
-      { who: 'aoi', face: 'normal', text: ['井立さんの言っていたこと……。', '「行けば、わかる」――もう、すぐなのね。'] },
-      { who: 'aoi', face: 'sad', text: ['姫さまも、そこにいる。', '……やっと、ここまで来た。'] },
+      { who: 'aoi', face: 'normal', text: ['「行けば、わかる」――井立さんの言葉。', 'その答えも、きっとこの先にあるね。'] },
+      { who: 'aoi', face: 'shy', text: ['姫さまも、そこにいる。', '……やっと、ここまで来たね。'] },
       { who: 'shikaku', face: 'serious', text: ['ただ、足もとは穴だらけだ。落ちたら戻れない。', '足場をひとつずつ、確かめて渡って。'] },
-      { who: 'kurenai', face: 'anger', pose: 'event', text: ['龍がすぐそこにいるなら、もう迷わない！', '待ってて、姫さま！'] },
+      { who: 'kurenai', face: 'joy', pose: 'event', text: ['龍がすぐそこなら、迷ってるヒマなんてない！', '待ってて、姫さま！'] },
       { who: 'shikaku', face: 'smile', text: ['その意気だ。最後まで、ぼくが見てる。', '――行って、二人とも！'] },
-      { who: 'aoi', face: 'joy', pose: 'stance', text: ['ええ。紅、四角。', '――ここで、終わらせましょう。'] }
+      { who: 'aoi', face: 'normal', pose: 'stance', text: ['うん。紅、四角。', '――ここで、終わらせよう。'] }
     ],
     // ステージ 4 のボス「玉龍」と会ったとき（35_dragon.js の intro から）。龍は話さない。紅・蒼・四角が龍を前に話す
     //   四角は、龍の動き（空を飛び、岸に降りて羽を休める・突進の光の帯）を知らせる
     dragon: [
-      { who: 'kurenai', face: 'damage', text: ['出た……！　これが、《龍》……！', 'ちょっと、おっきすぎるでしょ！？'] },
-      { who: 'aoi', face: 'normal', text: ['紅い月と、同じ色の瞳……。', 'あの奥に、姫さまの気配がある。'] },
+      { who: 'kurenai', face: 'damage', text: ['出たっ……！　これが、《龍》……！', 'ちょっと、おっきすぎない！？'] },
+      { who: 'aoi', face: 'normal', text: ['紅い月と、同じ色の瞳……。', 'あの奥に、姫さまの気配がする。'] },
       { who: 'shikaku', face: 'shout', text: ['――反応、最大！　まちがいない、玉龍だ。', '姫さまは、あの龍の結界の中にいる。'] },
       { who: 'shikaku', face: 'serious', text: ['龍は空を飛び回って、ときどき岸に降りて羽を休める。', '降りたときが、攻めどきだよ。'] },
       { who: 'shikaku', face: 'serious', text: ['足もとは穴の上だ。突進の前の、光の帯に気をつけて。', '落ちたら、そこで終わりだからね。'] },
-      { who: 'aoi', face: 'sad', text: ['……井立さんが、守っていた龍。', '何があるのかは、倒してから確かめましょう。'] },
-      { who: 'kurenai', face: 'anger', pose: 'stance', text: ['龍でもなんでも、関係ない！', '姫さまを、返してもらうよ！'] },
-      { who: 'aoi', face: 'normal', pose: 'stance', text: ['ええ、紅。二人で、ひとつ。', '――行くわよ！'] }
+      { who: 'aoi', face: 'normal', text: ['……井立さんが、守っていた龍。', '理由は、倒してから確かめよう。'] },
+      { who: 'kurenai', face: 'anger', pose: 'stance', text: ['龍でもなんでも、どーんと来い！', '姫さまは、返してもらうよ！'] },
+      { who: 'aoi', face: 'normal', pose: 'stance', text: ['二人で、ひとつ。', '――行くよ、紅！'] }
     ],
     // 玉龍が怒ったとき（HP が半分を切ったとき。35_dragon.js の roar から。はじめての 1 回だけ）
     dragon_rage: [
       { who: 'shikaku', face: 'shout', text: ['龍の力が跳ね上がった！　怒ってるよ！', '攻撃が速くなる。足もとの光の柱にも気をつけて！'] },
-      { who: 'kurenai', face: 'anger', text: ['怒ってるのは、こっちだって同じ！'] },
-      { who: 'aoi', face: 'normal', pose: 'stance', text: ['落ち着いて、紅。流れは、もう読めてる。', 'あと半分――押し切りましょう！'] }
+      { who: 'kurenai', face: 'joy', text: ['怒った？　こっちは、まだまだ元気いっぱいだよ！'] },
+      { who: 'aoi', face: 'normal', pose: 'stance', text: ['落ち着いて、紅。流れは、もう読めてる。', 'あと半分――一緒に押し切ろう！'] }
     ],
     // 玉龍を倒したあと（50_game.js の updBossTrigger から）。終わると、ステージクリア → エンディング
     dragon_end: [
-      { who: 'kurenai', face: 'joy', text: ['やった……！', '龍、倒したよ！'] },
+      { who: 'kurenai', face: 'joy', text: ['やったぁ……！', '龍、倒したよー！'] },
       { who: 'shikaku', face: 'smile', text: ['龍の反応、消失……。', 'そして――姫さまの反応、確認！　無事だよ！'] },
-      { who: 'aoi', face: 'shy', text: ['よかった……。', '本当に、よかった。'] },
-      { who: 'kurenai', face: 'shy', text: ['へへっ……四角、ありがと。', '最後まで、見ててくれて。'] },
+      { who: 'aoi', face: 'shy', text: ['……よかった。', '間に合ったんだね。'] },
+      { who: 'kurenai', face: 'joy', text: ['へへっ、四角、ありがとね！', '最後まで、ずーっと見ててくれて！'] },
       { who: 'shikaku', face: 'smile', text: ['お礼はいいよ。武器の手入れは、帰ってからね。', '――二人とも、おつかれさま。'] },
-      { who: 'aoi', face: 'normal', text: ['……紅い月が、沈んでいく。', '井立さんの言っていた答えも、きっとこの先に。'] },
+      { who: 'aoi', face: 'normal', text: ['……紅い月が、沈んでいく。', '井立さんの言っていた答えも、この先にあるはず。'] },
       { who: 'kurenai', face: 'joy', pose: 'event', text: ['うん！　姫さまを迎えに行こう、蒼！'] }
     ],
     // 中ボス「黒瀬 龍士」と初めて会ったとき（52_karate.js の enter から）。
@@ -113,37 +113,37 @@
     //   黒瀬の face: camera（カメラを構えた笑み）/ old（1 枚目のシートの絵）/ grin（不敵な笑みの寄り）/ reach（手を突き出す）
     kurose: [
       { who: 'kurose', face: 'camera', text: ['――そこまでだ。', 'いい月、いい顔だ。一枚、撮らせてもらう。'] },
-      { who: 'kurenai', face: 'anger', text: ['誰！？　こっちは急いでるの！', '姫さまが、あの《龍》に捕まってるんだから！'] },
+      { who: 'kurenai', face: 'anger', text: ['だれ！？　ごめん、こっちは急いでるの！', '姫さまが、あの《龍》に捕まってるんだから！'] },
       { who: 'kurose', face: 'old', text: ['知っている。だから、ここで確かめる。', '姫を取り戻せるだけの腕が、あるのかどうかをな。'] },
       { who: 'aoi', face: 'normal', text: ['……紅、気をつけて。この人、流れが読めない。', '構えは空手。でも、あのカメラ……何かある。'] },
       { who: 'kurose', face: 'grin', text: ['いい読みだ。拳も、蹴りも、光も――', '全部見切れたら、通してやる。'] },
       { who: 'kurose', face: 'reach', text: ['黒瀬 龍士。通りすがりの、ただの空手使いだ。', 'さあ――二人まとめて、かかってこい。'] },
-      { who: 'kurenai', face: 'anger', pose: 'stance', text: ['言ったね！　行くよ、蒼！'] }
+      { who: 'kurenai', face: 'anger', pose: 'stance', text: ['言ったね！　よーし、行くよ、蒼！'] }
     ],
     // ステージ 2 のボス「井立 快晴」: 鉄塔のてっぺんで、《龍》を守るために立ちはだかる（53_idachi.js の stIntro から）。
     //   シートの決め台詞「守るために、強くなる。…それが、今の俺の答えだ。」に沿わせた。龍を守る理由は、ここでは明かさない
     //   井立の face: smile / close / shout / kick
     idachi: [
       { who: 'idachi', face: 'smile', text: ['――ここまで登ってきたか。', '風の中、よく落ちなかったな。いい根性だ。'] },
-      { who: 'kurenai', face: 'anger', text: ['誰！？　そこ、どいて！', 'あたしたち、この先の《龍》に用があるの！'] },
+      { who: 'kurenai', face: 'anger', text: ['だれ！？　ちょっと、そこどいて！', 'あたしたち、この先の《龍》に用があるの！'] },
       { who: 'idachi', face: 'close', text: ['知ってる。だから、俺がここにいる。', '井立 快晴。……《龍》を守る者だ。'] },
       { who: 'shikaku', face: 'serious', text: ['――二人とも、気をつけて。彼の動き、データにない。', '空手……それも、相当な使い手だ。'] },
-      { who: 'aoi', face: 'normal', text: ['《龍》を、守る……？', 'あの龍は、姫さまを囚えているのよ。'] },
+      { who: 'aoi', face: 'normal', text: ['《龍》を、守る……？', 'あの龍は、姫さまを囚えているのに。'] },
       { who: 'idachi', face: 'close', text: ['事情は、それぞれだ。', '俺には俺の、守ると決めたものがある。'] },
-      { who: 'kurenai', face: 'anger', text: ['意味わかんない！', '姫さまを、返してもらうだけだよ！'] },
+      { who: 'kurenai', face: 'anger', text: ['うーん、ぜんぜんわかんない！', 'とにかく、姫さまは返してもらうよ！'] },
       { who: 'idachi', face: 'shout', text: ['なら、拳で語れ。', '守るために、強くなる。……それが、今の俺の答えだ。'] },
-      { who: 'aoi', face: 'normal', pose: 'stance', text: ['……紅、本気で行きましょう。', 'この人、迷いがない。'] },
-      { who: 'kurenai', face: 'anger', pose: 'stance', text: ['上等！　てっぺんまで来て、', '負けるわけにはいかないんだから！'] }
+      { who: 'aoi', face: 'normal', pose: 'stance', text: ['……紅、本気で行こう。', 'この人、迷いがない。'] },
+      { who: 'kurenai', face: 'anger', pose: 'stance', text: ['上等！　てっぺんまで来たんだもん、', 'ここで負けるわけにはいかないよ！'] }
     ],
     // 井立を倒したあと（53_idachi.js の stDie から）。終わると、登頂してステージクリア
     idachi_end: [
       { who: 'idachi', face: 'smile', text: ['……ふっ。完敗だ。', '二人で、ひとつ。……いい拳だった。'] },
-      { who: 'kurenai', face: 'joy', text: ['へへっ、だから言ったでしょ！', 'じゃあ、通してもらうよ！'] },
-      { who: 'aoi', face: 'normal', text: ['……教えて。', 'あなたは、どうして《龍》を守っていたの？'] },
+      { who: 'kurenai', face: 'joy', text: ['へへっ、だから言ったでしょ！', 'じゃあ、通してもらうね！'] },
+      { who: 'aoi', face: 'normal', text: ['……ひとつ、聞かせて。', 'どうして、《龍》を守っていたの？'] },
       { who: 'idachi', face: 'close', text: ['……行けば、わかる。', '龍は、学園のいちばん奥だ。'] },
       { who: 'idachi', face: 'smile', text: ['結界の上の空を、飛空艇が渡っている。', '――その拳で、確かめてこい。'] },
-      { who: 'kurenai', face: 'shy', text: ['……なんか、悪い人じゃなさそう？'] },
-      { who: 'aoi', face: 'joy', text: ['ふふ。行きましょう、紅。', '答えは、あの龍のところに。'] }
+      { who: 'kurenai', face: 'silly', text: ['……あれ？　なんか、悪い人じゃなさそう？'] },
+      { who: 'aoi', face: 'joy', text: ['ふふっ。行こう、紅。', '答えは、あの龍のところにあるよ。'] }
     ]
   };
   // 話し手ごとの見た目。side = カットインがすべり込んでくる側（-1 = 左、1 = 右）。portrait = 顔グラフィックの代わりに、シートの大きな絵を使う
