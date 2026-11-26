@@ -283,6 +283,32 @@
     g.restore();
   }
 
+  // 右下: 2P（四角のドローン）の状態。四角の顔と、修理・シールドが使えるまでの帯。ドローンを呼ぶまでは出さない
+  var shikakuPic = null;
+  function droneHud(g) {
+    if (!shikakuPic && window.REBELL_SHIKAKU) { shikakuPic = new Image(); shikakuPic.src = window.REBELL_SHIKAKU.smile; }
+    var d = G.drone; if (!d || !d.on || G.state === 'pause') return;      // ポーズ中は、操作説明に重なるので出さない
+    var C = R.DRONE_CFG, x = 1452, y = 916, i;
+    panel(g, x, y, 440, 132, 14, 'rgba(10,22,52,.86)', '#ffc84a', 4);
+    if (shikakuPic && shikakuPic.complete && shikakuPic.naturalWidth) { g.save(); g.beginPath(); g.rect(x + 12, y + 12, 150, 108); g.clip(); g.drawImage(shikakuPic, x + 12, y + 12, 159, 108); g.restore(); }
+    g.strokeStyle = '#ffc84a'; g.lineWidth = 3; g.strokeRect(x + 12, y + 12, 150, 108);
+    T(g, '2P  四角のドローン', x + 178, y + 36, 24, '#ffc84a', 'left', UI, '#07122e', 5);
+    var rows = [['5 修理', 1 - d.repCd / C.REP_CD, d.healT > 0, '#9dffb0'], ['+ シールド', d.shieldT > 0 ? 1 : 1 - d.shdCd / C.SHD_CD, d.shieldT > 0, '#ffe8a0']];
+    for (i = 0; i < 2; i++) {
+      var r = rows[i], yy = y + 66 + i * 38, ready = r[1] >= 1;
+      T(g, r[0], x + 178, yy + 10, 21, ready ? '#ffffff' : '#8fa0c8', 'left', UI, '#07122e', 4);
+      g.fillStyle = '#0a1430'; g.fillRect(x + 300, yy - 6, 126, 20);
+      g.fillStyle = r[2] ? ((G.t >> 3) % 2 ? '#ffffff' : r[3]) : ready ? r[3] : '#4a5a8a'; g.fillRect(x + 302, yy - 4, 122 * clamp(r[1], 0, 1), 16);
+    }
+    if (d.introT > 0) {      // 呼んだばかりのときは、操作の案内
+      g.globalAlpha = Math.min(1, d.introT / 40);
+      panel(g, 1452, 760, 440, 140, 14, 'rgba(10,22,52,.86)', '#ffc84a', 3);
+      T(g, 'テンキー  8 4 6 2: 移動', 1474, 800, 24, '#ffffff', 'left', UI, '#07122e', 4);
+      T(g, '0: 電撃弾（押しっぱなし）', 1474, 836, 24, '#ffffff', 'left', UI, '#07122e', 4);
+      T(g, '5: 修理　+: シールド　-: 戻す', 1474, 872, 24, '#ffffff', 'left', UI, '#07122e', 4);
+      g.globalAlpha = 1;
+    }
+  }
   R.drawHUD = function (g) {
     var p = G.pl, i;
     // 文字（ダメージ数字）
@@ -314,6 +340,7 @@
     if (full && !p.chars.kurenai.down && !p.chars.aoi.down) T(g, '[F] 紅蒼交錯！', 766, 222, 24, (G.t >> 3) % 2 ? '#ffffff' : '#ffe04a', 'left', UI, '#120a30', 6);
     logo(g, 1296, 100, 0.86);
     minimap(g);
+    droneHud(g);
     // コンボ
     if (G.combo >= 2) {
       g.save(); g.translate(1680, 392); var s = 1 + G.comboPop * 0.035; g.scale(s, s); g.transform(1, 0, -0.18, 1, 0, 0);
@@ -1137,8 +1164,8 @@
     helpPanel(g, 1);
     var rows = [['紅 / 蒼', '紅: 大鎌の重い大振り・ひるまない　蒼: 速い連撃・一発は軽い'], ['←→ / A D', '移動（逆を押すと切り返し）'], ['Space / W / ↑', 'ジャンプ　空中でもう一度押すと宙返り'], ['J / Z', '攻撃（押すたびにコンボ・締めの後は 1 段目へ戻って続く）'], ['つながる瞬間に押す', 'BEAT: 続くほど SP と交錯ゲージがたまりやすい（連打は MISS）'], ['攻撃を長押し', 'チャージ攻撃　離すと 紅: 紅月旋　蒼: 蒼月一閃（光ったら最大）'], ['↓ + 攻撃', '地上: 斬り上げて追いかける　空中: 急降下'],
       ['U / G', '遠距離　紅: 鎖鎌を投げて敵を引き寄せる　蒼: 飛ぶ斬撃を 3 連射'], ['空中で U / G', '紅: 鎌を打ち込んで叩きつける　蒼: 空中から撃つ（↓で斜め下）'],
-      ['L / C / Shift', 'ダッシュ（空中は紅 1 回・蒼 2 回）　ぎりぎりでかわすとスロー'], ['ダッシュ中に攻撃', 'ダッシュ斬り'], ['攻撃が当たった後', 'ジャンプ・ダッシュで動きを打ち切れる'], ['Q / E', 'キャラチェンジ（斬り込みながら交代）'], ['攻撃を当てた直後に交代', 'チェイン: 登場攻撃が強くなる'], ['K / X', '特技（SP 30）　紅: 紅蓮砕　蒼: 蒼刃閃'], ['→ / ↑ / ↓ と K','紅: 紅蓮旋舞・昇月鎌・血華葬　蒼: 瞬影斬・天翔刃・蒼雨'], ['F / V', '合体技「紅蒼交錯」（ゲージ満タン）'], ['1 / 2　　M / B', '薬 / 結晶　　音 / 光のにじみ']];
-    for (var i = 0; i < rows.length; i++) { T(g, rows[i][0], 900, 316 + i * 35, 27, i ? '#7af3ff' : '#ffe04a', 'right', UI, '#120a30', 6); T(g, rows[i][1], 928, 316 + i * 35, 27, '#ffffff', 'left', UI, '#120a30', 6); }      // 左下の操作パネルに重ならないよう、右寄せ
+      ['L / C / Shift', 'ダッシュ（空中は紅 1 回・蒼 2 回）　ぎりぎりでかわすとスロー'], ['ダッシュ中に攻撃', 'ダッシュ斬り'], ['攻撃が当たった後', 'ジャンプ・ダッシュで動きを打ち切れる'], ['Q / E', 'キャラチェンジ（斬り込みながら交代）'], ['攻撃を当てた直後に交代', 'チェイン: 登場攻撃が強くなる'], ['K / X', '特技（SP 30）　紅: 紅蓮砕　蒼: 蒼刃閃'], ['→ / ↑ / ↓ と K','紅: 紅蓮旋舞・昇月鎌・血華葬　蒼: 瞬影斬・天翔刃・蒼雨'], ['F / V', '合体技「紅蒼交錯」（ゲージ満タン）'], ['1 / 2　　M / B', '薬 / 結晶　　音 / 光のにじみ'], ['テンキー（2P）', '四角のドローン　8462: 移動　0: 電撃弾　5: 修理　+: シールド']];
+    for (var i = 0; i < rows.length; i++) { T(g, rows[i][0], 900, 312 + i * 34, 27, i === rows.length - 1 ? '#ffc84a' : i ? '#7af3ff' : '#ffe04a', 'right', UI, '#120a30', 6); T(g, rows[i][1], 928, 312 + i * 34, 27, '#ffffff', 'left', UI, '#120a30', 6); }      // 左下の操作パネルに重ならないよう、右寄せ
     blinkText(g, 'Esc / P で再開', 1560, 1010, 32);
   };
   R.drawGameOver = function (g) {

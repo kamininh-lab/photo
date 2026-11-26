@@ -390,6 +390,7 @@
     if (G.state !== 'play' || G.cross || G.bossDefeated) return false;
     if (p.st === 'dash' && !p.justDone) { p.justDone = true; justDodge(p); }
     if (p.inv > 0 || p.st === 'dash' || p.st === 'special' || p.st === 'cross') return false;
+    if (R.Drone && R.Drone.block(R.GX)) return false;      // 2P のドローンのシールドが、1 回だけ防ぐ
     // 紅は大鎌を振っている間、攻撃を受けてもひるまない（ダメージは 7 割）
     var armor = p.who === 'kurenai' && p.st === 'attack' && !p.atk.dive && p.stT <= p.atk.h1 + 2;
     if (armor) dmg *= 0.7;
@@ -1530,6 +1531,7 @@
     G.time++;
     if (G.comboT > 0) { G.comboT--; if (G.comboT === 0) G.combo = 0; }
     updMovers(); updPlayer(); updSprings(); updGimmicks(); updPShots();
+    if (R.Drone) R.Drone.update(R.GX);      // 2P: 四角のドローン（テンキー。58_drone.js）
     if (G.slow > 0) G.slow--;
     if (G.cross) updCross(); else if (!(G.slow > 0) || G.t % 3 === 0) { updEnemies(); updShots(); }
     if (!G.cross) updTouch();
@@ -1558,7 +1560,8 @@
   // 別ファイルの敵（52_karate.js）が使う部品
   R.GX = {
     fx: fx, part: part, burst: burst, text: text, toast: toast, shake: shake, dust: dust, box: box, onScreen: onScreen, groundAt: groundAt,
-    moveBody: moveBody, hurtPlayer: hurtPlayer, shoot: shoot, dropItem: dropItem, gainExp: gainExp, spawn: spawn, MID: MID
+    moveBody: moveBody, hurtPlayer: hurtPlayer, shoot: shoot, dropItem: dropItem, gainExp: gainExp, spawn: spawn, MID: MID,
+    damageEnemy: damageEnemy, hurtboxes: hurtboxes, openChests: openChests      // 四角のドローン（58_drone.js）の弾
   };
   R.G = G;
 })();

@@ -444,6 +444,7 @@
       else if (p.stretchT > 0 && p.st === 'free') { psy = 1 + 0.1 * p.stretchT / 6; psx = 1 - 0.07 * p.stretchT / 6; }     // 踏み切りで伸びる
       charDraw(g, f, p.x - cam, p.y, p.face, R.flipRot(p), psx, psy, p.hurtFlash > 0 && G.state === 'play' ? '#ffffff' : null, br);
     }
+    if (R.Drone) R.Drone.draw(g, cam);      // 2P: 四角のドローン（58_drone.js）
     // スプライトのコマを使ったエフェクト（合体技のとどめの光の柱）
     for (i = 0; i < G.fx.length; i++) {
       e = G.fx[i]; if (e.type !== 'sprfx') continue;
