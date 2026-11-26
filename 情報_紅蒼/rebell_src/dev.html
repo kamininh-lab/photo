@@ -4703,7 +4703,7 @@ if (!G.drone) G.drone = { on: false, x: 0, y: 0, vx: 0, vy: 0, face: 1, idle: 0,
 return G.drone;
 }
 function launch(d, p, X) {
-d.on = true; d.t = 0; d.idle = 0; d.introT = 300; d.face = p.face;
+d.on = true; d.leaving = 0; d.t = 0; d.idle = 0; d.introT = 300; d.face = p.face;
 d.x = G.cam.x + (p.face > 0 ? -12 : R.W + 12); d.y = p.y - 70;
 if (!d.used) { d.used = true; X.toast('四角のドローン、発進！（2P: テンキー）', '#ffc84a'); }
 else X.toast('ドローン、戻ったよ！', '#ffc84a');
@@ -4720,7 +4720,20 @@ latch = {}; return;
 d.t++;
 if (d.introT > 0) d.introT--;
 ['shotCd', 'repCd', 'shdCd', 'shieldT'].forEach(function (k) { if (d[k] > 0) d[k]--; });
-if (latch.NumpadSubtract) { d.on = false; d.shieldT = 0; d.shots = []; X.toast('ドローン、待機に戻すよ', '#ffc84a'); R.snd('select'); latch = {}; return; }
+if (d.leaving) {
+if (anyLatch() && !latch.NumpadSubtract) { d.leaving = 0; d.idle = 0; X.toast('やっぱり手伝うよ！', '#ffc84a'); R.snd('switch'); latch = {}; return; }
+d.leaving++; latch = {};
+if (d.leaving < 10) { d.vx *= 0.8; d.vy = 0.6; }
+else {
+if (d.leaving === 10) { R.snd('dash'); X.fx({ type: 'ring', x: d.x, y: d.y + 6, life: 12, r: 14, col: '#ffc84a', flat: true }); }
+d.vx *= 0.9; d.vy = Math.max(-9, d.vy - 0.55);
+if (d.leaving % 2 === 0) X.part(d.x + rand(-4, 4), d.y + 8, rand(-0.3, 0.3), rand(0.6, 1.4), 14, d.leaving % 4 ? '#ffc84a' : '#ffffff', 2, 0, true);
+}
+d.x += d.vx; d.y += d.vy;
+if (screenY(d.y) < -24) { d.on = false; d.leaving = 0; d.shots = []; }
+return;
+}
+if (latch.NumpadSubtract) { d.leaving = 1; d.shots = []; d.shieldT = 0; d.healT = 0; d.introT = 0; X.toast('ドローン、いったん引き上げるよ', '#ffc84a'); R.snd('select'); latch = {}; return; }
 var mx = (any(held, ['Numpad6', 'Numpad9', 'Numpad3']) ? 1 : 0) - (any(held, ['Numpad4', 'Numpad7', 'Numpad1']) ? 1 : 0);
 var my = (any(held, ['Numpad2', 'Numpad1', 'Numpad3']) ? 1 : 0) - (any(held, ['Numpad8', 'Numpad7', 'Numpad9']) ? 1 : 0);
 if (mx || my) {
@@ -4810,6 +4823,12 @@ g.globalAlpha = 1; g.fillStyle = '#fff3b0'; g.fillRect(sx - 2.5, s.y - 1.5, 5, 3
 }
 g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
 g.globalAlpha = 0.25; g.fillStyle = '#000000'; g.beginPath(); g.ellipse(x, y + 14, 7, 1.6, 0, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
+if (d.leaving > 10) {
+var tl = Math.min(46, -d.vy * 5.5), tg = g.createLinearGradient(0, y + 6, 0, y + 6 + tl);
+tg.addColorStop(0, 'rgba(255,243,176,.9)'); tg.addColorStop(0.4, 'rgba(255,200,74,.55)'); tg.addColorStop(1, 'rgba(255,200,74,0)');
+g.globalCompositeOperation = 'lighter'; g.fillStyle = tg; g.fillRect(x - 2.5, y + 6, 5, tl); g.fillStyle = 'rgba(255,255,255,.8)'; g.fillRect(x - 1, y + 6, 2, tl * 0.5);
+g.globalCompositeOperation = 'source-over';
+}
 g.translate(x, y); g.rotate(clamp(d.vx * 0.06, -0.25, 0.25)); if (d.face < 0) g.scale(-1, 1);
 if (im && im.complete && im.naturalWidth) g.drawImage(im, -W / 2, -H / 2, W, H);
 else { g.fillStyle = '#e8eef8'; g.fillRect(-6, -3, 12, 6); }
