@@ -4602,7 +4602,7 @@ if (t === 30 && R.TALKS && R.beginTalk) {
 if (e.talkFirst) { R.beginTalk('idachi', { vs: e }); return; }
 bossCut('close', '――また来たか。', '何度でも、受けて立つ。');
 }
-if (t === 31) { R.bgm('boss'); G.bossIntro = 110; }
+if (t === 31) { R.bgm('boss'); if (e.talkFirst) G.bossIntro = 110; else e.bannerT = 86; }
 e.fr = F('stance', (t >> 3) % 4);
 if (t >= 70) { go(e, 'idle'); e.cd = 30; e.invul = 0; e.calm = 0; }
 }
@@ -4697,6 +4697,7 @@ if (e.invul > 0) e.invul--;
 ['stepCd', 'rushCd', 'soutenCd', 'kamCd', 'exprT'].forEach(function (k) { if (e[k] > 0) e[k]--; });
 e.calm = p.st === 'attack' || p.st === 'special' ? 0 : (e.calm || 0) + 1;
 if (G.bossCut && G.bossCut.img === 'idaPic_' && ++G.bossCut.t > 84) G.bossCut = null;
+if (e.bannerT > 0 && --e.bannerT === 0 && !G.bossCut) G.bossIntro = 110;
 if (e.gT > 0 && --e.gT === 0) e.gHits = 0;
 e.warn = false;
 for (i = 0; i < e.trail.length; i++) e.trail[i].t++;
@@ -5590,7 +5591,7 @@ g.restore();
 }
 function bossCut(g) {
 var c = G.bossCut, u = c.t / 84, k = u < 0.14 ? R.ease(u / 0.14) : (u > 0.82 ? 1 - R.ease((u - 0.82) / 0.18) : 1), off = -(1 - k) * 1300;
-var y = 270, h = 230, x0 = -40, w = 1180, sk = 90, im = R.IMG[(c.img || 'midPic_') + c.pic], i, gr, nm = c.name || '黒瀬', bl = !!c.blue;
+var y = 300, h = 230, x0 = -40, w = 1180, sk = 90, im = R.IMG[(c.img || 'midPic_') + c.pic], i, gr, nm = c.name || '黒瀬', bl = !!c.blue;
 g.save(); g.translate(off, 0);
 g.beginPath(); g.moveTo(x0, y); g.lineTo(x0 + w + sk, y); g.lineTo(x0 + w, y + h); g.lineTo(x0, y + h); g.closePath();
 g.save(); g.clip();

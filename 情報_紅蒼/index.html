@@ -6073,7 +6073,7 @@ window.REBELL_SHIKAKU = {
       if (e.talkFirst) { R.beginTalk('idachi', { vs: e }); return; }
       bossCut('close', '――また来たか。', '何度でも、受けて立つ。');
     }
-    if (t === 31) { R.bgm('boss'); G.bossIntro = 110; }
+    if (t === 31) { R.bgm('boss'); if (e.talkFirst) G.bossIntro = 110; else e.bannerT = 86; }      // 再会のときは、カットインが引いてから題字を出す（重ならないように）
     e.fr = F('stance', (t >> 3) % 4);
     if (t >= 70) { go(e, 'idle'); e.cd = 30; e.invul = 0; e.calm = 0; }      // 登場と会話の間は、様子見の時間に数えない
   }
@@ -6174,6 +6174,7 @@ window.REBELL_SHIKAKU = {
     ['stepCd', 'rushCd', 'soutenCd', 'kamCd', 'exprT'].forEach(function (k) { if (e[k] > 0) e[k]--; });
     e.calm = p.st === 'attack' || p.st === 'special' ? 0 : (e.calm || 0) + 1;      // 相手が打ってこない時間
     if (G.bossCut && G.bossCut.img === 'idaPic_' && ++G.bossCut.t > 84) G.bossCut = null;
+    if (e.bannerT > 0 && --e.bannerT === 0 && !G.bossCut) G.bossIntro = 110;
     if (e.gT > 0 && --e.gT === 0) e.gHits = 0;
     e.warn = false;
     for (i = 0; i < e.trail.length; i++) e.trail[i].t++;
@@ -7177,7 +7178,7 @@ window.REBELL_SHIKAKU = {
   // 中ボス（黒瀬）の、戦いの最中のカットイン: 左上から紫の帯がすべり込み、シートのカットインの絵と、ひとことを出す（52_karate.js の bossCut）
   function bossCut(g) {
     var c = G.bossCut, u = c.t / 84, k = u < 0.14 ? R.ease(u / 0.14) : (u > 0.82 ? 1 - R.ease((u - 0.82) / 0.18) : 1), off = -(1 - k) * 1300;
-    var y = 270, h = 230, x0 = -40, w = 1180, sk = 90, im = R.IMG[(c.img || 'midPic_') + c.pic], i, gr, nm = c.name || '黒瀬', bl = !!c.blue;      // 左上の HP の表示にかからない高さ。img・name・blue = 黒瀬以外のボス（井立は青い帯）
+    var y = 300, h = 230, x0 = -40, w = 1180, sk = 90, im = R.IMG[(c.img || 'midPic_') + c.pic], i, gr, nm = c.name || '黒瀬', bl = !!c.blue;      // 左上の HP の表示にかからない高さ。img・name・blue = 黒瀬以外のボス（井立は青い帯）
     g.save(); g.translate(off, 0);
     g.beginPath(); g.moveTo(x0, y); g.lineTo(x0 + w + sk, y); g.lineTo(x0 + w, y + h); g.lineTo(x0, y + h); g.closePath();
     g.save(); g.clip();

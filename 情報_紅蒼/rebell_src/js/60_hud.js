@@ -231,7 +231,7 @@
   // 中ボス（黒瀬）の、戦いの最中のカットイン: 左上から紫の帯がすべり込み、シートのカットインの絵と、ひとことを出す（52_karate.js の bossCut）
   function bossCut(g) {
     var c = G.bossCut, u = c.t / 84, k = u < 0.14 ? R.ease(u / 0.14) : (u > 0.82 ? 1 - R.ease((u - 0.82) / 0.18) : 1), off = -(1 - k) * 1300;
-    var y = 270, h = 230, x0 = -40, w = 1180, sk = 90, im = R.IMG[(c.img || 'midPic_') + c.pic], i, gr, nm = c.name || '黒瀬', bl = !!c.blue;      // 左上の HP の表示にかからない高さ。img・name・blue = 黒瀬以外のボス（井立は青い帯）
+    var y = 300, h = 230, x0 = -40, w = 1180, sk = 90, im = R.IMG[(c.img || 'midPic_') + c.pic], i, gr, nm = c.name || '黒瀬', bl = !!c.blue;      // 左上の HP の表示にかからない高さ。img・name・blue = 黒瀬以外のボス（井立は青い帯）
     g.save(); g.translate(off, 0);
     g.beginPath(); g.moveTo(x0, y); g.lineTo(x0 + w + sk, y); g.lineTo(x0 + w, y + h); g.lineTo(x0, y + h); g.closePath();
     g.save(); g.clip();

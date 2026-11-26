@@ -379,7 +379,7 @@
       if (e.talkFirst) { R.beginTalk('idachi', { vs: e }); return; }
       bossCut('close', '――また来たか。', '何度でも、受けて立つ。');
     }
-    if (t === 31) { R.bgm('boss'); G.bossIntro = 110; }
+    if (t === 31) { R.bgm('boss'); if (e.talkFirst) G.bossIntro = 110; else e.bannerT = 86; }      // 再会のときは、カットインが引いてから題字を出す（重ならないように）
     e.fr = F('stance', (t >> 3) % 4);
     if (t >= 70) { go(e, 'idle'); e.cd = 30; e.invul = 0; e.calm = 0; }      // 登場と会話の間は、様子見の時間に数えない
   }
@@ -480,6 +480,7 @@
     ['stepCd', 'rushCd', 'soutenCd', 'kamCd', 'exprT'].forEach(function (k) { if (e[k] > 0) e[k]--; });
     e.calm = p.st === 'attack' || p.st === 'special' ? 0 : (e.calm || 0) + 1;      // 相手が打ってこない時間
     if (G.bossCut && G.bossCut.img === 'idaPic_' && ++G.bossCut.t > 84) G.bossCut = null;
+    if (e.bannerT > 0 && --e.bannerT === 0 && !G.bossCut) G.bossIntro = 110;
     if (e.gT > 0 && --e.gT === 0) e.gHits = 0;
     e.warn = false;
     for (i = 0; i < e.trail.length; i++) e.trail[i].t++;
