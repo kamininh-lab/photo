@@ -102,7 +102,12 @@
     for (i = e.trail.length - 1; i >= 0; i--) { e.trail[i].a -= 0.07; if (e.trail[i].a <= 0) e.trail.splice(i, 1); }
     if (e.st === 'die') { die(e); return; }
 
+    if (e.bannerT > 0 && --e.bannerT === 0) G.bossIntro = 110;      // 会話のあとに、題字を出す
     if (e.st === 'intro') {      // 岸の上で吠えてから、飛び立つ
+      if (!G.dragonMet && R.TALKS && R.TALKS.dragon && R.beginTalk) {      // はじめて会ったとき: 吠えたあとで、紅・蒼・四角の会話（65_talk.js）
+        G.bossIntro = 0;
+        if (t === 40) { G.dragonMet = true; e.bannerT = 24; R.beginTalk('dragon', { vs: e }); return; }
+      }
       e.face = -1; setFr(e, 'roar', t < 14 ? 0 : t < 26 ? 1 : (t >> 3) % 2 ? 2 : 3);
       if (t % 6 === 0) X.shake(3);
       if (t > 104) go(e, 'takeoff');
@@ -233,6 +238,7 @@
       if (t > (rage ? 120 : 170)) go(e, 'takeoff');
     } else if (e.st === 'roar') {      // 怒り
       setFr(e, 'roar', t < 10 ? 0 : t < 20 ? 1 : (t >> 3) % 2 ? 2 : 3); e.rot = 0.1;
+      if (t === 24 && !G.dragonRageMet && R.TALKS && R.TALKS.dragon_rage && R.beginTalk) { G.dragonRageMet = true; R.beginTalk('dragon_rage', { vs: e }); return; }      // はじめて怒ったとき: 短い会話
       if (t % 5 === 0) X.shake(5);
       if (t > 80) { if (e.y >= GY - 2) go(e, 'takeoff'); else toHover(e, 16); e.count = 0; }
     }

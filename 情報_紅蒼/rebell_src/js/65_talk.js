@@ -69,6 +69,34 @@
       { who: 'shikaku', face: 'smile', text: ['その意気だ。最後まで、ぼくが見てる。', '――行って、二人とも！'] },
       { who: 'aoi', face: 'joy', pose: 'stance', text: ['ええ。紅、四角。', '――ここで、終わらせましょう。'] }
     ],
+    // ステージ 3 のボス「玉龍」と会ったとき（35_dragon.js の intro から）。龍は話さない。紅・蒼・四角が龍を前に話す
+    //   四角は、龍の動き（空を飛び、岸に降りて羽を休める・突進の光の帯）を知らせる
+    dragon: [
+      { who: 'kurenai', face: 'damage', text: ['出た……！　これが、《龍》……！', 'ちょっと、おっきすぎるでしょ！？'] },
+      { who: 'aoi', face: 'normal', text: ['紅い月と、同じ色の瞳……。', 'あの奥に、姫さまの気配がある。'] },
+      { who: 'shikaku', face: 'shout', text: ['――反応、最大！　まちがいない、玉龍だ。', '姫さまは、あの龍の結界の中にいる。'] },
+      { who: 'shikaku', face: 'serious', text: ['龍は空を飛び回って、ときどき岸に降りて羽を休める。', '降りたときが、攻めどきだよ。'] },
+      { who: 'shikaku', face: 'serious', text: ['足もとは穴の上だ。突進の前の、光の帯に気をつけて。', '落ちたら、そこで終わりだからね。'] },
+      { who: 'aoi', face: 'sad', text: ['……井立さんが、守っていた龍。', '何があるのかは、倒してから確かめましょう。'] },
+      { who: 'kurenai', face: 'anger', pose: 'stance', text: ['龍でもなんでも、関係ない！', '姫さまを、返してもらうよ！'] },
+      { who: 'aoi', face: 'normal', pose: 'stance', text: ['ええ、紅。二人で、ひとつ。', '――行くわよ！'] }
+    ],
+    // 玉龍が怒ったとき（HP が半分を切ったとき。35_dragon.js の roar から。はじめての 1 回だけ）
+    dragon_rage: [
+      { who: 'shikaku', face: 'shout', text: ['龍の力が跳ね上がった！　怒ってるよ！', '攻撃が速くなる。足もとの光の柱にも気をつけて！'] },
+      { who: 'kurenai', face: 'anger', text: ['怒ってるのは、こっちだって同じ！'] },
+      { who: 'aoi', face: 'normal', pose: 'stance', text: ['落ち着いて、紅。流れは、もう読めてる。', 'あと半分――押し切りましょう！'] }
+    ],
+    // 玉龍を倒したあと（50_game.js の updBossTrigger から）。終わると、ステージクリア → エンディング
+    dragon_end: [
+      { who: 'kurenai', face: 'joy', text: ['やった……！', '龍、倒したよ！'] },
+      { who: 'shikaku', face: 'smile', text: ['龍の反応、消失……。', 'そして――姫さまの反応、確認！　無事だよ！'] },
+      { who: 'aoi', face: 'shy', text: ['よかった……。', '本当に、よかった。'] },
+      { who: 'kurenai', face: 'shy', text: ['へへっ……四角、ありがと。', '最後まで、見ててくれて。'] },
+      { who: 'shikaku', face: 'smile', text: ['お礼はいいよ。武器の手入れは、帰ってからね。', '――二人とも、おつかれさま。'] },
+      { who: 'aoi', face: 'normal', text: ['……紅い月が、沈んでいく。', '井立さんの言っていた答えも、きっとこの先に。'] },
+      { who: 'kurenai', face: 'joy', pose: 'event', text: ['うん！　姫さまを迎えに行こう、蒼！'] }
+    ],
     // 中ボス「黒瀬 龍士」と初めて会ったとき（52_karate.js の enter から）。
     // シートの説明に沿わせてある: カメラを手にする異色の武闘家。正体と目的は謎。卓越した空手の技術で立ちはだかる
     //   黒瀬の face: camera（カメラを構えた笑み）/ old（1 枚目のシートの絵）/ grin（不敵な笑みの寄り）/ reach（手を突き出す）
@@ -184,7 +212,9 @@
     }
     if (tk.vs) {      // 中ボスと向かい合う: いま操作している子が前、相棒はその後ろに控える
       var fc = tk.vs.x >= kx ? 1 : -1, act = p.who, par = act === 'kurenai' ? 'aoi' : 'kurenai';
-      if (!p.chars[par].down) actor(par, kx - fc * 30, fc, 40, fc * 44);      // 倒れている相棒は、立たせない
+      var bx = kx - fc * 30;      // 相棒の位置。画面の端（龍の戦いの入り口など）では、画面の中に寄せる
+      bx = fc > 0 ? Math.max(bx, cam + 8) : Math.min(bx, cam + R.W - 8);
+      if (!p.chars[par].down) actor(par, bx, fc, 40, fc * 44);      // 倒れている相棒は、立たせない
       actor(act, kx, fc, 0, 0);
       return;
     }
