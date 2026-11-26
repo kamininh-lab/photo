@@ -524,6 +524,44 @@
     }
     g.restore();
   }
+  // 「GYOKURYU」の文字も焦げる: 炎が文字の列のまん中（K と U の間）を突き抜けた所から、焦げが左右へ燃え広がる。
+  //   ABURN.start で燃え始め、ABURN.full で両端まで焦げる。燃え広がる先は赤く光り、焦げた所には火の粉と煙が残る
+  var ABURN = { start: 66, full: 128 }, aburnC = null;
+  function scorchAlpha(g, u, a, font) {
+    var b = clamp((u - ABURN.start) / (ABURN.full - ABURN.start), 0, 1);
+    if (b <= 0) return;
+    if (!aburnC) aburnC = R.mk(1240, 170);
+    var c = aburnC.getContext('2d'), W = aburnC.width, H = aburnC.height, by = 130, mid = W / 2, i;
+    var r = 40 + (W / 2) * R.ease(b);      // 焦げの広がり（まん中からの横の距離）
+    c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1; c.clearRect(0, 0, W, H);
+    spaced(c, 'GYOKURYU', mid, font, 22, function (ch, x) { c.fillStyle = '#ffffff'; c.fillText(ch, x, by); });
+    c.globalCompositeOperation = 'source-in';      // 文字の形の中だけに、焦げを塗る（焦げていない所は透明にする）
+    var bg = c.createLinearGradient(0, 30, 0, H); bg.addColorStop(0, '#8a5a3a'); bg.addColorStop(1, '#4e2c1e');
+    c.fillStyle = bg; c.beginPath(); c.rect(mid - r, 0, r * 2, H); c.fill();
+    c.globalCompositeOperation = 'source-atop';
+    [-1, 1].forEach(function (sd) {      // 燃え広がる先の、赤く光る帯
+      var ex = mid + sd * r, eg = c.createLinearGradient(ex - sd * 34, 0, ex, 0);
+      eg.addColorStop(0, 'rgba(255,150,40,0)'); eg.addColorStop(0.7, 'rgba(255,170,60,1)'); eg.addColorStop(1, 'rgba(255,230,150,1)');
+      c.fillStyle = eg; c.fillRect(sd < 0 ? ex : ex - 34, 0, 34, H);
+    });
+    for (i = 0; i < 700; i++) {      // 焦げのむらと、くすぶる火の粉
+      var x = fhash(i * 3 + 7) * W, y = fhash(i * 3 + 8) * H; if (Math.abs(x - mid) > r - 8) continue;
+      if (i % 3) { c.fillStyle = 'rgba(20,8,4,.85)'; c.fillRect(x | 0, y | 0, 2 + (i % 3), 2 + (i % 2)); }
+      else { var fl = 0.5 + 0.5 * Math.sin(u * (0.2 + fhash(i) * 0.3) + i); c.fillStyle = 'rgba(255,' + (110 + Math.round(100 * fl)) + ',40,' + (0.5 + 0.5 * fl) + ')'; c.fillRect(x | 0, y | 0, 2, 2); }
+    }
+    var dx0 = 960 - mid, dy0 = 716 - by;
+    g.save(); g.globalAlpha = a; g.drawImage(aburnC, dx0, dy0);
+    g.globalCompositeOperation = 'lighter'; g.globalAlpha = a * (0.3 + 0.12 * Math.sin(u * 0.27));      // くすぶる熱の光
+    g.shadowColor = '#ff6a20'; g.shadowBlur = 26; g.drawImage(aburnC, dx0, dy0); g.shadowBlur = 0;
+    g.globalCompositeOperation = 'source-over';
+    for (i = 0; i < 26; i++) {      // 焦げた所から立ちのぼる煙
+      var sx0 = (fhash(i * 5 + 3) - 0.5) * 2 * r; if (Math.abs(sx0) > 560) continue;
+      var per = 50 + Math.floor(fhash(i * 7 + 2) * 30), ph = ((u - ABURN.start + fhash(i * 9 + 4) * per) % per) / per;
+      g.globalAlpha = a * (1 - ph) * 0.26; g.fillStyle = 'rgb(110,100,96)';
+      g.beginPath(); g.arc(960 + sx0 + Math.sin(ph * 5 + i) * 8, 690 - ph * 100, 8 + ph * 18, 0, PI * 2); g.fill();
+    }
+    g.restore();
+  }
   // 炎を吐いている間の、画面の小さな揺れ（drawSplash から）
   function breathShake(u) { return u >= BR.fire && u < BR.end ? (u - BR.fire < 12 ? 5 : 1.6) : 0; }
 
@@ -554,10 +592,11 @@
     g.drawImage(wd, ex0, ey0 - WG.pad * s, wd.width * s, wd.height * s);
     g.shadowBlur = 0;
     // 文字: 1 文字ずつ浮かび上がる
+    var burnR = u > ABURN.start ? 40 + 620 * R.ease(clamp((u - ABURN.start) / (ABURN.full - ABURN.start), 0, 1)) : -1;      // 焦げた範囲（scorchAlpha と同じ）
     spaced(g, 'GYOKURYU', 960, font, 22, function (ch, x, i) {
-      var k = R.ease(clamp((u - 16 - i * 3) / 16, 0, 1)), y = 716 + (1 - k) * 16;
+      var k = R.ease(clamp((u - 16 - i * 3) / 16, 0, 1)), y = 716 + (1 - k) * 16, burnt = Math.abs(x + g.measureText(ch).width / 2 - 960) < burnR;
       var gr = g.createLinearGradient(0, y - 90, 0, y + 6); gr.addColorStop(0, '#f4fffb'); gr.addColorStop(0.6, JADE_L); gr.addColorStop(1, '#7af0d4');
-      g.globalAlpha = a * k; g.fillStyle = gr; g.shadowColor = JADE; g.shadowBlur = 16; g.fillText(ch, x, y); g.shadowBlur = 0;
+      g.globalAlpha = a * k; g.fillStyle = gr; g.shadowColor = burnt ? '#8a2a10' : JADE; g.shadowBlur = 16; g.fillText(ch, x, y); g.shadowBlur = 0;      // 焦げた字は、翡翠の光が消えて赤黒くくすむ
     });
     // 文字の上を走る光
     var sw = (u - 50) / 34;
@@ -568,6 +607,7 @@
       spaced(g, 'GYOKURYU', 960, font, 22, function (ch, x) { g.fillStyle = '#ffffff'; g.fillText(ch, x, 716); });
       g.restore();
     }
+    scorchAlpha(g, u, a, font);      // 炎が突き抜けたまん中から、焦げが左右へ燃え広がる
     // 下線と、漢字
     var lw = 660 * R.ease(Math.min(1, u / 36));
     g.globalAlpha = a; g.fillStyle = JADE; g.fillRect(960 - lw / 2, 754, lw, 3);
