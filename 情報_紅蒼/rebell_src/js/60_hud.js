@@ -1160,10 +1160,11 @@
     var b1 = bl1.getContext('2d'), b2 = bl2.getContext('2d');
     b1.clearRect(0, 0, 160, 90); b1.imageSmoothingEnabled = true; b1.drawImage(cityC, 0, 0, 160, 90);
     b2.clearRect(0, 0, 60, 34); b2.imageSmoothingEnabled = true; b2.drawImage(bl1, 0, 0, 60, 34);
-    var pulse = 0.92 + 0.08 * Math.sin(t * 0.021);
+    // にじみは、約 6 秒かけてゆっくり強まったり弱まったりする（いちばん弱いときは 3 割）
+    var pulse = 0.3 + 0.7 * (0.5 - 0.5 * Math.cos(t * 0.0175));
     g.globalCompositeOperation = 'lighter'; g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
-    g.globalAlpha = 0.5 * pulse; g.drawImage(bl1, 0, 0, 1920, 1080);
-    g.globalAlpha = 0.55 * pulse; g.drawImage(bl2, 0, 0, 1920, 1080);
+    g.globalAlpha = 0.34 * pulse; g.drawImage(bl1, 0, 0, 1920, 1080);
+    g.globalAlpha = 0.36 * pulse; g.drawImage(bl2, 0, 0, 1920, 1080);
     // 地平線のあたりの、桃色と紫のもや
     var hz = g.createLinearGradient(0, 560, 0, 1080);
     hz.addColorStop(0, 'rgba(255,60,170,0)'); hz.addColorStop(0.55, 'rgba(255,70,170,.16)'); hz.addColorStop(1, 'rgba(120,60,255,.22)');
