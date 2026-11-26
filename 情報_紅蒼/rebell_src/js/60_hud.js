@@ -454,6 +454,31 @@
     }
     g.restore();
   }
+  // 炎に合わせた翼の動き: ためで大きく振り上げ → 吐く瞬間に打ち下ろす → 吐いている間は小さく羽ばたき → 元に戻る。
+  //   龍の影は 1 枚の絵なので、上半分（翼）を縦 2 ドットの帯に切り、体の中心から離れるほど上端を上下させて（伸び縮み）曲げる。
+  //   下半分（脚と尾）と、体のまん中（頭）は動かさない。lift = 翼の先の上がり幅（ドット。正 = 上）
+  var WG = { pad: 30, cut: 54, xc: 172, body: 22, len: 150 }, wingC = null;
+  function wingLift(u) {
+    var e = R.ease;
+    if (u < BR.charge) return 0;
+    if (u < BR.fire) return 26 * e((u - BR.charge) / (BR.fire - BR.charge));
+    if (u < BR.fire + 6) return 26 - 40 * e((u - BR.fire) / 6);
+    if (u < BR.end) { var v = (u - BR.fire - 6) / (BR.end - BR.fire - 6); return -14 * (1 - v) + 10 * Math.sin((u - BR.fire - 6) * 0.42) * (1 - 0.6 * v); }
+    if (u < BR.end + 20) return wingLift(BR.end - 1) * (1 - e((u - BR.end) / 20));      // 吐き終わりの形から、なめらかに戻す
+    return 0;
+  }
+  function wings(src, u) {
+    var lift = wingLift(u), P = WG.pad, W = src.width, H = src.height, x, t, dy;
+    if (!wingC || wingC.width !== W) wingC = R.mk(W, H + P * 2);
+    var c = wingC.getContext('2d'); c.clearRect(0, 0, W, H + P * 2);
+    c.drawImage(src, 0, WG.cut, W, H - WG.cut, 0, WG.cut + P, W, H - WG.cut);      // 脚と尾はそのまま
+    for (x = 0; x < W; x += 2) {
+      t = clamp((Math.abs(x + 1 - WG.xc) - WG.body) / WG.len, 0, 1);
+      dy = Math.round(-lift * Math.pow(t, 1.4));
+      c.drawImage(src, x, 0, 2, WG.cut, x, P + dy, 2, WG.cut - dy);      // 上端だけを動かし、付け根（下端）は脚につないだまま伸び縮みさせる
+    }
+    return wingC;
+  }
   // 炎を吐いている間の、画面の小さな揺れ（drawSplash から）
   function breathShake(u) { return u >= BR.fire && u < BR.end ? (u - BR.fire < 12 ? 5 : 1.6) : 0; }
 
@@ -480,8 +505,8 @@
     e.globalCompositeOperation = 'source-in'; e.fillStyle = eg; e.fillRect(0, 0, embC.width, embC.height);
     var s = 1.5 * pop;
     g.globalAlpha = a * clamp((u - 6) / 30, 0, 1); g.imageSmoothingEnabled = false; g.shadowColor = JADE; g.shadowBlur = 34;
-    var ex0 = cx - embC.width / 2 * s, ey0 = cy - embC.height * 0.46 * s;
-    g.drawImage(embC, ex0, ey0, embC.width * s, embC.height * s);
+    var ex0 = cx - embC.width / 2 * s, ey0 = cy - embC.height * 0.46 * s, wd = wings(embC, u);
+    g.drawImage(wd, ex0, ey0 - WG.pad * s, wd.width * s, wd.height * s);
     g.shadowBlur = 0;
     breath(g, u, a, ex0 + MOUTH[0] * s, ey0 + MOUTH[1] * s);
     // 文字: 1 文字ずつ浮かび上がる
