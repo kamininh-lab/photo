@@ -6565,7 +6565,7 @@ g.globalAlpha = 1; dim(g, 0.35);
 var b1 = bl1.getContext('2d'), b2 = bl2.getContext('2d');
 b1.clearRect(0, 0, 160, 90); b1.imageSmoothingEnabled = true; b1.drawImage(cityC, 0, 0, 160, 90);
 b2.clearRect(0, 0, 60, 34); b2.imageSmoothingEnabled = true; b2.drawImage(bl1, 0, 0, 60, 34);
-var pulse = 0.3 + 0.7 * (0.5 - 0.5 * Math.cos(t * 0.0175));
+var pulse = 0.3 + 0.7 * (0.5 - 0.5 * Math.cos(t * PI * 2 / 600));
 g.globalCompositeOperation = 'lighter'; g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
 g.globalAlpha = 0.34 * pulse; g.drawImage(bl1, 0, 0, 1920, 1080);
 g.globalAlpha = 0.36 * pulse; g.drawImage(bl2, 0, 0, 1920, 1080);
