@@ -1117,11 +1117,43 @@
     g.restore();
   }
 
+  // ---- タイトル画面の、ビルの窓の明かり ----
+  //   遠景（R.BG.far）の窓のうち 6 割ほどが、窓ごとにばらばらの間隔で、ついたり消えたりする。
+  //   切り替わる瞬間は、蛍光灯のように数回ちらつく。消えた窓は、その窓のビルの壁の色で塗りつぶす。
+  //   ox, oy = 遠景を描いた位置、k = 倍率。遠景は 960 × k ごとにくり返す
+  function winLit(i, t) {
+    var P = 90 + Math.floor(fhash(i * 7 + 1) * 420), o = Math.floor(fhash(i * 7 + 2) * P), c = Math.floor((t + o) / P), on = fhash(i * 131 + c) > 0.4;
+    var since = (t + o) % P, before = fhash(i * 131 + c - 1) > 0.4;
+    if (on !== before && since < 18 && fhash(i * 7 + 3) < 0.7) return ((since >> 2) & 1) ? before : on;      // 切り替わりのちらつき
+    return on;
+  }
+  function titleWindows(g, t, ox, oy, k) {
+    var W = R.BG.far.wins, i, w, x, rep = 960 * k, gl = [];
+    if (!W) return;
+    for (i = 0; i < W.length; i++) {
+      w = W[i];
+      if (fhash(i * 7 + 5) < 0.4) continue;      // 4 割はずっと点いたまま
+      var lit = winLit(i, t);
+      for (var s = 0; s < 2; s++) {
+        x = ox + s * rep + w[0] * k;
+        if (x + w[2] * k < 0 || x > 1920) continue;
+        if (!lit) { g.fillStyle = w[5]; g.fillRect(x, oy + w[1] * k, w[2] * k, w[3] * k); }
+        else gl.push(x, oy + w[1] * k, w[2] * k, w[3] * k, w[4]);
+      }
+    }
+    // 点いている窓には、ほんのりにじむ光
+    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.22;
+    for (i = 0; i < gl.length; i += 5) { g.fillStyle = gl[i + 4]; g.fillRect(gl[i] - 3, gl[i + 1] - 3, gl[i + 2] + 6, gl[i + 3] + 6); }
+    g.restore();
+  }
+
   R.drawTitle = function (g) {
     var t = G.t, i;
     var gr = g.createLinearGradient(0, 0, 0, 1080); gr.addColorStop(0, '#0b0a26'); gr.addColorStop(0.6, '#2a1a66'); gr.addColorStop(1, '#5a2470');
     g.fillStyle = gr; g.fillRect(0, 0, 1920, 1080);
-    g.globalAlpha = 0.55; pix(g, R.BG.sky, 0, 0, 1920, 1080); g.globalAlpha = 0.8; pix(g, R.BG.far, -((t * 0.6) % 3840), 180, 3840, 1080); pix(g, R.BG.far, 3840 - ((t * 0.6) % 3840), 180, 3840, 1080); g.globalAlpha = 1;
+    g.globalAlpha = 0.55; pix(g, R.BG.sky, 0, 0, 1920, 1080); g.globalAlpha = 0.8; pix(g, R.BG.far, -((t * 0.6) % 3840), 180, 3840, 1080); pix(g, R.BG.far, 3840 - ((t * 0.6) % 3840), 180, 3840, 1080);
+    titleWindows(g, t, -((t * 0.6) % 3840), 180, 4);      // ビルの窓の明かりが、ついたり消えたりする
+    g.globalAlpha = 1;
     dim(g, 0.35);
     titleMoon(g, t);      // 紅い月と、羽ばたく龍の影
     // ポスター

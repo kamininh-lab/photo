@@ -211,8 +211,10 @@
       for (let xx = x + 3; xx < x + w - 3; xx += 4) {
         if (r() < (distant ? 0.48 : 0.28)) continue;
         const palette = r() < 0.56 ? P.cyan : P.pink;
-        rect(t, xx, yy, 1 + (r() < 0.28 ? 1 : 0), integer(r, 1, 3),
-          palette[distant ? 0 : integer(r, 0, 2)]);
+        const ww = 1 + (r() < 0.28 ? 1 : 0), wh = integer(r, 1, 3), wc = palette[distant ? 0 : integer(r, 0, 2)];
+        rect(t, xx, yy, ww, wh, wc);
+        // タイトル画面で明かりを点け消しするため、窓の位置と、消したときの壁の色を覚えておく
+        if (t.wins) t.wins.push([Math.round(xx), Math.round(yy), ww, wh, wc, distant ? P.sky[2] : P.sky[1]]);
       }
     }
     if (r() < 0.7) {
@@ -227,6 +229,7 @@
   }
   function buildFar() {
     const t = make(960, 270, true), r = random(0x94b02e);
+    t.wins = [];
     rect(t, 0, 183, 960, 18, P.sky[1]);
     // 各列は一周期だけ生成し、境界を越える部分は rect が反対側へ送る。
     for (let i = 0; i < 48; i++) {
@@ -260,6 +263,16 @@
       rect(t, x + rx - 3, y - 1, 4, 1, P.cyan[2]);
       rect(t, x - rx + 1, y + 1, 4, 1, P.cyan[2]);
       sparkle(t, x, y - 8, P.cyan[0]);
+    });
+    // 手前のビルに隠れた窓は外す（左上の 1 ドットが窓の色のまま残っているものだけ）。端で折り返す窓も外す
+    const img = t.ctx.getImageData(0, 0, 960, 270).data;
+    t.canvas.wins = t.wins.filter(function (w) {
+      if (w[0] < 0 || w[0] + w[2] > 960 || w[1] < 1) return false;
+      const i = (w[1] * 960 + w[0]) * 4, c = parseInt(w[4].slice(1), 16);
+      if (!(img[i] === (c >> 16 & 255) && img[i + 1] === (c >> 8 & 255) && img[i + 2] === (c & 255))) return false;
+      const j = i - 960 * 4;      // 消したときの色は、窓のすぐ上の壁の色
+      w[5] = 'rgb(' + img[j] + ',' + img[j + 1] + ',' + img[j + 2] + ')';
+      return true;
     });
     return t.canvas;
   }
