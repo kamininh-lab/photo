@@ -558,7 +558,7 @@
     if (t > 70 && t % 3 === 0) { X.shake(3); aura(e, 3); }
     if (t === 104) {      // 活を入れられた二人: 気力が満ちる
       ['kurenai', 'aoi'].forEach(function (k) { var c = p.chars[k]; if (!c.down) c.sp = Math.min(c.maxsp, c.sp + 30); });
-      X.toast(p.who === 'kurenai' ? '紅「上等！　こっちも全力で行くよ！」　― 気力が満ちた' : '蒼「……ええ。目が覚めました」　― 気力が満ちた', p.who === 'kurenai' ? '#ff9ad8' : '#9ae8ff');
+      X.toast(p.who === 'kurenai' ? '紅「上等！　こっちも全力で行くよ！」　― 気力が満ちた' : '蒼「うん。……おかげで、目が覚めたよ」　― 気力が満ちた', p.who === 'kurenai' ? '#ff9ad8' : '#9ae8ff');
       X.fx({ type: 'ring', x: p.x, y: p.y - 17, life: 20, r: 40, col: p.who === 'kurenai' ? '#ff7ad1' : '#7af3ff' });
     }
     if (t >= 112) { go(e, 'idle'); e.cd = 10; e.camCd = Math.min(e.camCd, 60); e.stepCd = 0; e.rushCd = 0; }
