@@ -5,7 +5,7 @@
   // 通常160ms先読み。裏タブでは延長し、長い中断は演奏位置を飛ばす。
   const LOOKAHEAD = 0.16, HIDDEN_AHEAD = 1.25, INTERVAL = 25;
   const SILENT = 0.0001;
-  let ctx = null, master = null, fx = null, music = null, noiseBuffer = null;
+  let ctx = null, master = null, fx = null, music = null, noiseBuffer = null, tapDest = null;
   let compressor = null, current = null, wanted = null, timer = null;
   let muted = false, volume = 0.72;
   const voices = new Set(), graph = [], lastSfx = new Map();
@@ -131,7 +131,7 @@
     for (const node of graph) disconnect(node);
     graph.length = 0;
     if (ctx) ctx.onstatechange = null;
-    ctx = master = compressor = music = fx = noiseBuffer = current = null;
+    ctx = master = compressor = music = fx = noiseBuffer = current = tapDest = null;
     lastSfx.clear();
   }
 
@@ -703,6 +703,12 @@
     debug: () => ({ heat, voices: voices.size, state: ctx ? ctx.state : 'none', bgm: current ? current.name : null, next: current ? current.next : -1 }),      // 確認用
     setMuted: safe(setMuted),
     isMuted: () => muted,
-    setVolume: safe(setVolume)
+    setVolume: safe(setVolume),
+    // LAN の協力プレイ用: 鳴っている音を MediaStream として取り出す（59_net.js が子のパソコンへ送る）
+    tap: safe(() => {
+      init(); if (!ctx || !master || !ctx.createMediaStreamDestination) return null;
+      if (!tapDest) { tapDest = ctx.createMediaStreamDestination(); master.connect(tapDest); }
+      return tapDest.stream;
+    })
   });
 })();

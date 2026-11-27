@@ -138,7 +138,10 @@
   var I = R.input = { down: {}, hit: {}, any: false, pad: false };
   var kdown = {}, latch = {}, touch = {}, sim = {}, padPrev = {}, anyLatch = false;
   ACTIONS.forEach(function (a) { I.down[a] = false; I.hit[a] = false; });
+  function typing(e) { var t = e.target; return !!(t && (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT')); }      // 文字を打つ欄（協力プレイのコード）では、ゲームの操作にしない
+  R.typing = typing;
   window.addEventListener('keydown', function (e) {
+    if (typing(e)) return;
     var a = KEYMAP[e.code];
     if (a) { e.preventDefault(); if (!e.repeat) { latch[a] = true; anyLatch = true; } kdown[e.code] = true; I.usePad = false; showTouch(false); }
     if (R.onGesture) R.onGesture();

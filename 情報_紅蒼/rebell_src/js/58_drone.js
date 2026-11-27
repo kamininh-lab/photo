@@ -7,7 +7,7 @@
   var R = window.REBELL, G = R.game, clamp = R.clamp, rand = R.rand;
   var held = {}, latch = {};
   window.addEventListener('keydown', function (e) {
-    if (!e.code || e.code.indexOf('Numpad') !== 0) return;
+    if (!e.code || e.code.indexOf('Numpad') !== 0 || (R.typing && R.typing(e))) return;
     e.preventDefault();
     if (!e.repeat) latch[e.code] = true;
     held[e.code] = true;
@@ -39,6 +39,9 @@
   function screenY(y) { return y + (G.cam.y || 0); }
 
   R.Drone = {
+    // LAN の協力プレイ（59_net.js）: 子のパソコンで押されたキーを、テンキーと同じように受け取る
+    feed: function (code, down) { if (down && !held[code]) latch[code] = true; held[code] = !!down; },
+    feedReset: function () { held = {}; },
     // 毎フレーム（R.updatePlay から）。X = 50_game.js の部品
     update: function (X) {
       var d = drone(), p = G.pl, i, s;
