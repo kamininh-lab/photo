@@ -1,0 +1,193 @@
+# REBELL のストーリー（あらすじ・全会話・ボス戦の台詞・エンディング）を Word に書き起こす。
+# 会話は 65_talk.js の R.TALKS から、そのまま取り出す。
+import re, io, sys
+from docx import Document
+from docx.shared import Pt, RGBColor, Mm
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
+
+SRC = sys.argv[1]
+OUT = sys.argv[2]
+talk_js = io.open(SRC + r'\js\65_talk.js', encoding='utf-8').read()
+
+# ---- 会話を取り出す ----
+body = talk_js[talk_js.index('R.TALKS = {'):talk_js.index('// 話し手ごとの見た目')]
+TALKS = {}
+for m in re.finditer(r'\n    (\w+): \[(.*?)\n    \]', body, re.S):
+    items = []
+    for it in re.finditer(r"\{ who: '(\w+)'.*?text: \[(.*?)\] \}", m.group(2)):
+        items.append((it.group(1), re.findall(r"'([^']*)'", it.group(2))))
+    TALKS[m.group(1)] = items
+
+NAME = {'kurenai': '紅', 'aoi': '蒼', 'shikaku': '四角', 'kurose': '黒瀬', 'idachi': '井立'}
+COL = {'kurenai': RGBColor(0xD0, 0x2C, 0x86), 'aoi': RGBColor(0x1E, 0x6F, 0xC0), 'shikaku': RGBColor(0xB0, 0x7A, 0x00),
+       'kurose': RGBColor(0x7A, 0x3C, 0xC0), 'idachi': RGBColor(0x14, 0x7A, 0x96)}
+JP = 'Yu Mincho'; JPG = 'Yu Gothic'
+
+doc = Document()
+sec = doc.sections[0]
+sec.page_width, sec.page_height = Mm(210), Mm(297)
+for s in ('left_margin', 'right_margin'): setattr(sec, s, Mm(22))
+sec.top_margin = sec.bottom_margin = Mm(20)
+
+def set_font(style_or_run, name, east):
+    style_or_run.font.name = name
+    rpr = style_or_run.element.get_or_add_rPr() if hasattr(style_or_run.element, 'get_or_add_rPr') else style_or_run._element.get_or_add_rPr()
+    rf = rpr.find(qn('w:rFonts'))
+    if rf is None: rf = OxmlElement('w:rFonts'); rpr.append(rf)
+    rf.set(qn('w:eastAsia'), east); rf.set(qn('w:ascii'), name); rf.set(qn('w:hAnsi'), name)
+
+st = doc.styles['Normal']; set_font(st, JP, JP); st.font.size = Pt(10.5)
+st.paragraph_format.space_after = Pt(4); st.paragraph_format.line_spacing = 1.35
+for lv, sz, col in (('Title', 26, RGBColor(0x3A, 0x14, 0x70)), ('Heading 1', 16, RGBColor(0x3A, 0x14, 0x70)), ('Heading 2', 12.5, RGBColor(0x55, 0x2A, 0x90))):
+    s = doc.styles[lv]; set_font(s, JPG, JPG); s.font.size = Pt(sz); s.font.bold = True; s.font.color.rgb = col
+    s.paragraph_format.keep_with_next = True
+    s.paragraph_format.space_before = Pt(18 if lv == 'Heading 1' else 12 if lv == 'Heading 2' else 0)
+    s.paragraph_format.space_after = Pt(6)
+
+def para(text='', bold=False, size=None, color=None, align=None, italic=False, after=None):
+    p = doc.add_paragraph()
+    if text:
+        r = p.add_run(text); r.bold = bold; r.italic = italic
+        if size: r.font.size = Pt(size)
+        if color: r.font.color.rgb = color
+    if align: p.alignment = align
+    if after is not None: p.paragraph_format.space_after = Pt(after)
+    return p
+
+def note(text):      # 場面の説明（ト書き）
+    p = para(text, color=RGBColor(0x60, 0x60, 0x70), size=9.5)
+    p.paragraph_format.left_indent = Mm(4)
+    return p
+
+def line(who, texts, tag=None):      # 台詞 1 つ: 話し手の名前 + 「台詞」（ゲームの 2 行は改行で）
+    p = doc.add_paragraph()
+    p.paragraph_format.left_indent = Mm(16); p.paragraph_format.first_line_indent = Mm(-16)
+    r = p.add_run(NAME.get(who, who)); r.bold = True; set_font(r, JPG, JPG)
+    if who in COL: r.font.color.rgb = COL[who]
+    p.add_run('\t')
+    p.paragraph_format.tab_stops.add_tab_stop(Mm(16))
+    for i, t in enumerate(texts):
+        if i: p.add_run().add_break()
+        p.add_run(('「' if i == 0 else '　') + t + ('」' if i == len(texts) - 1 else ''))
+    if tag:
+        rr = p.add_run('　' + tag); rr.font.size = Pt(8.5); rr.font.color.rgb = RGBColor(0x80, 0x80, 0x90)
+    return p
+
+def talk(key):
+    for who, texts in TALKS[key]: line(who, texts)
+
+def rule():
+    p = doc.add_paragraph(); pPr = p._p.get_or_add_pPr(); b = OxmlElement('w:pBdr'); bt = OxmlElement('w:bottom')
+    for k, v in (('val', 'single'), ('sz', '6'), ('space', '1'), ('color', 'B8A8E0')): bt.set(qn('w:' + k), v)
+    b.append(bt); pPr.append(b)
+
+# ---- 表紙 ----
+doc.add_paragraph('REBELL ― 紅蒼交錯', style='Title').alignment = WD_ALIGN_PARAGRAPH.CENTER
+para('ストーリー台本', size=14, align=WD_ALIGN_PARAGRAPH.CENTER, color=RGBColor(0x55, 0x2A, 0x90))
+para('交わる運命、ぶつかる色。', size=12, align=WD_ALIGN_PARAGRAPH.CENTER, italic=True)
+para('サイバーパンク 2D ドットアクション　／　キャラクターデザイン・原案：このみ', size=9.5, align=WD_ALIGN_PARAGRAPH.CENTER, color=RGBColor(0x60, 0x60, 0x70))
+para('※ ゲームの現在の版（2026 年 11 月 27 日）の台詞を、そのまま書き起こしたもの。', size=9, align=WD_ALIGN_PARAGRAPH.CENTER, color=RGBColor(0x80, 0x80, 0x90))
+rule()
+
+# ---- 登場人物 ----
+doc.add_heading('登場人物', level=1)
+CHARS = [
+    ('紅（くれない）', '大鎌を振るう少女。明るく元気で、荒々しく踏み込む。「反逆者（REBELL）」と呼ばれる二人の一人。'),
+    ('蒼（あおい）', '刀を閃かせる少女。落ち着いていて、静かな微笑みのまま流れを読む。紅とは性格も戦い方も正反対。'),
+    ('四角 明宏（よすみ あきひろ）', '二人の大鎌と刀を作ったメカニック。通信で二人を支え、道案内と解析を受け持つ。'),
+    ('井立 快晴（いだち かいせい）', '鉄塔のてっぺんで立ちはだかる空手家。《龍》を守る者。「守るために、強くなる」。'),
+    ('黒瀬 龍士（くろせ りゅうじ）', 'カメラを手にする異色の空手使い。正体と目的は謎。学園で二人の腕を試す。'),
+    ('玉龍（ぎょくりゅう）', '紅い月の夜に目覚めた《龍》。玉龍の姫をさらい、学園のいちばん奥に囚えている。'),
+]
+t = doc.add_table(rows=0, cols=2); t.style = 'Table Grid'
+for n, d in CHARS:
+    c = t.add_row().cells; c[0].width = Mm(52); c[1].width = Mm(114)
+    rr = c[0].paragraphs[0].add_run(n); rr.bold = True; set_font(rr, JPG, JPG)
+    c[1].paragraphs[0].add_run(d)
+
+# ---- 序章 ----
+doc.add_heading('序章　あらすじ', level=1)
+note('タイトル画面のあと、黒い画面に一行ずつ浮かび上がる。')
+STORY = ['紅い月が昇る夜。', '目覚めた《龍》が、玉龍の姫をさらっていった。', '', '「反逆者（REBELL）」と呼ばれる二人――', '大鎌を振るう 紅（くれない）。刀を閃かせる 蒼（あおい）。', '', '囚われの姫を、取り戻せ。', '二人は、龍の待つ玉龍学園へ走る。']
+for s in STORY:
+    if not s: para(after=0); continue
+    p = para(s, align=WD_ALIGN_PARAGRAPH.CENTER, after=2, bold=(s == '囚われの姫を、取り戻せ。'), size=(13 if s == '囚われの姫を、取り戻せ。' else None),
+             color=(RGBColor(0xD0, 0x2C, 0x86) if s == '囚われの姫を、取り戻せ。' else None))
+
+# ---- 第一章 ----
+doc.add_heading('第一章　ネオン廃都の水道橋', level=1)
+para('STAGE 1  -  NEON RUINS AQUEDUCT', size=9, color=RGBColor(0x80, 0x80, 0x90))
+doc.add_heading('ステージの前', level=2)
+note('雨の降るネオンの廃都。水道橋の上に機械兵があふれている。四角から通信が入り、武器のおさらいをする。')
+talk('stage1')
+doc.add_heading('ボス戦　重機兵ガーディアン', level=2)
+note('水道橋の終わりで、重機兵ガーディアン（HEAVY GUARDIAN）が道を塞ぐ。会話はなく、倒すとステージクリア。')
+
+# ---- 第二章 ----
+doc.add_heading('第二章　天を衝く鉄塔', level=1)
+para('STAGE 2  -  SKYWARD TOWER', size=9, color=RGBColor(0x80, 0x80, 0x90))
+doc.add_heading('ステージの前', level=2)
+note('学園へ渡る橋は《龍》の結界で塞がれている。雲の上まで続く鉄塔を、てっぺんまで登るしかない。')
+talk('tower')
+doc.add_heading('ボス戦　井立 快晴', level=2)
+note('鉄塔のてっぺん。風の中で、井立が待っている。')
+talk('idachi')
+note('戦いの途中、井立の顔が画面に割り込んで叫ぶ。')
+line('idachi', ['――受けてばかりだと、思うなよ。'], '（突進のとき）')
+line('idachi', ['受けてみろ。', '――蒼天破！'], '（大技のとき）')
+line('idachi', ['守るために、強くなる。', '――ここから先は、本気だ！'], '（本気を出したとき。青い闘気をまとう）')
+line('idachi', ['――また来たか。', '何度でも、受けて立つ。'], '（やられて、やり直したとき）')
+doc.add_heading('井立を倒したあと', level=2)
+talk('idachi_end')
+
+# ---- 第三章 ----
+doc.add_heading('第三章　紅月の空中回廊', level=1)
+para('STAGE 3  -  SKY CORRIDOR', size=9, color=RGBColor(0x80, 0x80, 0x90))
+doc.add_heading('ステージの前', level=2)
+note('鉄塔のてっぺんから見下ろす、一面の雲海。結界の上を飛空艇の航路が通っている。')
+talk('sky')
+doc.add_heading('空中回廊', level=2)
+note('画面は右上へ止まらずに流れていく。飛空艇・エアカー・浮き足場を乗り継いで進む。足を踏み外すと、四角のドローンが拾い上げてくれる（「四角のドローンが拾い上げた！」）。'
+     '最後に大きな飛空艇の甲板に降り立つ。――「着艦！ ― 結界の上を越えた」')
+
+# ---- 第四章 ----
+doc.add_heading('第四章　玉龍学園　紅い月の下で', level=1)
+para('STAGE 4  -  GYOKURYU ACADEMY', size=9, color=RGBColor(0x80, 0x80, 0x90))
+doc.add_heading('ステージの前', level=2)
+note('結界を越えて、玉龍学園に降り立つ。月はさっきより紅い。')
+talk('school')
+doc.add_heading('中ボス戦　黒瀬 龍士', level=2)
+note('学園の途中。カメラを手にした男が、二人の前に現れる。')
+talk('kurose')
+note('戦いの途中、黒瀬の顔が画面に割り込む。')
+line('kurose', ['この拳、見切れるか！'], '（突進のとき）')
+line('kurose', ['遊びは終わりだ。――本気で行くぞ！'], '（本気を出したとき）')
+line('kurose', ['腕を上げたな、二人とも。', 'さて、もう少し本気で行くぞ！'], '（金色の闘気をまとい、動きが速くなるとき）')
+note('このとき、操作している子が気力を満たして答える（画面下の一言）。')
+line('kurenai', ['上等！　こっちも全力で行くよ！'], '（紅のとき）')
+line('aoi', ['うん。……おかげで、目が覚めたよ'], '（蒼のとき）')
+note('黒瀬を倒すと――')
+line('kurose', ['……いい腕だ。二人で、ひとつか'], '（どちらかが倒れているときは「……いい腕だ。その覚悟、見せてもらった」）')
+line('kurose', ['いい顔だ、撮らせてもらった。――行け。姫は、龍の足もとだ'], '（シャッターの光）')
+
+doc.add_heading('ボス戦　玉龍', level=2)
+note('学園のいちばん奥、桜の並木の先。紅い月を背に、《龍》が姿を現す。戦いが始まると、桜吹雪が舞い散る。')
+talk('dragon')
+note('龍が岸に降りて羽を休めると――「玉龍が羽を休めている…今だ！」')
+note('龍の体力が半分を切ると――「玉龍が怒りに燃えている…！」（風が強まり、桜吹雪に紅い花びらが混じる）')
+talk('dragon_rage')
+doc.add_heading('玉龍を倒したあと', level=2)
+talk('dragon_end')
+
+# ---- 終章 ----
+doc.add_heading('終章　エンディング', level=1)
+note('このみさんの原画とともに。')
+for s in ['龍は倒れ、囚われの姫は解き放たれた。', '月は沈み、街に朝の色が戻る。', '――ふたりの反逆は、まだ始まったばかり。']:
+    para(s, align=WD_ALIGN_PARAGRAPH.CENTER, size=12, after=4)
+para()
+para('THANK YOU FOR PLAYING', align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, color=RGBColor(0x1E, 0x6F, 0xC0))
+
+doc.save(OUT)
+print('saved', OUT, {k: len(v) for k, v in TALKS.items()})
