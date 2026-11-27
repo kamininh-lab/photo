@@ -366,12 +366,32 @@
     if (bar % 4 === 0 && beat === 0) rin();
   }
 
+  // スタイルランクが高い間だけ、曲に重なる音（heat = 1: ランク S / 2: 紅蒼。ゲーム側から setHeat で切り替える）。
+  //   1: 和音を 16 分音符で駆け上がる高い分散和音と、裏拍の細かいハイハット
+  //   2: さらに、旋律を 1 オクターブ上で重ね、2 拍・4 拍に手拍子ふうの音、小節の頭にきらめき
+  // 曲そのものは変えず、同じ拍に音を足すだけなので、切り替わっても曲は途切れない
+  let heat = 0;
+  function overdrive(g, bar, beat, chord, melody, eighth, t) {
+    if (!heat || g.name === 'title' || g.name === 'gameover') return;
+    const up = [0, 1, 2, 1, 2, 1, 0, 2, 1, 2, 0, 1, 2, 1, 2, 0][beat], oct = beat % 8 >= 4 ? 36 : 24;
+    voice(g, t, eighth * 0.55, { freq: hz(chord[up] + oct), wave: 'triangle', vol: heat > 1 ? 0.06 : 0.048, attack: 0.002, hold: 0.08, cut: 7000, cutTo: 2400 });
+    if (beat % 2 === 1) hiss(g, t, 0.03, 0.04, 8000);
+    if (heat < 2) return;
+    if (beat % 2 === 0 && melody && melody[beat / 2] != null) {
+      voice(g, t, eighth * 0.9, { freq: hz(melody[beat / 2] + 12), wave: 'sawtooth', vol: 0.04, attack: 0.004, hold: 0.3, cut: 5200, cutTo: 2600, detune: 6 });
+    }
+    if (beat === 4 || beat === 12) { hiss(g, t, 0.07, 0.11, 1900, 'bandpass', 2600); hiss(g, t + 0.012, 0.05, 0.07, 2300, 'bandpass', 3000); }
+    if (beat === 0) [0, 1, 2].forEach(i => voice(g, t + i * 0.03, 0.5, { freq: hz(chord[i] + 48), wave: 'sine', vol: 0.03, attack: 0.002, hold: 0.05, cut: 9000 }));
+  }
+  function setHeat(v) { heat = v >= 2 ? 2 : v >= 1 ? 1 : 0; }
+
   function arrange(g, index, t) {
     if (!g.score.loop) { jingle(g, index, t); return; }
     const s = index % 256, bar = Math.floor(s / 16), beat = s % 16;
     const b = bar >= 8, chord = g.score.harmony[bar], root = chord[0];
     const eighth = 60 / g.score.bpm / 2, barTime = eighth * 8;
     const name = g.name, melody = g.score.melody[bar];
+    overdrive(g, bar, beat, chord, melody, eighth, t);
     if (name === 'midboss') { solemn(g, bar, beat, b, chord, melody, eighth, barTime, t); return; }
     if (beat === 0) pad(g, t, chord, barTime * 0.94, b);
     if (name === 'title') {
@@ -678,6 +698,9 @@
     playBgm: safe(playBgm),
     stopBgm: safe(stopBgm),
     sfx: safe(sfx),
+    setHeat: safe(setHeat),
+    getHeat: () => heat,
+    debug: () => ({ heat, voices: voices.size, state: ctx ? ctx.state : 'none', bgm: current ? current.name : null, next: current ? current.next : -1 }),      // 確認用
     setMuted: safe(setMuted),
     isMuted: () => muted,
     setVolume: safe(setVolume)

@@ -2407,7 +2407,13 @@ var s = G.style; if (!s) return;
 if (s.pop > 0) s.pop--;
 if (s.word && ++s.word.t > 50) s.word = null;
 if (s.pts > 0) { s.pts = Math.max(0, s.pts - (G.comboT > 0 ? 0.1 : 0.55) - s.rank * 0.03); s.rank = styleRank(s.pts); }
+R.heat(s.rank >= 6 ? 2 : s.rank >= 5 ? 1 : 0);
 }
+R.heat = function (h) {
+if (G.heat === h) return;
+G.heat = h;
+try { if (window.REBELL_AUDIO && window.REBELL_AUDIO.setHeat) window.REBELL_AUDIO.setHeat(h); } catch (e) { }
+};
 function finishFx(e, boss) {
 if (boss) {
 G.hitstop = Math.max(G.hitstop, 22); G.invert = 10; G.invertCd = 60; G.flash = Math.max(G.flash, 0.5); shake(12); G.slow = Math.max(G.slow, 80);
@@ -7269,6 +7275,7 @@ I.poll();
 var ok = I.hit.ok || I.hit.jump || I.hit.attack;
 if (I.hit.mute && window.REBELL_AUDIO) { try { window.REBELL_AUDIO.setMuted(!window.REBELL_AUDIO.isMuted()); } catch (e) { } }
 if (I.hit.bloom) bloom = !bloom;
+if (G.state !== 'play' && G.state !== 'pause' && R.heat) R.heat(0);
 switch (G.state) {
 case 'logo':
 G.t++; G.stateT++;

@@ -289,7 +289,14 @@
     if (s.pop > 0) s.pop--;
     if (s.word && ++s.word.t > 50) s.word = null;
     if (s.pts > 0) { s.pts = Math.max(0, s.pts - (G.comboT > 0 ? 0.1 : 0.55) - s.rank * 0.03); s.rank = styleRank(s.pts); }
+    R.heat(s.rank >= 6 ? 2 : s.rank >= 5 ? 1 : 0);
   }
+  // ランク S 以上の間、曲に音が重なる（10_codex_audio.js の overdrive）。遊んでいる間だけ。会話・ポーズ・クリアでは 90_main.js が 0 に戻す
+  R.heat = function (h) {
+    if (G.heat === h) return;
+    G.heat = h;
+    try { if (window.REBELL_AUDIO && window.REBELL_AUDIO.setHeat) window.REBELL_AUDIO.setHeat(h); } catch (e) { }
+  };
   // とどめの演出: 倒した一撃だけ長く止め、画面の色を一瞬だけ反転させる。ボスは、もっと長く・強く
   function finishFx(e, boss) {
     if (boss) {

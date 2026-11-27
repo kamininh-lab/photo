@@ -83,6 +83,7 @@
     var ok = I.hit.ok || I.hit.jump || I.hit.attack;
     if (I.hit.mute && window.REBELL_AUDIO) { try { window.REBELL_AUDIO.setMuted(!window.REBELL_AUDIO.isMuted()); } catch (e) { } }
     if (I.hit.bloom) bloom = !bloom;
+    if (G.state !== 'play' && G.state !== 'pause' && R.heat) R.heat(0);      // 遊んでいる間だけ、高ランクの音を曲に重ねる
     switch (G.state) {
       case 'logo':      // 起動時のロゴ。キーやクリックで飛ばせる
         G.t++; G.stateT++;
