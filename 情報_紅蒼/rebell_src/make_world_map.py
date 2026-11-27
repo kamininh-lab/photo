@@ -6,7 +6,7 @@
   左 = 市街地（甲突川・鹿児島中央駅・天文館・城山・鹿児島駅）、中央 = 錦江湾、右 = 桜島。
   建物・台地・桜島は、高さのぶんだけ上へずらして重ねて描く（立体の模型を、少し南から見下ろした見た目）。
 ステージの場所:
-  第一章の水道橋 = 左下の台地から鹿児島中央駅へ渡る高架の水路、第二章の鉄塔 = 鹿児島中央駅、
+  第一章の水道橋 = 左下の台地から甲突川を越えて城山のふもとへ渡る高架の水路、第二章の鉄塔 = 城山の上、
   第三章の航路 = 鉄塔のてっぺんから右上へ（城山の上を越えて学園の真上まで）、第四章の学園 = 北の玉龍学園（紅い結界のドーム）。
 道のり・マス・ピン・地名の文字は、ここでは描かない（ゲームの中で描く）。
 道のりの座標は 62_map.js の PATH と合わせてある（この下の AQ・TX/TY/TT・ROUTE・DOME を直したら、PATH も直す）。
@@ -33,9 +33,9 @@ def PP(pts):
 
 
 # ---------- ステージの場所（62_map.js の PATH と合わせる） ----------
-AQ = [(6, 532), (215, 420)]                     # 第一章: 水道橋（左下の台地 → 鹿児島中央駅）
-TX, TY, TT = 215, 420, 210                      # 第二章: 鉄塔（足もと x, y, てっぺんの y）
-ROUTE = [(215, 210), (262, 160), (322, 116), (392, 78), (446, 54), (480, 46)]      # 第三章: 飛空艇の航路
+AQ = [(6, 532), (297, 262)]                     # 第一章: 水道橋（左下の台地 → 甲突川を越えて城山のふもと）
+TX, TY, TT = 297, 262, 100                      # 第二章: 鉄塔（城山の上）（足もと x, y, てっぺんの y）
+ROUTE = [(297, 100), (340, 70), (395, 48), (446, 38), (480, 46)]      # 第三章: 飛空艇の航路
 DOME = (480, 124, 66, 34, 58)                   # 第四章: 学園の結界（中心 x, y, 横の半径, 縦の半径, 高さ）
 
 
@@ -543,7 +543,7 @@ for (x0, y0, ux, uy) in walk(AQ, 26):
     d.point((x0 + 4, y0 - 5), fill=PINK + (255,)); ld.point((x0 + 4, y0 - 5), fill=PINK + (230,))
 rl, rd = new_layer()      # 雨（第一章のあたりだけ）
 for _ in range(210):
-    x0 = rnd.randint(-30, 300); y0 = rnd.randint(380, 540) - (300 - x0) * 0.1
+    x0 = rnd.randint(-30, 300); y0 = rnd.randint(300, 540) - x0 * 0.3 + 60
     rd.line([(x0, y0), (x0 + 3, y0 + 8)], fill=(160, 195, 255, 62))
 comp(rl)
 
@@ -618,7 +618,7 @@ comp(sm.filter(ImageFilter.GaussianBlur(1.6)))
 
 # ---------- 第三章: 雲と、飛空艇の航路 ----------
 cl, cd = new_layer()
-rpts = walk(ROUTE[:5], 5)
+rpts = walk(ROUTE[:4], 5)
 for _ in range(64):      # 航路のすぐ下に、雲の帯
     px, py, ux, uy = rnd.choice(rpts); px += rnd.randint(-12, 12); py += 20 + rnd.randint(-8, 9); r0 = rnd.randint(12, 30)
     cd.ellipse([px - r0, py - r0 * 0.36, px + r0, py + r0 * 0.36], fill=(128, 104, 196, 50))
@@ -652,7 +652,7 @@ for yy in (TT - 24, TT + 35, TT + 105, TT + 175):
 comp(gl.filter(ImageFilter.GaussianBlur(2.5)))
 cl2, cd2 = new_layer()      # 塔にかかる雲の輪
 for _ in range(22):
-    px = TX + rnd.randint(-46, 46); py = 304 + rnd.randint(-9, 9); r0 = rnd.randint(12, 26)
+    px = TX + rnd.randint(-46, 46); py = int(TT + (TY - TT) * 0.5) + rnd.randint(-9, 9); r0 = rnd.randint(12, 26)
     cd2.ellipse([px - r0, py - r0 * 0.34, px + r0, py + r0 * 0.34], fill=(190, 166, 250, 60))
 comp(cl2.filter(ImageFilter.GaussianBlur(2)))
 
@@ -668,7 +668,7 @@ def airship(x, y, s=1.0, big=False):
         d.line([(x - w0 + 4, y + 2), (x + w0 - 4, y + 2)], fill=PINK + (230,))
 
 
-for (x0, y0) in ((290, 152), (364, 106), (424, 76)):
+for (x0, y0) in ((330, 66), (392, 40), (440, 30)):
     airship(x0, y0)
 bm, bmd = new_layer(); hc = dome_pt(math.radians(76), 0)[1]
 bmd.polygon([(cx - 6, 54), (cx + 6, 54), (cx + 13, hc), (cx - 13, hc)], fill=(120, 230, 255, 46)); comp(bm)      # 飛空艇から結界の切れ目へ
