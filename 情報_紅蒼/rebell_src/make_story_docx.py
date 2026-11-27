@@ -88,7 +88,7 @@ doc.add_paragraph('REBELL ― 紅蒼交錯', style='Title').alignment = WD_ALIGN
 para('ストーリー台本', size=14, align=WD_ALIGN_PARAGRAPH.CENTER, color=RGBColor(0x55, 0x2A, 0x90))
 para('交わる運命、ぶつかる色。', size=12, align=WD_ALIGN_PARAGRAPH.CENTER, italic=True)
 para('サイバーパンク 2D ドットアクション　／　キャラクターデザイン・原案：このみ', size=9.5, align=WD_ALIGN_PARAGRAPH.CENTER, color=RGBColor(0x60, 0x60, 0x70))
-para('※ ゲームの現在の版（2026 年 11 月 27 日）の台詞を、そのまま書き起こしたもの。', size=9, align=WD_ALIGN_PARAGRAPH.CENTER, color=RGBColor(0x80, 0x80, 0x90))
+para('※ ゲームの現在の版（2026 年 11 月 28 日）の台詞を、そのまま書き起こしたもの。', size=9, align=WD_ALIGN_PARAGRAPH.CENTER, color=RGBColor(0x80, 0x80, 0x90))
 rule()
 
 # ---- 登場人物 ----
@@ -116,6 +116,15 @@ for s in STORY:
     if not s: para(after=0); continue
     p = para(s, align=WD_ALIGN_PARAGRAPH.CENTER, after=2, bold=(s == '囚われの姫を、取り戻せ。'), size=(13 if s == '囚われの姫を、取り戻せ。' else None),
              color=(RGBColor(0xD0, 0x2C, 0x86) if s == '囚われの姫を、取り戻せ。' else None))
+
+# ---- 全体マップ ----
+doc.add_heading('全体マップ　――章の進み方', level=1)
+note('あらすじのあと、街を上空から見た全体マップが出る。四角が通信で送ってくる作戦図という見立て。'
+     '道のりは、水道橋の上 → 鉄塔の足もと → 鉄塔のてっぺん → 雲の上の航路 → 結界の中の学園、と続く。')
+note('紅と蒼が道の入口から第一章のマスまで走ってくる。マスの上で決定を押すと、その章が「ステージの前」の会話から始まる。')
+note('章をクリアするとマップへ戻り、「新しい道が開いた！」と出て、二人が次のマスまで走る。'
+     'クリアした章は選び直して何度でも遊べ、マスには評価（S〜D）の印がつく。まだ行けないマスの名前は「？？？」。'
+     '第四章をクリアしたときだけ、マップをはさまずに終章へ進む。')
 
 # ---- 第一章 ----
 doc.add_heading('第一章　ネオン廃都の水道橋', level=1)
@@ -160,7 +169,7 @@ note('画面は右上へ止まらずに流れていく。飛空艇・エアカ�
 doc.add_heading('着艦したあと', level=2)
 note('飛空艇は、学園の真上に浮かんでいる。')
 talk('sky_end')
-note('会話が終わると、ステージクリア。二人はデッキから飛び降りて、第四章へ。')
+note('会話が終わると、ステージクリア。全体マップに戻り、学園のマスへの道が開く。二人はデッキから飛び降りて、第四章へ。')
 
 # ---- 第四章 ----
 doc.add_heading('第四章　玉龍学園　紅い月の下で', level=1)
