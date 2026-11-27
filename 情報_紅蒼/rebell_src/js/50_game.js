@@ -1578,7 +1578,7 @@
     else G.stg.retry++;
     if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; G.tHint = {}; G.idaMet = false; G.idaHint = null; G.dragonMet = false; G.dragonRageMet = false; }
     if (!fromCheckpoint) G.guardMet = false;
-    G.guardWait = null; G.guardEnd = false;
+    G.guardWait = null; G.guardEnd = false; G.endTalked = false;
     G.dragonEnd = false;      // 中ボスを倒したか・もう会ったか（やり直しても覚えておく。ステージを最初から始めるときだけ戻す）
     S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });
     S.items.forEach(function (q) { G.items.push({ type: q[0], x: q[1], y: q[2], t: 0, open: false }); });
@@ -1675,7 +1675,10 @@
       } else { G.bossDefeated = true; G.stateT = 0; summit(p); }
     }
     if (G.bossIntro > 0) G.bossIntro--;
-    if (G.bossDefeated) { G.stateT++; if (G.stateT === 90) { G.arena = null; R.bgm('clear'); G.state = 'clear'; G.stateT = 0; } }
+    if (G.bossDefeated) {
+      G.stateT++;
+      if (G.stateT === 50 && S.endTalk && !G.endTalked && R.TALKS && R.TALKS[S.endTalk]) { G.endTalked = true; G.shots = []; R.beginTalk(S.endTalk, { mid: true }); return; }      // ゴールのあとの会話（ステージ 3）。終わると、少し間をおいてクリア
+      if (G.stateT === 90) { G.arena = null; R.bgm('clear'); G.state = 'clear'; G.stateT = 0; } }
   }
   // ステージ 2 のボス（井立）が、会話を終えて去ったあと（53_idachi.js から）: 登頂して、ステージクリアへ
   R.idachiDone = function (e) {

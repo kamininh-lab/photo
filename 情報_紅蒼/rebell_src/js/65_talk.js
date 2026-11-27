@@ -89,7 +89,19 @@
       { who: 'kurenai', face: 'joy', pose: 'event', text: ['高いのは、もう慣れっこ！……たぶん！', 'よーし、全部まとめて乗り継いじゃおう！'] },
       { who: 'aoi', face: 'joy', pose: 'stance', text: ['右上へ、まっすぐ。', 'ふふっ、流れに乗っていこう、紅。'] }
     ],
-    // ステージ 4（玉龍学園）の前: 鉄塔から結界を越えて降り立つ。《龍》はもうすぐそこにいる、と四角が知らせる
+    // ステージ 3（空中回廊）のゴール、飛空艇のデッキに降り立ったあと（50_game.js の updGoal から）。終わると、ステージクリア。
+    //   飛空艇は学園の真上。デッキから飛び降りるところで終わり、ステージ 4 の前の会話「――よっ、と！　着地成功！」へつながる
+    sky_end: [
+      { who: 'kurenai', face: 'joy', text: ['着艦ーっ！　ぜんぶ乗り継いだよ！', 'へへっ、高いところ、もう怖くないもんね！'] },
+      { who: 'aoi', face: 'joy', text: ['ふふっ、さっきは『たぶん』って言ってたのに。', '……でも、ほんとうに、よくがんばったね。'] },
+      { who: 'shikaku', face: 'smile', text: ['二人とも、おつかれさま。航路は、ここで終わりだよ。', 'その飛空艇は、いま学園の真上にいる。'] },
+      { who: 'aoi', face: 'normal', text: ['……下に見えるのが、玉龍学園。', '月の光が、あそこだけ紅く濁ってる。'] },
+      { who: 'kurenai', face: 'silly', text: ['えっ、ここから降りるの！？　階段とか……', '……ないよね。うん、知ってた！'] },
+      { who: 'shikaku', face: 'serious', text: ['結界は、この真下で途切れてる。', 'デッキの端から飛び降りれば、学園の中に入れる。'] },
+      { who: 'aoi', face: 'shy', text: ['姫さま、もうすぐだね。', '……紅、手、つなぐ？'] },
+      { who: 'kurenai', face: 'joy', pose: 'event', text: ['へへっ、つながなくても平気！……でも、つなぐ！', 'せーのっ！'] }
+    ],
+    // ステージ 4（玉龍学園）の前:鉄塔から結界を越えて降り立つ。《龍》はもうすぐそこにいる、と四角が知らせる
     school: [
       { who: 'kurenai', face: 'joy', text: ['――よっ、と！　着地成功！', 'ここが玉龍学園かぁ！'] },
       { who: 'aoi', face: 'normal', text: ['月が、さっきより紅い……。', '空気が重いね。何かが、すぐ近くにいる。'] },
@@ -195,12 +207,12 @@
   //   opt.vs = 向かい合っている相手（中ボス）。ステージの途中の会話で、終わったらそのまま戦いに戻る
   R.beginTalk = function (key, opt) {
     var C = G.pl.chars, lines = R.TALKS[key].filter(function (ln) { return !(C[ln.who] && C[ln.who].down); });      // 戦闘不能の子の台詞は飛ばす
-    G.talk = { key: key, lines: lines, i: 0, t: 0, T: 0, inT: 0, outT: -1, full: false, prev: null, vs: (opt && opt.vs) || null };
+    G.talk = { key: key, lines: lines, i: 0, t: 0, T: 0, inT: 0, outT: -1, full: false, prev: null, vs: (opt && opt.vs) || null, mid: !!(opt && opt.mid) };      // mid = 相手のいない、ステージの途中・終わりの会話（二人が向かい合って話す）
     G.state = 'talk'; G.stateT = 0;
   };
   function leave(tk) { tk.outT = 0; tk.prev = null; R.snd('switch'); }
   function finish() {
-    var vs = G.talk.vs;
+    var vs = G.talk.vs || G.talk.mid;
     G.pl.animT = G.talk.T;      // 立ち姿の呼吸を、会話中の続きから
     G.talk = null; G.state = 'play'; G.stateT = 0;
     if (!vs) R.openStage();     // ステージの前の会話なら、ここで章の題と曲
@@ -253,8 +265,9 @@
       actor(act, kx, fc, 0, 0);
       return;
     }
-    actor('aoi', kx + GAP, -1, 40, GAP + 34);      // 蒼を先に描く（跳び去るとき、紅の後ろを通る）
-    actor('kurenai', kx, 1, 0, 0);
+    if (tk.mid) kx = Math.min(kx, cam + R.W - GAP - 24);      // ステージの終わりの会話: 蒼が画面の右へはみ出さないように
+    if (!(tk.mid && p.chars.aoi.down)) actor('aoi', kx + GAP, -1, 40, GAP + 34);      // 蒼を先に描く（跳び去るとき、紅の後ろを通る）
+    if (!(tk.mid && p.chars.kurenai.down)) actor('kurenai', kx, 1, 0, 0);
   };
   // 中ボスの大きな絵（顔とカメラが入るように、上寄りを切り取る）
   function drawPortrait(g, x, y, w, h) {
