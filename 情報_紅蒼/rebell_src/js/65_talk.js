@@ -49,6 +49,18 @@
       { who: 'aoi', face: 'joy', pose: 'stance', text: ['ふふっ、紅らしいね。', '私が流れを読むから、合わせていこう。'] },
       { who: 'kurenai', face: 'anger', pose: 'stance', text: ['よーし、まずはこいつから！', '行っくよー、蒼！'] }
     ],
+    // 重機兵ガーディアンを倒したあと（50_game.js の updBossTrigger から）。終わると、ステージクリア。
+    //   水道橋はここで終わり。四角が、この先の鉄塔へ向かうよう伝える（くわしい事情は、ステージ 2 の前の会話で）
+    guard_end: [
+      { who: 'kurenai', face: 'joy', text: ['やったー！　門番、撃破！', 'へへっ、ぎりぎりの反撃、決まったでしょ？'] },
+      { who: 'aoi', face: 'joy', text: ['うん、すごかったよ、紅。', '息、ぴったりだったね。'] },
+      { who: 'shikaku', face: 'smile', text: ['二人とも、おつかれさま。武器の具合はどう？', '……刃こぼれなし。さすが、ぼくの作品だね。'] },
+      { who: 'kurenai', face: 'silly', text: ['四角、ちょっと自分のこと褒めすぎじゃない？', 'でも、ありがと！'] },
+      { who: 'aoi', face: 'normal', text: ['水道橋は、ここで終わり。', '学園までは、まだ遠いね。'] },
+      { who: 'shikaku', face: 'serious', text: ['この先に、空まで届く鉄塔がある。', '学園へ行く道は、そこにつながってる。'] },
+      { who: 'kurenai', face: 'joy', pose: 'event', text: ['鉄塔かぁ……よーし、どんどん行こう！', '待っててね、姫さま！'] },
+      { who: 'aoi', face: 'joy', pose: 'stance', text: ['ふふっ、うん。行こう、紅。'] }
+    ],
     // ステージ 2（鉄塔）の前: 見上げるほど高い塔を前に二人がためらい、四角が通信で励ます
     tower: [
       { who: 'kurenai', face: 'silly', text: ['うわー……てっぺん、見えない！', 'これ、雲の上まで続いてるんじゃない？'] },

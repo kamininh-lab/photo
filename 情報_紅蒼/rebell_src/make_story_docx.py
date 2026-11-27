@@ -125,7 +125,10 @@ talk('stage1')
 doc.add_heading('ボス戦　重機兵ガーディアン', level=2)
 note('水道橋の終わり。重機兵ガーディアン（HEAVY GUARDIAN）が、地響きを立てて歩いてくる。')
 talk('guard')
-note('会話のあと「WARNING　重機兵ガーディアン」の帯が出て、戦いが始まる。倒すとステージクリア。')
+note('会話のあと「WARNING　重機兵ガーディアン」の帯が出て、戦いが始まる。')
+doc.add_heading('重機兵を倒したあと', level=2)
+talk('guard_end')
+note('会話が終わると、ステージクリア。')
 
 # ---- 第二章 ----
 doc.add_heading('第二章　天を衝く鉄塔', level=1)

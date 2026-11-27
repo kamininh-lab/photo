@@ -1578,7 +1578,7 @@
     else G.stg.retry++;
     if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; G.tHint = {}; G.idaMet = false; G.idaHint = null; G.dragonMet = false; G.dragonRageMet = false; }
     if (!fromCheckpoint) G.guardMet = false;
-    G.guardWait = null;
+    G.guardWait = null; G.guardEnd = false;
     G.dragonEnd = false;      // 中ボスを倒したか・もう会ったか（やり直しても覚えておく。ステージを最初から始めるときだけ戻す）
     S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });
     S.items.forEach(function (q) { G.items.push({ type: q[0], x: q[1], y: q[2], t: 0, open: false }); });
@@ -1716,6 +1716,8 @@
       G.stateT++;
       // 龍を倒したあと: 紅・蒼・四角の会話をはさんでから、ステージクリアへ（会話が終わると stateT は 0 から数え直す）
       if (G.stateT === 40 && b.type === 'dragon' && !G.dragonEnd && R.TALKS && R.TALKS.dragon_end) { G.dragonEnd = true; G.shots = []; R.beginTalk('dragon_end', { vs: G.boss || { x: p.x + 60 } }); return; }
+      // 重機兵を倒したあとも同じように、会話をはさんでからステージクリアへ
+      if (G.stateT === 40 && b.type === 'guard' && !G.guardEnd && R.TALKS && R.TALKS.guard_end) { G.guardEnd = true; G.shots = []; R.beginTalk('guard_end', { vs: { x: G.boss ? G.boss.x : p.x + 60 } }); return; }
       if (G.stateT === 70) { G.arena = null; R.bgm('clear'); G.state = 'clear'; G.stateT = 0; }
     }
   }
