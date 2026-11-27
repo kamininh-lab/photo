@@ -1,5 +1,5 @@
-// 全体マップ（ステージを選ぶ画面）。街を上空から見下ろした下絵（09_map_art.js。make_world_map.py が描く）の上に、
-// 道のりのマス・ステージのマス・紅と蒼を描く。画面は 1920x1080 の仮想座標（HUD と同じ。下絵の 1 ドット = 2）。
+// 全体マップ（ステージを選ぶ画面）。サイバーパンクの鹿児島市を、北を上にして見下ろした下絵（09_map_art.js。make_world_map.py が描く）の上に、
+// 地名・道のりのマス・ステージのマス・紅と蒼を描く。画面は 1920x1080 の仮想座標（HUD と同じ。下絵の 1 ドット = 2）。
 //   ← → （↑ ↓ でも）… となりのステージのマスへ、道のりに沿って走る（行けるのは、クリアしたステージと、その次まで）
 //   決定            … いまいるマスのステージを始める（ステージの前の会話から）
 // 流れ: はじめから → マップ（道の入口から第一章のマスへ走ってくる）→ 決定でステージ → クリア → マップ（次のマスへの道が開き、自動で走っていく）
@@ -9,15 +9,26 @@
   var R = window.REBELL, G = R.game, U = R.UI, T = U.T, panel = U.panel, PI = Math.PI, clamp = R.clamp;
   var PINK = '#ff4fb0', CYAN = '#37e6ff', GOLD = '#ffd36a';
   var img = null; if (window.REBELL_MAP) { img = new Image(); img.src = window.REBELL_MAP; }
-  // 道のり（下絵の座標）: 水道橋の上 → 鉄塔の足もと → てっぺん → 雲の上の航路 → 学園。make_world_map.py の絵と合わせてある
-  var PATH = [[30, 445], [120, 432], [150, 427], [250, 412], [380, 400], [470, 392], [470, 192], [540, 142], [640, 124], [740, 130], [800, 168]];
-  var NODE = [2, 5, 6, 10];      // ステージのマス（PATH の何番目か）
+  // 道のり（下絵の座標）: 水道橋の上（左下の台地 → 鹿児島中央駅）→ 鉄塔の足もと → てっぺん → 城山の上を越える航路 → 学園の真上の飛空艇 → 学園。
+  //   make_world_map.py の絵（AQ・TX/TY/TT・ROUTE・DOME）と合わせてある
+  var PATH = [[6, 532], [52, 507], [100, 482], [156, 452], [215, 420], [215, 210], [262, 160], [322, 116], [392, 78], [446, 54], [480, 46], [480, 126]];
+  var NODE = [2, 4, 5, 11];      // ステージのマス（PATH の何番目か）
   // マスの横に出す短い名前（dx, dy = マスからのずれ）と、下の説明
   var INFO = [
     { name: '水道橋', dx: 0, dy: 74, desc: '雨の降るネオンの廃都。機械兵のうろつく水道橋を渡り、門番を倒せ。' },
-    { name: '鉄塔', dx: -110, dy: 20, desc: '学園への橋は、結界の中。雲の上まで続く鉄塔を、てっぺんまで登れ。' },
-    { name: '空中回廊', dx: -150, dy: -10, desc: '止まらない飛空艇の航路。乗り継いで、結界の上を越えろ。' },
+    { name: '鉄塔', dx: 0, dy: 76, desc: '学園への橋は、結界の中。雲の上まで続く鉄塔を、てっぺんまで登れ。' },
+    { name: '空中回廊', dx: 150, dy: 16, desc: '止まらない飛空艇の航路。乗り継いで、結界の上を越えろ。' },
     { name: '玉龍学園', dx: 0, dy: 80, desc: '紅い月の下、桜の並木の奥で《龍》が待つ。姫を取り戻せ。' }
+  ];
+  // 地名（仮想座標。下絵には文字を描かず、ここで重ねる）: [文字, x, y, 大きさ, 色, ローマ字]
+  var PLACES = [
+    ['桜島', 1650, 690, 40, '#ffc2d0', 'SAKURAJIMA'],
+    ['錦江湾', 1380, 640, 32, '#9fe9ff', 'KINKO BAY'],
+    ['城山', 622, 524, 24, '#b6f5d8'],
+    ['天文館', 822, 716, 24, '#ffd0ee'],
+    ['甲突川', 300, 262, 22, '#9fe9ff'],
+    ['鹿児島中央駅', 276, 792, 22, '#d8d0ff'],
+    ['鹿児島駅', 1000, 420, 22, '#d8d0ff']
   ];
   var RANKS = 'DCBAS', SPEED = 4.6, STEP = 21;
   var LEN = [0], i;
@@ -82,6 +93,12 @@
     g.save();
     g.imageSmoothingEnabled = false;
     if (img && img.complete && img.naturalWidth) g.drawImage(img, 0, 0, 1920, 1080); else { g.fillStyle = '#140a30'; g.fillRect(0, 0, 1920, 1080); }
+    for (k = 0; k < PLACES.length; k++) {      // 地名（道のりやマスの下になるよう、先に描く）
+      p = PLACES[k]; g.globalAlpha = 0.92;
+      T(g, p[0], p[1], p[2], p[3], p[4], 'center', U.font, '#0a0624', 6);
+      if (p[5]) T(g, p[5], p[1], p[2] + Math.round(p[3] * 0.62), Math.round(p[3] * 0.46), p[4], 'center', U.font, '#0a0624', 4);
+      g.globalAlpha = 1;
+    }
     // 道のり: 開いているところまでは光る線、その先は暗い点線
     g.lineCap = 'round'; g.lineJoin = 'round';
     function trace(d0, d1) { g.beginPath(); for (var d = d0; d <= d1 + 0.01; d += 6) { q = at(Math.min(d, d1)); if (d === d0) g.moveTo(q[0], q[1]); else g.lineTo(q[0], q[1]); } q = at(d1); g.lineTo(q[0], q[1]); }
@@ -90,7 +107,7 @@
     g.lineWidth = 22; g.strokeStyle = 'rgba(255,79,176,.16)'; trace(0, lit); g.stroke();
     g.globalCompositeOperation = 'source-over';
     g.lineWidth = 8; g.strokeStyle = '#1a0f3a'; trace(0, lit); g.stroke();
-    var lg = g.createLinearGradient(60, 900, 1600, 300); lg.addColorStop(0, PINK); lg.addColorStop(0.55, GOLD); lg.addColorStop(1, CYAN);
+    var lg = g.createLinearGradient(20, 1060, 960, 100); lg.addColorStop(0, PINK); lg.addColorStop(0.55, GOLD); lg.addColorStop(1, CYAN);
     g.lineWidth = 4; g.strokeStyle = lg; trace(0, lit); g.stroke();
     // 小さなマス
     for (k = 0; k < DOTS.length; k++) {
@@ -140,7 +157,7 @@
     else if ((t >> 4) % 2) T(g, 'NEW !', 1838, 950, 40, PINK, 'right', U.font, '#120a30', 6);
     if (!moving && m.wait <= 0 && (t >> 5) % 2 === 0) T(g, 'Enter / Space ： 出発', 1838, 1040, 28, '#ffffff', 'right', U.font, '#120a30', 5);
     T(g, '← → ： マスを移動', 64, 190, 26, '#d8d0ff', 'left', U.font, '#120a30', 5);
-    if (m.newT > 0 && m.wait <= 0 && m.newT > 60) T(g, '新しい道が開いた！', 960, 220, 54, (t >> 3) % 2 ? '#ffffff' : GOLD, 'center', U.font, '#120a30', 9);
+    if (m.newT > 0 && m.wait <= 0 && m.newT > 60) T(g, '新しい道が開いた！', 960, 580, 54, (t >> 3) % 2 ? '#ffffff' : GOLD, 'center', U.font, '#120a30', 9);
     if (t < 24) { g.fillStyle = 'rgba(0,0,0,' + (1 - t / 24) + ')'; g.fillRect(0, 0, 1920, 1080); }      // 暗い画面から現れる
     g.restore();
   };
