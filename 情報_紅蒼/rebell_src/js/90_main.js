@@ -75,6 +75,7 @@
       if (G.titleFade > 0) { F.fillStyle = 'rgba(0,0,0,' + Math.min(1, G.titleFade / 36) + ')'; F.fillRect(0, 0, 1920, 1080); }      // ロゴのあと、暗い画面から現れる
     }
     else if (st === 'intro') R.drawIntro(F);
+    else if (st === 'map') R.drawMap(F);
     else if (st === 'ending') R.drawEnding(F);
   }
 
@@ -100,6 +101,9 @@
         G.t++; G.stateT++;
         if ((ok && G.stateT > 20) || R.introDone()) { R.snd('select'); R.newGame(); }
         break;
+      case 'map':       // 全体マップ（62_map.js）。マスを移動して、決定でステージを始める
+        G.t++; G.stateT++; R.updateMap(ok);
+        break;
       case 'talk':      // ステージの前の会話。決定で次の台詞へ、Esc で飛ばす
         R.updateTalk(ok, I.hit.pause);
         break;
@@ -119,8 +123,10 @@
         if (G.stateT === 97) R.snd('rankup');      // 総合ランクの判が押される音
         if (G.stateT > 60 && ok) {
           R.snd('select');
+          var gr = R.stageGrade && R.stageGrade(); if (R.mapRecord && gr) R.mapRecord(G.stageIdx, gr.rank);
           if (G.stageIdx + 1 < R.STAGES.length) {
-            R.startStage(G.stageIdx + 1, false, R.STAGES[G.stageIdx + 1].talk);      // HP と SP は、前のステージを終えたときのまま持ち越す（回復しない）。会話があれば、その前にはさむ
+            if (R.openMap) R.openMap(G.stageIdx, true);      // 全体マップへ戻る（次のマスへの道が開く）。HP と SP は、前のステージを終えたときのまま持ち越す（回復しない）
+            else R.startStage(G.stageIdx + 1, false, R.STAGES[G.stageIdx + 1].talk);
           } else { G.state = 'ending'; G.stateT = 0; R.bgm('title'); }
         }
         break;

@@ -1632,7 +1632,9 @@
   };
   R.newGame = function () {
     G.pl = newPlayer(); G.time = 0; G.kills = 0; G.maxCombo = 0; G.helpT = 60 * 14; G.respawn = null;
-    R.startStage(0, false, 'stage1');      // ステージ 1 の前に、紅と蒼の会話
+    G.unlocked = 0; G.ranks = {}; G.S = R.STAGES[0];
+    if (R.openMap) R.openMap(-1, false);      // 全体マップへ（62_map.js）。第一章のマスで決定を押すと、紅と蒼の会話からステージが始まる
+    else R.startStage(0, false, 'stage1');
   };
   R.continueGame = function () {
     var p = G.pl;
