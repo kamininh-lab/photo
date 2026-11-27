@@ -115,6 +115,7 @@
         break;
       case 'clear':
         G.t++; G.stateT++;
+        if (G.stateT === 97) R.snd('rankup');      // 総合ランクの判が押される音
         if (G.stateT > 60 && ok) {
           R.snd('select');
           if (G.stageIdx + 1 < R.STAGES.length) {

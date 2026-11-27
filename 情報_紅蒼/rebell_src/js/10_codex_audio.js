@@ -601,6 +601,17 @@
         }
         p(48, 22, 1.8, 0.26, 'triangle');
         run([76, 71, 68, 64, 57, 52], 0.15, 0.22, 'square', 0.08); break;
+      // ---- スタイルランク・コンボ・とどめ ----
+      case 'rankup':       // ランクが上がった: 短く駆け上がる 3 音
+        run([81, 88, 93], 0.045, 0.17, 'triangle'); break;
+      case 'combo10':      // 10 コンボごと: きらっと光る 4 音
+        run([88, 91, 95, 100], 0.035, 0.13, 'triangle');
+        n(0.12, 0.05, 7000); break;
+      case 'finish':       // ボスへのとどめ: 低い一撃と、高く伸びる光
+        n(0.5, 0.3, 4200, 0, 'lowpass', 160);
+        p(140, 32, 0.6, 0.3, 'triangle');
+        p(660, 1980, 0.5, 0.1, 'triangle', 0.05);
+        run([76, 83, 88, 95], 0.06, 0.16, 'triangle'); break;
       case 'deny':
         p(110, 100, 0.11, 0.16, 'square', 0, 1000);
         p(110, 90, 0.13, 0.16, 'square', 0.14, 1000); break;
@@ -622,7 +633,7 @@
   }
 
   const effects = new Set([
-    'shutter', 'guard', 'wave',
+    'shutter', 'guard', 'wave', 'rankup', 'combo10', 'finish',
     'select', 'start', 'jump', 'djump', 'land', 'dash',
     'slash_red1', 'slash_red2', 'slash_red3', 'slash_blue1', 'slash_blue2', 'slash_blue3',
     'hit', 'hit_heavy', 'special_red', 'special_blue', 'switch', 'cross',

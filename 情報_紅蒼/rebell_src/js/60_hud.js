@@ -366,6 +366,7 @@
       g.fillStyle = '#ff7a2a'; g.beginPath(); g.moveTo(-170, 26); g.lineTo(150, 12); g.lineTo(150, 18); g.fill();
       g.restore();
     }
+    styleHud(g);      // スタイルランク（D 〜 紅蒼）
     // 連続攻撃のリズム（BEAT）: 段数の目盛りと、SP・ゲージのたまり方の倍率
     var rb = G.pl.rhythm;
     if (rb > 0 && G.state === 'play') {
@@ -419,8 +420,57 @@
       g.fillStyle = 'rgba(255,255,255,' + (0.88 * Math.pow(G.dazzle / 84, 1.25)) + ')'; g.fillRect(0, 0, 1920, 1080);
     }
     if (G.flash > 0) { g.fillStyle = 'rgba(255,255,255,' + Math.min(1, G.flash) + ')'; g.fillRect(0, 0, 1920, 1080); }
+    if (G.invert > 0 && G.state === 'play') { g.save(); g.globalCompositeOperation = 'difference'; g.fillStyle = '#ffffff'; g.fillRect(0, 0, 1920, 1080); g.restore(); }      // とどめの一瞬: 色を反転
     if (G.fade > 0) { g.fillStyle = 'rgba(5,4,15,' + G.fade + ')'; g.fillRect(0, 0, 1920, 1080); }
   };
+  // ---- スタイルランク ----
+  //   コンボ数の下に、ランクの大きな文字・次のランクまでの目盛り・いま決めた技の名前（JUST DODGE / CHAIN など）を出す。
+  //   S 以上では、画面の端をネオンの光が走る（紅蒼は桃色と水色、S は金色）
+  var STYLE_COL = ['', '#9aa0c8', '#7af3ff', '#8dffb0', '#ffe04a', '#ff9a2a', '#ff4fb0'];
+  function styleHud(g) {
+    var s = G.style; if (!s || s.rank < 1 || G.state !== 'play') return;
+    var r = s.rank, AT = R.STYLE_AT, name = R.STYLE_NAMES[r], col = STYLE_COL[r], top = r >= 6, t = G.t, i;
+    var lo = AT[r], hi = r < 6 ? AT[r + 1] : 640, u = clamp((s.pts - lo) / (hi - lo), 0, 1);
+    // 画面の端の光
+    if (r >= 5) {
+      var pa = (top ? 0.34 : 0.22) * (0.75 + 0.25 * Math.sin(t * 0.12));
+      g.save(); g.globalCompositeOperation = 'lighter';
+      [[0, 0, 150, 0, 0], [1920, 0, 1770, 0, 1], [0, 0, 0, 90, 2], [0, 1080, 0, 990, 3]].forEach(function (e) {
+        var gr = g.createLinearGradient(e[0], e[1], e[2], e[3]), c = top ? (e[4] % 2 ? '55,230,255' : '255,79,176') : '255,214,90';
+        gr.addColorStop(0, 'rgba(' + c + ',' + pa + ')'); gr.addColorStop(1, 'rgba(' + c + ',0)');
+        g.fillStyle = gr;
+        if (e[4] < 2) g.fillRect(Math.min(e[0], e[2]), 0, 150, 1080); else g.fillRect(0, Math.min(e[1], e[3]), 1920, 90);
+      });
+      // 端を走る光の筋
+      for (i = 0; i < 6; i++) {
+        var yy = ((t * (9 + i * 2) + i * 317) % 1300) - 110, left = i % 2 === 0;
+        g.fillStyle = 'rgba(' + (top ? (left ? '255,120,200' : '120,240,255') : '255,230,140') + ',' + (pa * 1.6) + ')';
+        g.fillRect(left ? 6 + (i >> 1) * 10 : 1908 - (i >> 1) * 10, yy, 4, 110);
+      }
+      g.restore();
+    }
+    // ランクの文字
+    g.save(); g.translate(1700, 600); var sc = 1 + s.pop * 0.03; g.scale(sc, sc); g.transform(1, 0, -0.18, 1, 0, 0);
+    T(g, 'STYLE', -150, -84, 26, '#ffffff', 'left', UI, '#120a30', 6);
+    g.font = 'bold ' + (top ? 104 : 132) + 'px ' + (top ? MIN : SERIF); g.textAlign = 'center'; g.lineJoin = 'round'; g.lineWidth = 16; g.strokeStyle = '#1a0a30';
+    if (top) {      // 紅蒼: 紅は桃色、蒼は水色
+      g.strokeText('紅蒼', 0, 20);
+      g.shadowColor = (t >> 2) % 2 ? PINK : CYAN; g.shadowBlur = 30;
+      g.fillStyle = PINK; g.textAlign = 'right'; g.fillText('紅', 0, 20); g.fillStyle = CYAN; g.textAlign = 'left'; g.fillText('蒼', 0, 20);
+    } else {
+      g.strokeText(name, 0, 28);
+      if (r >= 4) { g.shadowColor = col; g.shadowBlur = 24; }
+      var gr2 = g.createLinearGradient(0, -80, 0, 28); gr2.addColorStop(0, '#ffffff'); gr2.addColorStop(0.55, col); gr2.addColorStop(1, col);
+      g.fillStyle = gr2; g.fillText(name, 0, 28);
+    }
+    g.shadowBlur = 0;
+    // 次のランクまでの目盛り
+    g.fillStyle = 'rgba(20,10,48,.85)'; g.fillRect(-152, 48, 304, 16);
+    g.fillStyle = col; g.fillRect(-148, 52, 296 * u, 8);
+    if (s.word) { var wa = Math.min(1, s.word.t / 5) * Math.min(1, (50 - s.word.t) / 14); g.globalAlpha = wa; T(g, s.word.str, 0, 104 - Math.max(0, 6 - s.word.t) * 3, 30, '#ffffff', 'center', UI, '#120a30', 7); g.globalAlpha = 1; }
+    g.restore();
+  }
+
   // 中ボスの顔（シートの表情アイコン）。八角形の枠に入れる
   function midFace(g, b, x, y, w, h) {
     var own = !!b.iconOf, im = own ? R.IMG[b.iconImg] : R.IMG.midIcons, D = own ? b.iconData : window.REBELL_MIDBOSS, i = own ? b.iconOf(b) : R.Karate.icon(b);
@@ -1266,8 +1316,29 @@
     });
     T(g, 'STAGE CLEAR', 960, 430, 120, '#ffffff', 'center', SERIF, PINK, 12);
     g.fillStyle = CYAN; g.fillRect(480, 462, 960, 4);
-    stats(g, 540);
-    g.globalAlpha = 1; if (G.stateT > 60) blinkText(g, 'ENTER で次へ', 960, 800, 40);
+    var gd = R.stageGrade ? R.stageGrade() : null;
+    if (!gd) stats(g, 540);
+    else {
+      // 評価: 4 つの項目が順に出て（それぞれ ◆ 0 〜 3 個）、最後に総合ランクの判が押される
+      var t = G.stateT, i, j;
+      for (i = 0; i < gd.rows.length; i++) {
+        var ra = clamp((t - 30 - i * 14) / 12, 0, 1), y = 540 + i * 56, row = gd.rows[i]; if (ra <= 0) continue;
+        g.globalAlpha = a * ra;
+        T(g, row[0], 760 - (1 - ra) * 30, y, 34, '#c8b8ff', 'right', UI, '#120a30', 6); T(g, String(row[1]), 800 - (1 - ra) * 30, y, 38, '#ffffff', 'left', UI, '#120a30', 6);
+        for (j = 0; j < 3; j++) { g.save(); g.translate(1150 + j * 40, y - 13); g.rotate(PI / 4); g.fillStyle = j < row[2] ? '#ffe04a' : 'rgba(60,40,110,.9)'; g.fillRect(-11, -11, 22, 22); g.restore(); }
+      }
+      var st = t - 96;
+      if (st > 0) {
+        var k = st < 10 ? 2.4 - 1.4 * R.ease(st / 10) : 1, rc = { S: '#ffe04a', A: '#ff9a2a', B: '#8dffb0', C: '#7af3ff', D: '#9aa0c8' }[gd.rank];
+        g.globalAlpha = a * Math.min(1, st / 6);
+        g.save(); g.translate(1420, 620); g.rotate(-0.12); g.scale(k, k);
+        g.strokeStyle = rc; g.lineWidth = 8; g.beginPath(); g.arc(0, 0, 118, 0, PI * 2); g.stroke(); g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 102, 0, PI * 2); g.stroke();
+        g.shadowColor = rc; g.shadowBlur = 30; T(g, gd.rank, 0, 52, 170, rc, 'center', SERIF, '#1a0a30', 14); g.shadowBlur = 0;
+        T(g, 'RANK', 0, -72, 26, '#ffffff', 'center', UI, '#120a30', 6);
+        g.restore();
+      }
+    }
+    g.globalAlpha = 1; if (G.stateT > 120) blinkText(g, 'ENTER で次へ', 960, 800, 40);
   };
   R.drawEnding = function (g) {
     var t = G.stateT, a = Math.min(1, t / 60);

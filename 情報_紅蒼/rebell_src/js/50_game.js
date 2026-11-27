@@ -243,7 +243,7 @@
       p.rhythm = Math.min(BEAT_MAX, p.rhythm + 1); p.rhythmT = BEAT_KEEP; p.atkJust = true;
       text(p.x, p.y - 50, p.rhythm >= 2 ? 'BEAT ×' + p.rhythm : 'BEAT!', p.rhythm >= BEAT_MAX ? '#ffe04a' : col, p.rhythm >= 3);
       fx({ type: 'ring', x: p.x, y: p.y - MID, life: 12, r: 18 + p.rhythm * 4, col: p.rhythm >= BEAT_MAX ? '#ffe04a' : col });
-      R.snd('select');
+      R.snd('select'); styleAdd(5 + p.rhythm * 2, p.rhythm >= BEAT_MAX ? 'BEAT MAX' : null);
     } else if (p.rhythm > 0) { p.rhythm = 0; p.rhythmT = 0; text(p.x, p.y - 50, 'MISS', '#8a80b0'); }
   }
   R.beatGain = function () { return 1 + BEAT_GAIN * G.pl.rhythm; };
@@ -258,8 +258,54 @@
       fx({ type: 'ring', x: p.x, y: p.y - MID, life: 26, r: 46, col: '#ffe04a' });
     }
   }
+  // ---- スタイルランク（D → C → B → A → S → 紅蒼）----
+  // 攻撃を当てるほど点（pts）がたまり、ランクが上がる。同じ技ばかりだと伸びにくく（直前の 5 つの技と比べる）、
+  // ジャスト回避・反撃・交代のチェイン・BEAT・空中の追撃・巻き込み・とどめで大きく伸びる。時間がたつと減り、やられると大きく下がる。
+  //   ランクが高いほど、SP と交錯ゲージがたまりやすい（1 段ごとに 5%）。S 以上では斬撃に残像がつき、画面の端が光る（60_hud.js）
+  var STYLE_AT = [0, 30, 90, 170, 270, 390, 540], STYLE_MAX = 640;
+  R.STYLE_AT = STYLE_AT; R.STYLE_NAMES = ['', 'D', 'C', 'B', 'A', 'S', '紅蒼'];
+  function newStyle() { return { pts: 0, rank: 0, pop: 0, recent: [], word: null }; }
+  function styleRank(pts) { for (var i = STYLE_AT.length - 1; i > 0; i--) if (pts >= STYLE_AT[i]) return i; return 0; }
+  function styleAdd(n, word) {
+    var s = G.style || (G.style = newStyle()), r0 = s.rank;
+    s.pts = clamp(s.pts + n, 0, STYLE_MAX); s.rank = styleRank(s.pts);
+    if (word) s.word = { str: word, t: 0 };
+    if (s.rank > r0) {
+      s.pop = 22; R.snd('rankup', { step: s.rank });
+      if (G.stg) G.stg.best = Math.max(G.stg.best, s.rank);
+      if (s.rank >= 5) { G.flash = Math.max(G.flash, 0.12); fx({ type: 'ring', x: G.pl.x, y: G.pl.y - MID, life: 22, r: 56, col: s.rank >= 6 ? '#ffffff' : '#ffe04a' }); }
+    }
+  }
+  function styleMul() { return 1 + (G.style ? G.style.rank : 0) * 0.05; }
+  // いまの技が、直前の技とどれだけかぶっているか → 点の倍率（はじめての技は 1.3 倍、くり返すほど下がる）
+  function styleVariety(p) {
+    if (p.st !== 'attack' || !p.atk) return 1.15;      // 特技・合体技・飛び道具が後から当たったとき
+    var L = G.style ? G.style.recent : [], n = 0, i;
+    for (i = 0; i < L.length - 1; i++) if (L[i] === p.atk) n++;      // 最後の 1 つは、いまの技そのもの
+    return [1.3, 0.8, 0.45, 0.25, 0.2][Math.min(4, n)];
+  }
+  function updStyle() {
+    var s = G.style; if (!s) return;
+    if (s.pop > 0) s.pop--;
+    if (s.word && ++s.word.t > 50) s.word = null;
+    if (s.pts > 0) { s.pts = Math.max(0, s.pts - (G.comboT > 0 ? 0.1 : 0.55) - s.rank * 0.03); s.rank = styleRank(s.pts); }
+  }
+  // とどめの演出: 倒した一撃だけ長く止め、画面の色を一瞬だけ反転させる。ボスは、もっと長く・強く
+  function finishFx(e, boss) {
+    if (boss) {
+      G.hitstop = Math.max(G.hitstop, 22); G.invert = 10; G.invertCd = 60; G.flash = Math.max(G.flash, 0.5); shake(12); G.slow = Math.max(G.slow, 80);
+      text(e.x, e.y - e.h - 6, 'FINISH!!', '#ffe04a', true); R.snd('finish'); styleAdd(120, 'FINISH!!');
+      fx({ type: 'ring', x: e.x, y: e.y - e.h / 2, life: 30, r: 90, col: '#ffffff' });
+    } else {
+      G.hitstop = Math.max(G.hitstop, 7);
+      if (!(G.invertCd > 0)) { G.invert = 3; G.invertCd = 45; }
+      styleAdd(15);
+    }
+  }
+
   function startAttack(a) {
     var p = G.pl;
+    if (G.style) { G.style.recent.push(a); if (G.style.recent.length > 5) G.style.recent.shift(); }
     p.st = 'attack'; p.stT = 0; p.atk = a; p.buf = false; p.bufJust = false; p.atkJust = false; p.hitSet = []; p.fxDone = false; p.sndDone = false; p.flipT = 0; p.skidT = 0; p.landT = 0; p.landAnim = null;
     p.battleT = 150; p.angerT = 50; p.kusari = null;
     if (a.air) { p.airAtk++; if (p.airAtk <= ATK[p.who].a.length) p.vy = Math.min(p.vy, -1.4); }      // 空中で振るたびに少し浮く
@@ -267,7 +313,7 @@
     else if (a.hover) { p.airShot++; p.vy = Math.min(p.vy, a.hover); }                                  // 蒼は、空中で撃つたびに少し浮く
     else if (a.kusari && a.kusari.pull) { p.airShot++; p.vy = Math.min(p.vy, -1.6); p.vx *= 0.5; }      // 紅は、空中で一瞬ためてから鎌を打ち込む
     else if (a.lunge) p.vx = p.face * a.lunge;
-    if (p.who === 'aoi') ghost(p, 8);      // 蒼は一振りごとに残像を引く
+    if (p.who === 'aoi' || (G.style && G.style.rank >= 4)) ghost(p, 8);      // 蒼は一振りごとに残像を引く（ランク A 以上なら、紅も）
   }
   // f = [始まりの角度, 終わりの角度, 半径]
   function slashFx(p, a, big, f) {
@@ -284,8 +330,10 @@
     // 中ボス（52_karate.js）は、受け方を自分で決める: false = 見切って当たらない / { mul, guard } = ダメージの倍率と、ガードしたか
     var gd = e.onHit ? e.onHit(e, dmg, dir, kb, opt) : null;
     if (gd === false) return false;
-    var p = G.pl, d = Math.round(dmg * atkMul() * rand(0.92, 1.08) * (opt.weak ? 1.6 : 1) * (gd ? gd.mul : 1));
+    var p = G.pl, counter = p.counterT > 0 && !opt.env && !(gd && gd.guard);      // ジャスト回避のあとの最初の一撃は「反撃」: 1.5 倍
+    var d = Math.round(dmg * atkMul() * rand(0.92, 1.08) * (opt.weak ? 1.6 : 1) * (gd ? gd.mul : 1) * (counter ? 1.5 : 1));
     var cx = opt.cx != null ? opt.cx : e.x, cy = opt.cy != null ? opt.cy : e.y - e.h * 0.55;
+    var airborne = e.type === 'robot' && !e.ground;      // 浮いている敵への追撃（空中コンボ）
     if (gd && gd.guard) {      // ガードされた: 少しだけ削れる（これで倒れることはない）。コンボも SP も伸びない
       d = Math.max(1, d); e.hp = Math.max(1, e.hp - d); e.flash = 3;
       fx({ type: 'spark', x: cx + rand(-3, 3), y: cy + rand(-4, 4), life: 8, size: 11, col: 'blue' });
@@ -298,11 +346,25 @@
     burst(cx, cy, opt.heavy ? 10 : 4, opt.col === 'blue' ? ['#7af3ff', '#ffffff', '#37e6ff'] : ['#ffd36a', '#ffffff', '#ff7ad1'], opt.heavy ? 4 : 2.6, 18, 0.12);
     text(cx, cy - 8, d, opt.weak ? '#ffe04a' : '#ffffff', opt.weak || opt.heavy);
     if (opt.weak) text(cx, cy - 22, 'WEAK!', '#ff7ad1');
-    if (!e.armor) { e.vx = dir * kb; if (opt.lift && e.type !== 'drone') e.vy = opt.lift; e.st = 'hurt'; e.stT = 0; }
+    if (!e.armor) {
+      e.vx = dir * kb; e.st = 'hurt'; e.stT = 0; e.wrecked = false;
+      if (opt.lift && e.type !== 'drone') e.vy = opt.lift;
+      else if (airborne) { e.juggle = (e.juggle || 0) + 1; e.vy = Math.min(e.vy, Math.min(-0.6, -3 + e.juggle * 0.3)); }      // 浮いている間に当てると、また少し跳ね上がる（だんだん弱まる）
+    }
     else if (e.type === 'drone') { e.vx = dir * kb; }
     G.combo++; G.comboT = 130; G.comboPop = 8; G.maxCombo = Math.max(G.maxCombo, G.combo);
+    if (G.stg) G.stg.combo = Math.max(G.stg.combo, G.combo);
+    if (G.combo % 10 === 0) {      // 10 コンボごとの決めの音と光
+      R.snd('combo10', { step: Math.min(8, G.combo / 10) }); text(p.x, p.y - 62, G.combo + ' HITS!', '#ffe04a', true);
+      fx({ type: 'ring', x: p.x, y: p.y - MID, life: 16, r: 34, col: '#ffe04a' }); styleAdd(12);
+    }
+    if (counter) {
+      p.counterT = 0; G.hitstop = Math.max(G.hitstop, (opt.stop || 0) + 4); G.flash = Math.max(G.flash, 0.14);
+      text(cx, cy - 24, 'COUNTER!', '#ffe04a', true); fx({ type: 'ring', x: cx, y: cy, life: 14, r: 30, col: '#ffe04a' }); styleAdd(35, 'COUNTER');
+    }
+    if (!opt.env) styleAdd((opt.heavy ? 7 : 4) * styleVariety(p) * (airborne ? 1.4 : 1) * (opt.weak ? 1.3 : 1), airborne && e.juggle === 2 ? 'AIR COMBO' : null);
     if (!opt.noGain) {
-      var c = p.chars[p.who], gm = (opt.gain == null ? 1 : opt.gain) * R.beatGain();      // gain = SP とゲージのたまり方（離れて当てる攻撃は少なめ）。リズムよく続けるほど増える
+      var c = p.chars[p.who], gm = (opt.gain == null ? 1 : opt.gain) * R.beatGain() * styleMul();      // gain = SP とゲージのたまり方（離れて当てる攻撃は少なめ）。リズムよく続けるほど増える。スタイルランクでも増える
       c.sp = Math.min(c.maxsp, c.sp + (opt.heavy ? 5 : 3) * gm);
       p.cross = Math.min(100, p.cross + (2.2 + Math.min(3, G.combo * 0.08)) * gm);
     }
@@ -321,6 +383,7 @@
   function killEnemy(e, dir) {
     if (e.dead) return;
     e.dead = true; e.hp = 0;
+    if (e.type !== 'photo') finishFx(e, e === G.boss);      // とどめの演出（中ボスの写し身には付けない）
     if (e.onKill) { e.onKill(e, dir); return; }      // 中ボスと、その写し身は、倒れ方を自分で決める
     G.kills++;
     if (e.type === 'dragon') { e.st = 'die'; e.stT = 0; e.dead = false; e.dying = true; G.shots = []; R.snd('boss_die'); R.bgm(null); return; }
@@ -379,8 +442,11 @@
   function justDodge(p) {
     if (p.justCd > 0) return;
     var c = p.chars[p.who];
-    p.justCd = 160; G.slow = 54;
+    p.justCd = 120; G.slow = 60;
     c.sp = Math.min(c.maxsp, c.sp + 12); p.cross = Math.min(100, p.cross + 8);
+    p.counterT = 100; p.dashCd = 0; p.inv = Math.max(p.inv, 26);      // 見切ったあとしばらくは「反撃」の構え（次の一撃が 1.5 倍）。ダッシュもすぐ出せる
+    for (var gi = 1; gi <= 3; gi++) ghost(p, 14 + gi * 4, { x: p.x - p.face * gi * 14 });      // よけた跡に、残像が並ぶ
+    styleAdd(60, 'JUST DODGE');
     text(p.x, p.y - 40, 'JUST!', '#ffe04a', true); R.snd('checkpoint');
     fx({ type: 'ring', x: p.x, y: p.y - MID, life: 20, r: 44, col: '#ffe04a' });
     G.flash = Math.max(G.flash, 0.16);
@@ -395,6 +461,7 @@
     var armor = p.who === 'kurenai' && p.st === 'attack' && !p.atk.dive && p.stT <= p.atk.h1 + 2;
     if (armor) dmg *= 0.7;
     c.hp -= dmg; p.hurtFlash = 8; p.hurtFaceT = 55; p.battleT = 150; p.rhythm = 0; p.rhythmT = 0;      // やられると、リズムは途切れる
+    p.counterT = 0; styleAdd(armor ? -50 : -130); if (G.stg) { G.stg.dmg += dmg; G.stg.hurts++; }      // スタイルランクも大きく下がる
     text(p.x, p.y - 36, '-' + Math.round(dmg), '#ff5a6a');
     burst(p.x, p.y - MID, armor ? 4 : 8, ['#ff5a6a', '#ffffff'], 3, 20, 0.1);
     R.snd('hurt');
@@ -432,7 +499,14 @@
     startAttack(a);
     if (a.drop && p.ground) { p.y -= 14; p.vy = 3; }
     p.entry = true; p.chain = chain;
-    if (chain) { p.cross = Math.min(100, p.cross + 7); text(p.x, p.y - 42, 'CHAIN!', blue ? '#7af3ff' : '#ff9ad8', true); G.hitstop = Math.max(G.hitstop, 3); }
+    if (chain) {
+      p.cross = Math.min(100, p.cross + 7); text(p.x, p.y - 42, 'CHAIN!', blue ? '#7af3ff' : '#ff9ad8', true); G.hitstop = Math.max(G.hitstop, 3); styleAdd(40, 'CHAIN');
+      // 交代攻撃: いちばん近い敵のほうを向いて飛び込む（背中を向けたまま空振りしない）
+      var near = null, nd = 150;
+      G.enemies.forEach(function (e) { var dd = Math.abs(e.x - p.x); if (!e.dead && !e.dying && dd < nd && Math.abs(e.y - p.y) < 90) { nd = dd; near = e; } });
+      if (near && near.x !== p.x) { p.face = near.x > p.x ? 1 : -1; if (a.lunge) p.vx = p.face * a.lunge; }
+      G.comboT = Math.max(G.comboT, 130);
+    }
   }
   // ---- 特技（K / X）。方向キーといっしょに押すと、別の技になる ----
   //   n = K だけ / f = ←→ + K / u = ↑ + K / d = ↓ + K。cost = 使う SP
@@ -984,7 +1058,8 @@
     var move = (I.down.right ? 1 : 0) - (I.down.left ? 1 : 0), speed = B.speed;
     var jumpHit = I.hit.jump || I.hit.up, jumpHeld = I.down.jump || I.down.up, wasGround = p.ground, grav = 0.45;
     p.animT++;
-    ['inv', 'dashCd', 'switchCd', 'drop', 'hurtFlash', 'flipT', 'landT', 'stretchT', 'dashWin', 'justCd', 'battleT', 'angerT', 'hurtFaceT', 'joyT', 'stopT', 'wallT', 'kickT'].forEach(function (k) { if (p[k] > 0) p[k]--; });
+    ['inv', 'dashCd', 'switchCd', 'drop', 'hurtFlash', 'flipT', 'landT', 'stretchT', 'dashWin', 'justCd', 'battleT', 'angerT', 'hurtFaceT', 'joyT', 'stopT', 'wallT', 'kickT', 'counterT'].forEach(function (k) { if (p[k] > 0) p[k]--; });
+    if (p.counterT > 0 && G.t % 3 === 0) part(p.x + rand(-9, 9), p.y - rand(2, 34), rand(-0.3, 0.3), rand(-1.4, -0.5), 14, G.t % 2 ? '#ffe04a' : '#ffffff', 2, 0, true);      // 反撃の構えの間は、体から金色の光が立つ
     if (p.mood && --p.mood.t <= 0) p.mood = null;
     if (p.st !== 'special') p.vanish = false;      // 瞬影斬で消えた姿は、技が終われば必ず戻す
     if (p.rhythm > 0 && p.st !== 'attack' && --p.rhythmT <= 0) p.rhythm = 0;      // 攻撃をやめてしばらくたつと、リズムは途切れる
@@ -1069,6 +1144,7 @@
         if (a.rehit && p.stT === a.rehit) p.hitSet = [];
         if (a.rehits && a.rehits.indexOf(p.stT) >= 0) p.hitSet = [];      // チャージ攻撃: 何度も当たる
         if (a.box && open && p.stT <= a.h1) hitEnemies(p, a, mult);
+        if (G.style && G.style.rank >= 5 && open && p.stT <= a.h1 + 2 && p.stT % 3 === 0) ghost(p, 8, { faint: true });      // ランク S 以上: 振っている間、残像を引く
         if (a.shock && p.stT === (a.shockAt || a.h0 + 1) && p.ground) {
           shake(a.fin ? 8 : 5); dust(p.x + p.face * 30, p.y, 12); R.snd('slam_red'); fx({ type: 'crack', x: p.x + p.face * 32, y: p.y, life: 22 });
           if (a.quake) fx({ type: 'quake', x: p.x + p.face * 30, y: p.y, life: 24, face: p.face, n: a.quake });
@@ -1219,7 +1295,11 @@
     var p = G.pl, dx = p.x - e.x, ad = Math.abs(dx);
     e.animT++; e.stT++;
     if (e.cd > 0) e.cd--;
-    if (e.st === 'hurt') { if (e.ground) e.vx *= 0.86; if (e.stT > 16 && e.ground) e.st = 'idle'; }
+    if (e.st === 'hurt') {
+      if (e.ground) { e.vx *= 0.86; e.juggle = 0; }
+      if (e.stT > 16 && e.ground) e.st = 'idle';
+      wreck(e);
+    }
     else if (e.st === 'attack') {
       e.vx *= 0.8;
       if (e.stT === 24) { e.vx = e.face * 2.6; R.snd('slash_red1'); }
@@ -1235,8 +1315,35 @@
         } else { e.vx *= 0.8; e.st = 'idle'; }
       } else { e.vx *= 0.8; e.st = 'idle'; }
     }
-    e.vy = Math.min(9, e.vy + 0.45); moveBody(e);
+    var pvx = e.vx;
+    e.vy = Math.min(9, e.vy + (e.st === 'hurt' && !e.ground ? 0.36 : 0.45)); moveBody(e);      // 打ち上げられている間は、少しゆっくり落ちる（空中で追撃しやすい）
+    if (e.st === 'hurt' && e.hitWall && Math.abs(pvx) > 2.6 && !e.walled && !e.dead) {      // 吹き飛んで壁に叩きつけられた
+      e.walled = true; e.vx = -pvx * 0.35; e.vy = Math.min(e.vy, -2.4);
+      damageEnemy(e, 8, -R.sign(pvx), 0, { env: true, heavy: true, noGain: true, snd: 'hit_heavy', stop: 3 });
+      text(e.x, e.y - e.h - 4, 'WALL!', '#ffd36a'); dust(e.x + R.sign(pvx) * 10, e.y - 20, 6); styleAdd(18, 'WALL HIT');
+      if (!e.dead) { e.vx = -pvx * 0.35; e.vy = -2.4; }
+    }
+    if (e.st !== 'hurt') e.walled = false;
     if (e.y > R.H + 80) { e.dead = true; }
+  }
+  // 吹き飛んでいる敵が、ほかの敵にぶつかる（巻き込み）: 両方にダメージ。ぶつけられた方も軽く浮く
+  function wreck(e) {
+    if (e.wrecked || Math.abs(e.vx) < 2.4) return;
+    var b = box(e), i, o, hbs, j;
+    for (i = 0; i < G.enemies.length; i++) {
+      o = G.enemies[i];
+      if (o === e || o.dead || o.dying || o.gone || o.invul > 0 || o.type === 'photo') continue;
+      hbs = hurtboxes(o);
+      for (j = 0; j < hbs.length; j++) if (R.overlap(b, hbs[j])) {
+        var dir = R.sign(e.vx), sp = Math.abs(e.vx);
+        e.wrecked = true;
+        damageEnemy(o, 10 + sp * 2, dir, Math.min(4, sp * 0.7), { env: true, heavy: true, noGain: true, lift: -3.2, snd: 'hit_heavy', stop: 4, weak: hbs[j].weak });
+        damageEnemy(e, 8, -dir, 0, { env: true, noGain: true, snd: 'hit' });
+        if (!e.dead) { e.vx = -dir * sp * 0.3; e.vy = Math.min(e.vy, -2.6); e.wrecked = true; }
+        text((e.x + o.x) / 2, Math.min(e.y, o.y) - 50, 'CRASH!', '#ffd36a', true); styleAdd(28, 'CRASH');
+        return;
+      }
+    }
   }
   function updDrone(e) {
     var p = G.pl, dx = p.x - e.x;
@@ -1458,7 +1565,10 @@
     G.stageIdx = idx; G.S = S; G.enemies = []; G.shots = []; G.pshots = []; G.items = []; G.fx = []; G.parts = []; G.texts = []; G.ghosts = [];
     G.sakuraOn = false; G.sakuraK = 0; G.sakura = []; G.sakuraCam = undefined;
     G.boss = null; G.arena = null; G.cross = null; G.bossCut = null; G.bossDefeated = false; G.rage = false; G.combo = 0; G.hitstop = 0; G.slow = 0;
-    G.dazzle = 0; G.bossIntro = 0;
+    G.dazzle = 0; G.bossIntro = 0; G.invert = 0; G.invertCd = 0;
+    G.style = newStyle(); if (p) p.counterT = 0;
+    if (!fromCheckpoint || !G.stg || G.stg.stage !== idx) G.stg = { stage: idx, time: 0, combo: 0, dmg: 0, hurts: 0, best: 0, retry: 0 };      // このステージだけの成績（クリアの評価に使う）
+    else G.stg.retry++;
     if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; G.tHint = {}; G.idaMet = false; G.idaHint = null; G.dragonMet = false; G.dragonRageMet = false; }
     G.dragonEnd = false;      // 中ボスを倒したか・もう会ったか（やり直しても覚えておく。ステージを最初から始めるときだけ戻す）
     S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });
@@ -1493,6 +1603,22 @@
   };
   // 章の題を出して、ステージの曲を始める
   R.openStage = function () { var S = G.S; G.card = { t: 0, title: S.title, sub: S.sub }; R.bgm(S.bgm); };
+  // ステージクリアの評価（S 〜 D）: タイム・最大コンボ・受けたダメージ・スタイルランクを、それぞれ 0 〜 3 点で数える（合計 12 点）
+  //   PAR = ステージごとの目安の秒数。縦と空のステージは敵が少ないので、コンボの目安を低くしてある。やり直した回数だけ、ダメージの点が下がる
+  var PAR = { city: 180, tower: 200, sky: 120, school: 360 };
+  R.stageGrade = function () {
+    var s = G.stg, S = G.S; if (!s || !S) return null;
+    var sec = s.time / 60, par = PAR[S.id] || 240, ct = S.sky || S.vertical ? [20, 10, 4] : [50, 30, 12];
+    var tp = sec <= par ? 3 : sec <= par * 1.35 ? 2 : sec <= par * 1.8 ? 1 : 0;
+    var cp = s.combo >= ct[0] ? 3 : s.combo >= ct[1] ? 2 : s.combo >= ct[2] ? 1 : 0;
+    var dp = Math.max(0, (s.dmg <= 20 ? 3 : s.dmg <= 70 ? 2 : s.dmg <= 150 ? 1 : 0) - s.retry);
+    var sp = s.best >= 5 ? 3 : s.best >= 4 ? 2 : s.best >= 2 ? 1 : 0;
+    var total = tp + cp + dp + sp, mm = Math.floor(sec / 60), ss = Math.floor(sec % 60);
+    return {
+      rows: [['TIME', mm + ':' + ('0' + ss).slice(-2), tp], ['MAX COMBO', s.combo + ' HIT', cp], ['DAMAGE', Math.round(s.dmg) + (s.retry ? '（やり直し ' + s.retry + '）' : ''), dp], ['STYLE', R.STYLE_NAMES[s.best] || '-', sp]],
+      total: total, rank: total >= 11 ? 'S' : total >= 8 ? 'A' : total >= 5 ? 'B' : total >= 3 ? 'C' : 'D'
+    };
+  };
   R.newGame = function () {
     G.pl = newPlayer(); G.time = 0; G.kills = 0; G.maxCombo = 0; G.helpT = 60 * 14; G.respawn = null;
     R.startStage(0, false, 'stage1');      // ステージ 1 の前に、紅と蒼の会話
@@ -1614,6 +1740,8 @@
     if (G.cutin) { G.cutin.t++; if (G.cutin.t > 52) G.cutin = null; }
     if (G.helpT > 0) G.helpT--;
     if (G.comboPop > 0) G.comboPop--;
+    if (G.invert > 0) G.invert--;      // とどめの一瞬の色の反転
+    if (G.invertCd > 0) G.invertCd--;
     if (G.hitstop > 0) {      // ヒットストップ中の入力は次のコマへ持ち越す
       G.hitstop--; updFx();
       for (var k in R.input.hit) if (R.input.hit[k]) R.input.tap(k);
@@ -1621,6 +1749,8 @@
     }
     G.time++;
     if (G.comboT > 0) { G.comboT--; if (G.comboT === 0) G.combo = 0; }
+    updStyle();
+    if (G.stg && !G.bossDefeated) G.stg.time++;
     updMovers(); updPlayer(); updSprings(); updGimmicks(); updPShots();
     if (R.Drone) R.Drone.update(R.GX);      // 2P: 四角のドローン（テンキー。58_drone.js）
     if (G.slow > 0) G.slow--;
