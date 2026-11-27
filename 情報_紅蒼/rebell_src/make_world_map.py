@@ -194,17 +194,7 @@ for ax, ay in ((590, 122), (712, 120)):
     d.ellipse([ax - 16, ay - 12, ax + 16, ay - 2], fill=(70, 60, 120, 255), outline=(200, 190, 255, 255))
     d.rectangle([ax - 6, ay - 3, ax + 6, ay], fill=(40, 30, 80, 255)); d.line([(ax - 11, ay - 7), (ax + 11, ay - 7)], fill=CYAN + (255,))
 
-# 龍: ゲームの龍のスプライト（翼を広げた正面の姿）を、結界の奥に小さく置く
-js = open(os.path.join(HERE, 'js', '08_dragon_art.js'), encoding='utf-8').read()
-dimg = Image.open(io.BytesIO(base64.b64decode(re.search(r'img: "data:image/\w+;base64,([^"]+)"', js).group(1)))).convert('RGBA')
-fw = [int(v) for v in re.search(r'wing: \[(?:\[[^\]]*\], ){3}\[([^\]]*)\]', js).group(1).split(',')]
-dsp = dimg.crop((fw[0], fw[1], fw[0] + fw[2], fw[1] + fw[3]))
-dsp = dsp.resize((int(dsp.width * 0.31), int(dsp.height * 0.31)), Image.LANCZOS)
-cx, cy, rx, ry = DOME
-gx, gy = cx + 26 - dsp.width // 2, cy - ry + 4 - dsp.height // 2
-gl = Image.new('RGBA', (W, H)); ImageDraw.Draw(gl).ellipse([gx - 10, gy - 5, gx + dsp.width + 10, gy + dsp.height + 5], fill=(255, 40, 70, 150))
-base.alpha_composite(gl.filter(ImageFilter.GaussianBlur(10)))
-base.alpha_composite(dsp, (gx, gy))
+# 龍の絵は、マップには描かない（2026-11-28 の要望）
 
 # 作戦図らしく: うすい方眼・走査線・四隅のかぎ・まわりを暗く（四角が通信で送ってくる地図、という見立て）
 ho = Image.new('RGBA', (W, H)); hd = ImageDraw.Draw(ho)

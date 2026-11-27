@@ -128,7 +128,7 @@
     }
     // 左上: 題
     panel(g, 36, 30, 520, 118, 16, 'rgba(14,8,40,.82)', '#c9b8ff', 4);
-    T(g, 'WORLD MAP', 64, 84, 46, '#ffffff', 'left', U.font, '#120a30', 6);
+    T(g, 'KAGOSHIMA CITY', 64, 84, 46, '#ffffff', 'left', U.font, '#120a30', 6);
     T(g, 'REBELL ― 紅蒼交錯', 66, 126, 26, '#ffb8e6', 'left', U.font, '#120a30', 5);
     // 下: いまいる（向かっている）ステージ
     var s = moving ? m.to : m.at, S = R.STAGES[s], rk = G.ranks && G.ranks[s];
