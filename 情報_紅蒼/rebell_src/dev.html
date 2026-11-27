@@ -3458,6 +3458,31 @@ if (G.S && G.parts.length < 160 && G.t % 5 === 0) {
 if (G.S.id === 'school') G.parts.push({ x: G.cam.x + rand(0, R.W + 80), y: -6, vx: rand(-0.9, -0.3), vy: rand(0.35, 0.8), life: 420, t: 0, col: null, petal: true, size: 1, grav: 0, sway: rand(0, 6) });
 else if (G.t % 15 === 0) part(G.cam.x + rand(0, R.W), rand(20, 190) - (G.cam.y || 0), rand(-0.2, 0.2), rand(-0.3, -0.1), 120, Math.random() < 0.5 ? '#ff7ad1' : '#37e6ff', 1, 0, true);
 }
+updSakura();
+}
+var SAKURA_COL = ['#ffe6f1', '#ffcce0', '#ffaed0', '#ff8fbf'];
+function updSakura() {
+var on = !!(G.S && G.S.id === 'school' && G.sakuraOn && G.state === 'play');
+if (!G.sakura) G.sakura = [];
+if (G.state !== 'play' && G.state !== 'clear') return;
+G.sakuraK = (G.sakuraK || 0) + ((on ? 1 : 0) - (G.sakuraK || 0)) * 0.015;
+var K = G.sakuraK, L = G.sakura, rage = !!G.dragonRageMet, t = G.t, i, q;
+var dcam = G.sakuraCam === undefined ? 0 : G.cam.x - G.sakuraCam; G.sakuraCam = G.cam.x;
+var gu = (t % 480) / 100, gust = gu < 1 ? 1.6 * Math.sin(Math.PI * gu) : 0;
+var wind = -(0.45 + 0.3 * Math.sin(t * 0.013) + gust) * (rage ? 1.4 : 1);
+var want = Math.round((rage ? 190 : 150) * K);
+for (i = 0; i < 5 && L.length < want; i++) {
+var top = Math.random() < 0.65, z = 0.5 + Math.random() * 1.1;
+L.push({ x: top ? rand(-20, R.W + 60) : R.W + rand(4, 30), y: top ? rand(-24, -4) : rand(-10, R.H * 0.7), z: z, ph: rand(0, 6.3), spin: rand(0, 6.3), sp: rand(0.06, 0.16),
+col: rage && Math.random() < 0.25 ? '#ff5a7a' : SAKURA_COL[Math.floor(Math.random() * 4)] });
+}
+for (i = 0; i < L.length; i++) {
+q = L[i];
+q.x += wind * q.z + Math.sin(t * 0.05 + q.ph) * 0.35 - dcam * q.z * 0.8;
+q.y += 0.28 + 0.25 * q.z + Math.cos(t * 0.04 + q.ph) * 0.15 + gust * 0.12;
+q.spin += q.sp * (1 + gust * 0.6);
+}
+G.sakura = L.filter(function (q) { return q.x > -14 && q.x < R.W + 40 && q.y < R.H + 12 && !(L.length > want + 20 && q.y > R.H * 0.5 && Math.random() < 0.02); });
 }
 function updCross() {
 var X = G.cross, p = G.pl; X.t++;
@@ -3484,6 +3509,7 @@ if (X.t >= 118) { G.cross = null; p.st = 'free'; p.inv = Math.max(p.inv, 40); p.
 R.startStage = function (idx, fromCheckpoint, talk) {
 var S = R.STAGES[idx], p = G.pl;
 G.stageIdx = idx; G.S = S; G.enemies = []; G.shots = []; G.pshots = []; G.items = []; G.fx = []; G.parts = []; G.texts = []; G.ghosts = [];
+G.sakuraOn = false; G.sakuraK = 0; G.sakura = []; G.sakuraCam = undefined;
 G.boss = null; G.arena = null; G.cross = null; G.bossCut = null; G.bossDefeated = false; G.rage = false; G.combo = 0; G.hitstop = 0; G.slow = 0;
 G.dazzle = 0; G.bossIntro = 0;
 if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; G.tHint = {}; G.idaMet = false; G.idaHint = null; G.dragonMet = false; G.dragonRageMet = false; }
@@ -3580,6 +3606,7 @@ R.Karate.enter(G.boss, m);
 if (!G.boss && !G.bossDefeated && p.x > b.trigger) {
 G.arena = b.arena.slice();
 G.boss = spawn(b.type, b.x, GY); G.boss.name = b.name; G.boss.sub = b.sub; G.enemies.push(G.boss);
+if (b.type === 'dragon') G.sakuraOn = true;
 G.bossIntro = 110; R.bgm('boss'); R.snd(b.type === 'dragon' ? 'roar' : 'explosion'); shake(8);
 G.enemies = G.enemies.filter(function (e) { return e === G.boss || (e.x > b.arena[0] - 40 && e.x < b.arena[1]); });
 }
@@ -5299,6 +5326,7 @@ if (it.type === 'crystal') { var bob = it.loose ? 0 : Math.round(Math.sin((G.t +
 else if (it.type === 'potion') fg.drawImage(I.potion, ix - 6, Math.round(it.y) - 8 + (it.loose ? 0 : Math.round(Math.sin((G.t + it.x) * 0.07) * 2)));
 else if (it.type === 'chest') fg.drawImage(I.chest[it.open ? 1 : 0], ix - 13, Math.round(it.y) - 22);
 }
+sakuraDraw(fg, false, oy);
 for (i = 0; i < G.enemies.length; i++) { e = G.enemies[i]; if (!e.dead && e.x > cam - 260 && e.x < cam + R.W + 200) drawEnemy(fg, e, cam); }
 for (i = 0; i < G.fx.length; i++) {
 e = G.fx[i];
@@ -5349,6 +5377,23 @@ charDraw(g, R.frame(e.who, e.group, u < 0.3 ? e.i0 : e.i1), e.x - cam, e.y, 1, 0
 }
 g.restore();
 };
+function sakuraDraw(fg, front, oy) {
+var L = G.sakura; if (!L || !L.length || !G.S || G.S.id !== 'school') return;
+var i, q, s, w, h, k = Math.min(1, (G.sakuraK || 0) * 1.5);
+for (i = 0; i < L.length; i++) {
+q = L[i]; if ((q.z >= 1.25) !== front) continue;
+s = q.z < 0.75 ? 1 : q.z < 1.05 ? 2 : q.z < 1.4 ? 3 : 4;
+var c = Math.cos(q.spin);
+w = Math.max(1, Math.round(s * 1.6 * Math.abs(c))); h = Math.max(1, Math.round(s * (0.8 + 0.4 * Math.abs(Math.sin(q.spin * 0.7)))));
+var x = Math.round(q.x - w / 2), y = Math.round(q.y - oy);
+if (s >= 3) { fg.globalAlpha = k * 0.18; fg.fillStyle = '#ff9cc8'; fg.fillRect(x - 1, y - 1, w + 2, h + 2); }
+fg.globalAlpha = k * (q.z < 0.75 ? 0.6 : q.z < 1.25 ? 0.85 : 0.95);
+fg.fillStyle = q.col; fg.fillRect(x, y, w, h);
+if (s >= 2 && w >= 2) { fg.fillStyle = '#fff4f9'; fg.fillRect(x, y, 1, 1); }
+if (s >= 3 && w >= 3) { fg.fillStyle = q.col; fg.fillRect(x + 1, y - 1, w - 2, 1); fg.fillRect(x + 1, y + h, w - 2, 1); }
+}
+fg.globalAlpha = 1;
+}
 R.renderFront = function (fg) {
 var i, e;
 fg.clearRect(0, 0, R.W, R.H); fg.imageSmoothingEnabled = false;
@@ -5371,6 +5416,7 @@ if (q.petal) { fg.globalAlpha = 0.9; fg.drawImage(R.BG.petal, qx, qy); continue;
 fg.globalAlpha = Math.min(1, (1 - q.t / q.life) * 1.6); fg.fillStyle = q.col; fg.fillRect(qx, qy, q.size, q.size);
 }
 fg.globalAlpha = 1;
+sakuraDraw(fg, true, oy);
 fg.restore();
 if (R.Cyber) R.Cyber.rain(fg, G.S, cam, oy, G.t);
 };

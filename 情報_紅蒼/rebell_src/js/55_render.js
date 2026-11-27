@@ -467,6 +467,7 @@
       else if (it.type === 'chest') fg.drawImage(I.chest[it.open ? 1 : 0], ix - 13, Math.round(it.y) - 22);
     }
     // 敵
+    sakuraDraw(fg, false, oy);      // 龍との戦いの桜吹雪（奥の花びら。龍や主人公の後ろ）
     for (i = 0; i < G.enemies.length; i++) { e = G.enemies[i]; if (!e.dead && e.x > cam - 260 && e.x < cam + R.W + 200) drawEnemy(fg, e, cam); }
     // 斬撃の弧・突きの線・輪・魔法陣（主人公の絵を隠さないよう、後ろに描く）
     for (i = 0; i < G.fx.length; i++) {
@@ -526,6 +527,27 @@
     g.restore();
   };
 
+  // 龍との戦いの桜吹雪（動きは 50_game.js の updSakura）。front = 手前（z 1.25 以上）だけ / 奥だけ
+  //   花びらは、くるくる回るように幅が伸び縮みする楕円のドット。手前ほど大きく濃い。
+  //   いま描いている画面は translate(0, oy) されているので、画面の座標に戻して描く
+  function sakuraDraw(fg, front, oy) {
+    var L = G.sakura; if (!L || !L.length || !G.S || G.S.id !== 'school') return;
+    var i, q, s, w, h, k = Math.min(1, (G.sakuraK || 0) * 1.5);
+    for (i = 0; i < L.length; i++) {
+      q = L[i]; if ((q.z >= 1.25) !== front) continue;
+      s = q.z < 0.75 ? 1 : q.z < 1.05 ? 2 : q.z < 1.4 ? 3 : 4;
+      var c = Math.cos(q.spin);
+      w = Math.max(1, Math.round(s * 1.6 * Math.abs(c))); h = Math.max(1, Math.round(s * (0.8 + 0.4 * Math.abs(Math.sin(q.spin * 0.7)))));
+      var x = Math.round(q.x - w / 2), y = Math.round(q.y - oy);
+      if (s >= 3) { fg.globalAlpha = k * 0.18; fg.fillStyle = '#ff9cc8'; fg.fillRect(x - 1, y - 1, w + 2, h + 2); }      // 手前の花びらは、ほんのり光る
+      fg.globalAlpha = k * (q.z < 0.75 ? 0.6 : q.z < 1.25 ? 0.85 : 0.95);
+      fg.fillStyle = q.col; fg.fillRect(x, y, w, h);
+      if (s >= 2 && w >= 2) { fg.fillStyle = '#fff4f9'; fg.fillRect(x, y, 1, 1); }      // 光の当たる縁
+      if (s >= 3 && w >= 3) { fg.fillStyle = q.col; fg.fillRect(x + 1, y - 1, w - 2, 1); fg.fillRect(x + 1, y + h, w - 2, 1); }      // 丸み
+    }
+    fg.globalAlpha = 1;
+  }
+
   // (4) 主人公の手前に描くもの（弾・火花や爆発・粒）
   R.renderFront = function (fg) {
     var i, e;
@@ -549,6 +571,7 @@
       fg.globalAlpha = Math.min(1, (1 - q.t / q.life) * 1.6); fg.fillStyle = q.col; fg.fillRect(qx, qy, q.size, q.size);
     }
     fg.globalAlpha = 1;
+    sakuraDraw(fg, true, oy);      // 桜吹雪の手前の花びら（主人公の前）
     fg.restore();
     if (R.Cyber) R.Cyber.rain(fg, G.S, cam, oy, G.t);      // 雨（画面の手前）
   };

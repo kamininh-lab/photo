@@ -4787,6 +4787,34 @@ window.REBELL_SHIKAKU = {
       if (G.S.id === 'school') G.parts.push({ x: G.cam.x + rand(0, R.W + 80), y: -6, vx: rand(-0.9, -0.3), vy: rand(0.35, 0.8), life: 420, t: 0, col: null, petal: true, size: 1, grav: 0, sway: rand(0, 6) });
       else if (G.t % 15 === 0) part(G.cam.x + rand(0, R.W), rand(20, 190) - (G.cam.y || 0), rand(-0.2, 0.2), rand(-0.3, -0.1), 120, Math.random() < 0.5 ? '#ff7ad1' : '#37e6ff', 1, 0, true);
     }
+    updSakura();
+  }
+  // 龍との戦いで舞い散る桜吹雪（画面の座標で動かす。描くのは 55_render.js の sakuraDraw）
+  //   z = 奥行き（0.5 奥 〜 1.6 手前）。手前ほど大きく速い。カメラが動くと、奥行きに応じてずれる
+  //   右から吹く風はゆっくり強弱し、約 8 秒ごとに突風。龍が怒ってからは風が強まり、紅い花びらが混じる
+  var SAKURA_COL = ['#ffe6f1', '#ffcce0', '#ffaed0', '#ff8fbf'];
+  function updSakura() {
+    var on = !!(G.S && G.S.id === 'school' && G.sakuraOn && G.state === 'play');
+    if (!G.sakura) G.sakura = [];
+    if (G.state !== 'play' && G.state !== 'clear') return;      // 会話・ポーズの間は止める
+    G.sakuraK = (G.sakuraK || 0) + ((on ? 1 : 0) - (G.sakuraK || 0)) * 0.015;
+    var K = G.sakuraK, L = G.sakura, rage = !!G.dragonRageMet, t = G.t, i, q;
+    var dcam = G.sakuraCam === undefined ? 0 : G.cam.x - G.sakuraCam; G.sakuraCam = G.cam.x;
+    var gu = (t % 480) / 100, gust = gu < 1 ? 1.6 * Math.sin(Math.PI * gu) : 0;
+    var wind = -(0.45 + 0.3 * Math.sin(t * 0.013) + gust) * (rage ? 1.4 : 1);
+    var want = Math.round((rage ? 190 : 150) * K);
+    for (i = 0; i < 5 && L.length < want; i++) {      // 足りない分を、上の端か右の端から入れる
+      var top = Math.random() < 0.65, z = 0.5 + Math.random() * 1.1;
+      L.push({ x: top ? rand(-20, R.W + 60) : R.W + rand(4, 30), y: top ? rand(-24, -4) : rand(-10, R.H * 0.7), z: z, ph: rand(0, 6.3), spin: rand(0, 6.3), sp: rand(0.06, 0.16),
+        col: rage && Math.random() < 0.25 ? '#ff5a7a' : SAKURA_COL[Math.floor(Math.random() * 4)] });
+    }
+    for (i = 0; i < L.length; i++) {
+      q = L[i];
+      q.x += wind * q.z + Math.sin(t * 0.05 + q.ph) * 0.35 - dcam * q.z * 0.8;
+      q.y += 0.28 + 0.25 * q.z + Math.cos(t * 0.04 + q.ph) * 0.15 + gust * 0.12;
+      q.spin += q.sp * (1 + gust * 0.6);
+    }
+    G.sakura = L.filter(function (q) { return q.x > -14 && q.x < R.W + 40 && q.y < R.H + 12 && !(L.length > want + 20 && q.y > R.H * 0.5 && Math.random() < 0.02); });
   }
   // 合体技「紅蒼交錯」
   function updCross() {
@@ -4817,6 +4845,7 @@ window.REBELL_SHIKAKU = {
   R.startStage = function (idx, fromCheckpoint, talk) {
     var S = R.STAGES[idx], p = G.pl;
     G.stageIdx = idx; G.S = S; G.enemies = []; G.shots = []; G.pshots = []; G.items = []; G.fx = []; G.parts = []; G.texts = []; G.ghosts = [];
+    G.sakuraOn = false; G.sakuraK = 0; G.sakura = []; G.sakuraCam = undefined;
     G.boss = null; G.arena = null; G.cross = null; G.bossCut = null; G.bossDefeated = false; G.rage = false; G.combo = 0; G.hitstop = 0; G.slow = 0;
     G.dazzle = 0; G.bossIntro = 0;
     if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; G.tHint = {}; G.idaMet = false; G.idaHint = null; G.dragonMet = false; G.dragonRageMet = false; }
@@ -4922,6 +4951,7 @@ window.REBELL_SHIKAKU = {
     if (!G.boss && !G.bossDefeated && p.x > b.trigger) {
       G.arena = b.arena.slice();
       G.boss = spawn(b.type, b.x, GY); G.boss.name = b.name; G.boss.sub = b.sub; G.enemies.push(G.boss);
+      if (b.type === 'dragon') G.sakuraOn = true;      // 龍との戦いが始まると、桜吹雪
       G.bossIntro = 110; R.bgm('boss'); R.snd(b.type === 'dragon' ? 'roar' : 'explosion'); shake(8);
       G.enemies = G.enemies.filter(function (e) { return e === G.boss || (e.x > b.arena[0] - 40 && e.x < b.arena[1]); });
     }
@@ -6847,6 +6877,7 @@ window.REBELL_SHIKAKU = {
       else if (it.type === 'chest') fg.drawImage(I.chest[it.open ? 1 : 0], ix - 13, Math.round(it.y) - 22);
     }
     // 敵
+    sakuraDraw(fg, false, oy);      // 龍との戦いの桜吹雪（奥の花びら。龍や主人公の後ろ）
     for (i = 0; i < G.enemies.length; i++) { e = G.enemies[i]; if (!e.dead && e.x > cam - 260 && e.x < cam + R.W + 200) drawEnemy(fg, e, cam); }
     // 斬撃の弧・突きの線・輪・魔法陣（主人公の絵を隠さないよう、後ろに描く）
     for (i = 0; i < G.fx.length; i++) {
@@ -6906,6 +6937,27 @@ window.REBELL_SHIKAKU = {
     g.restore();
   };
 
+  // 龍との戦いの桜吹雪（動きは 50_game.js の updSakura）。front = 手前（z 1.25 以上）だけ / 奥だけ
+  //   花びらは、くるくる回るように幅が伸び縮みする楕円のドット。手前ほど大きく濃い。
+  //   いま描いている画面は translate(0, oy) されているので、画面の座標に戻して描く
+  function sakuraDraw(fg, front, oy) {
+    var L = G.sakura; if (!L || !L.length || !G.S || G.S.id !== 'school') return;
+    var i, q, s, w, h, k = Math.min(1, (G.sakuraK || 0) * 1.5);
+    for (i = 0; i < L.length; i++) {
+      q = L[i]; if ((q.z >= 1.25) !== front) continue;
+      s = q.z < 0.75 ? 1 : q.z < 1.05 ? 2 : q.z < 1.4 ? 3 : 4;
+      var c = Math.cos(q.spin);
+      w = Math.max(1, Math.round(s * 1.6 * Math.abs(c))); h = Math.max(1, Math.round(s * (0.8 + 0.4 * Math.abs(Math.sin(q.spin * 0.7)))));
+      var x = Math.round(q.x - w / 2), y = Math.round(q.y - oy);
+      if (s >= 3) { fg.globalAlpha = k * 0.18; fg.fillStyle = '#ff9cc8'; fg.fillRect(x - 1, y - 1, w + 2, h + 2); }      // 手前の花びらは、ほんのり光る
+      fg.globalAlpha = k * (q.z < 0.75 ? 0.6 : q.z < 1.25 ? 0.85 : 0.95);
+      fg.fillStyle = q.col; fg.fillRect(x, y, w, h);
+      if (s >= 2 && w >= 2) { fg.fillStyle = '#fff4f9'; fg.fillRect(x, y, 1, 1); }      // 光の当たる縁
+      if (s >= 3 && w >= 3) { fg.fillStyle = q.col; fg.fillRect(x + 1, y - 1, w - 2, 1); fg.fillRect(x + 1, y + h, w - 2, 1); }      // 丸み
+    }
+    fg.globalAlpha = 1;
+  }
+
   // (4) 主人公の手前に描くもの（弾・火花や爆発・粒）
   R.renderFront = function (fg) {
     var i, e;
@@ -6929,6 +6981,7 @@ window.REBELL_SHIKAKU = {
       fg.globalAlpha = Math.min(1, (1 - q.t / q.life) * 1.6); fg.fillStyle = q.col; fg.fillRect(qx, qy, q.size, q.size);
     }
     fg.globalAlpha = 1;
+    sakuraDraw(fg, true, oy);      // 桜吹雪の手前の花びら（主人公の前）
     fg.restore();
     if (R.Cyber) R.Cyber.rain(fg, G.S, cam, oy, G.t);      // 雨（画面の手前）
   };
