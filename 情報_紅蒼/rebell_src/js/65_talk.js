@@ -156,7 +156,21 @@
       { who: 'kurose', face: 'reach', text: ['黒瀬 龍士。通りすがりの、ただの空手使いだ。', 'さあ――二人まとめて、かかってこい。'] },
       { who: 'kurenai', face: 'anger', pose: 'stance', text: ['言ったね！　よーし、行くよ、蒼！'] }
     ],
-    // ステージ 2 のボス「井立 快晴」: 鉄塔のてっぺんで、《龍》を守るために立ちはだかる（53_idachi.js の stIntro から）。
+    // 黒瀬を退けたあと（52_karate.js の stDie から）。紅と蒼は先へ走り去り、残った黒瀬が通信の向こうの四角に話しかける。
+    //   exit = この台詞から、二人が右へ走り去る（画面から消える）。四角が黒幕であることを、ここでにおわせる（はっきりとは言わない）
+    kurose_end: [
+      { who: 'kurenai', face: 'joy', text: ['よーし、通してもらったし、先を急ごう！', '黒瀬さん、撮った写真、あとで見せてね！'] },
+      { who: 'aoi', face: 'normal', text: ['……ありがとう、黒瀬さん。', '行こう、紅。龍の足もとまで、あと少しだよ。'] },
+      { who: 'kurose', face: 'old', exit: true, text: ['…………。', '――さて。聞いているんだろう、通信の向こうの君。'] },
+      { who: 'shikaku', face: 'smile', text: ['……あれ、ばれてた？　こちら四角。', 'あの二人の武器を作った、ただのメカニックだよ。'] },
+      { who: 'kurose', face: 'grin', text: ['ただの、か。……君は、結界のことに詳しいな。', 'どこで塞がり、どこで途切れるか。全部知っていた。'] },
+      { who: 'kurose', face: 'camera', text: ['橋を塞いだ場所も、結界の上の航路も。', 'まるで――結界を張った、本人のようだ。'] },
+      { who: 'shikaku', face: 'serious', text: ['…………。', '解析が得意なだけだよ。それ以上の意味は、ないさ。'] },
+      { who: 'kurose', face: 'old', text: ['そうか。だが、ファインダー越しだと、', '嘘は、よく見える。'] },
+      { who: 'shikaku', face: 'smile', text: ['ふふっ、怖いなあ。……でも、もう遅いよ。', '月は、もうじゅうぶん紅くなった。'] },
+      { who: 'kurose', face: 'grin', text: ['……四角 明宏。その名前、覚えておこう。'] }
+    ],
+    // ステージ 2 のボス「井立 快晴」:鉄塔のてっぺんで、《龍》を守るために立ちはだかる（53_idachi.js の stIntro から）。
     //   シートの決め台詞「守るために、強くなる。…それが、今の俺の答えだ。」に沿わせた。龍を守る理由は、ここでは明かさない
     //   井立の face: smile / close / shout / kick
     idachi: [
@@ -207,21 +221,24 @@
   //   opt.vs = 向かい合っている相手（中ボス）。ステージの途中の会話で、終わったらそのまま戦いに戻る
   R.beginTalk = function (key, opt) {
     var C = G.pl.chars, lines = R.TALKS[key].filter(function (ln) { return !(C[ln.who] && C[ln.who].down); });      // 戦闘不能の子の台詞は飛ばす
-    G.talk = { key: key, lines: lines, i: 0, t: 0, T: 0, inT: 0, outT: -1, full: false, prev: null, vs: (opt && opt.vs) || null, mid: !!(opt && opt.mid) };      // mid = 相手のいない、ステージの途中・終わりの会話（二人が向かい合って話す）
+    G.talk = { key: key, lines: lines, i: 0, t: 0, T: 0, inT: 0, outT: -1, full: false, prev: null, vs: (opt && opt.vs) || null, mid: !!(opt && opt.mid), onEnd: (opt && opt.onEnd) || null };      // onEnd = 会話が終わったときに呼ぶ      // mid = 相手のいない、ステージの途中・終わりの会話（二人が向かい合って話す）
     G.state = 'talk'; G.stateT = 0;
   };
   function leave(tk) { tk.outT = 0; tk.prev = null; R.snd('switch'); }
   function finish() {
-    var vs = G.talk.vs || G.talk.mid;
+    var vs = G.talk.vs || G.talk.mid, cb = G.talk.onEnd;
     G.pl.animT = G.talk.T;      // 立ち姿の呼吸を、会話中の続きから
     G.talk = null; G.state = 'play'; G.stateT = 0;
     if (!vs) R.openStage();     // ステージの前の会話なら、ここで章の題と曲
+    if (cb) cb();
   }
   // ok = 決定（台詞を全部出す → 次の台詞へ）、skip = 会話を飛ばす
   R.updateTalk = function (ok, skip) {
     var tk = G.talk, ln;
     if (!tk) { G.state = 'play'; return; }
     G.t++; tk.T++; tk.inT++;
+    if (tk.inT >= IN && tk.lines[tk.i].exit) tk.exitOn = true;      // 二人が走り去る台詞まで来た
+    if (tk.exitOn) tk.exitT = (tk.exitT || 0) + 1;
     if (tk.vs && tk.vs.talkPose) tk.vs.talkPose(tk.vs, tk.inT >= IN && tk.outT < 0 && tk.lines[tk.i].who === tk.vs.talkWho, tk.T);      // 向かい合う相手（黒瀬・井立）は、話すときだけ身ぶりをする
     if (G.fadeDir) { G.fade = R.clamp(G.fade + G.fadeDir * 0.04, 0, 1); if (G.fade === 0 || G.fade === 1) G.fadeDir = 0; }
     if (tk.prev && ++tk.prev.t > 8) tk.prev = null;
@@ -242,14 +259,18 @@
     var tk = G.talk; if (!tk) return;
     var ln = tk.lines[tk.i], p = G.pl, kx = p.x, started = tk.inT >= IN;
     // leap = 終わりに跳び去る距離（0 なら、その場に残る）
-    function actor(who, x, face, ph, leap) {
+    // run = 走り去りはじめてからのフレーム数（0 なら立ったまま）
+    function actor(who, x, face, ph, leap, run) {
       var S = R.STAND[who], st = S.idle, f, br, y = p.y, a = 1, v;      // いま立っている高さ（鉄塔のてっぺんでも）
       var speaking = started && tk.outT < 0 && ln.who === who;
       if (speaking && ln.pose === 'event') { f = R.frame(who, 'event', 1); st = null; }
       else { if (speaking && ln.pose === 'stance') st = S.stance; f = R.frame(who, st === S.idle ? 'idle' : 'stance', st.i); }
       if (st) { v = R.breath(st, tk.T + ph); br = { knee: st.knee, neck: st.neck, d: v[0], e: v[1] }; }
       if (speaking && tk.t < 14) y -= Math.round(5 * Math.sin(PI * tk.t / 14));       // 話しはじめに、ぴょこんと跳ねる
-      if (leap && tk.outT >= 0) {                                                      // 終わり: 相棒は後ろへ跳んで、姿を消す（交代を待つ）
+      if (run > 0) {      // 先へ走り去る（画面の右の外へ出たら、描かない）
+        x += run * Math.min(3.6, run * 0.3); f = R.frame(who, 'run', Math.floor(run / 4) % R.SPR[who].run.length); br = null; face = 1;
+        if (x - cam > R.W + 40) return;
+      } else if (leap && tk.outT >= 0) {                                                      // 終わり: 相棒は後ろへ跳んで、姿を消す（交代を待つ）
         v = Math.min(1, tk.outT / 26);
         x -= leap * R.ease(v); y -= Math.round(74 * Math.sin(PI * v * 0.8)); a = 1 - v * v;
         f = R.frame(who, 'jump', v < 0.3 ? 2 : v < 0.65 ? 3 : 4); br = null;
@@ -261,8 +282,9 @@
       var fc = tk.vs.x >= kx ? 1 : -1, act = p.who, par = act === 'kurenai' ? 'aoi' : 'kurenai';
       var bx = kx - fc * 30;      // 相棒の位置。画面の端（龍の戦いの入り口など）では、画面の中に寄せる
       bx = fc > 0 ? Math.max(bx, cam + 8) : Math.min(bx, cam + R.W - 8);
-      if (!p.chars[par].down) actor(par, bx, fc, 40, fc * 44);      // 倒れている相棒は、立たせない
-      actor(act, kx, fc, 0, 0);
+      var ex = tk.exitOn ? tk.exitT : 0;      // 走り去る: 相棒が先に、操作している子が少し遅れて
+      if (!p.chars[par].down) actor(par, bx, fc, 40, fc * 44, Math.max(0, ex - 4));      // 倒れている相棒は、立たせない
+      actor(act, kx, fc, 0, 0, Math.max(0, ex - 14));
       return;
     }
     if (tk.mid) kx = Math.min(kx, cam + R.W - GAP - 24);      // ステージの終わりの会話: 蒼が画面の右へはみ出さないように

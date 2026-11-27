@@ -586,14 +586,29 @@
     if (t === 170) R.snd('select');
     if (t === 130) { e.expr = 'n_wounded'; e.exprT = 9999; }
     if (t === 196) { R.snd('shutter'); G.flash = 1; e.expr = 'n_laugh'; X.toast('黒瀬「いい顔だ、撮らせてもらった。――行け。姫は、龍の足もとだ」', '#d9b8ff'); }
-    if (t >= 204) {      // 薬と結晶を置いていく
-      for (i = 0; i < 5; i++) X.dropItem('crystal', e.x + rand(-30, 30), e.y - 30);
-      X.dropItem('potion', e.x, e.y - 40);
+    // 二人が先へ走り去り、残った黒瀬が四角と話す（65_talk.js の kurose_end）。終わると、暗転して二人は先の場所に
+    if (t === 204 && !e.endTalked && R.TALKS && R.TALKS.kurose_end) {
+      e.endTalked = true; G.toast = null;
+      R.beginTalk('kurose_end', { vs: e, onEnd: function () { ahead(e); } });
+      return;
+    }
+    if (t >= 204) {      // 薬と結晶を置いていく（会話のあとは、先へ進んだ二人の足もとに）
+      var ix = e.endTalked ? G.pl.x + 56 : e.x;
+      for (i = 0; i < 5; i++) X.dropItem('crystal', ix + rand(-30, 30), e.y - 30);
+      X.dropItem('potion', ix, e.y - 40);
       X.burst(e.x, e.y - 26, 20, ['#ffffff', PUR[1], '#cfe8ff'], 4, 26);
       R.midBossDone(e);
     }
   }
 
+  // 黒瀬と四角の会話のあと: 暗い画面から明けると、二人は戦いの場の右の端まで進んでいる（足場があるときだけ）
+  function ahead(e) {
+    var p = G.pl, m = e.mid, tx = m ? m.arena[1] - 40 : p.x;
+    if (tx > p.x && X.groundAt(tx)) { p.x = tx; p.vx = 0; }
+    p.face = 1; p.inv = Math.max(p.inv, 60);
+    G.cam.x = R.clamp(p.x - R.W * 0.42 + 26, 0, G.S.len - R.W);
+    G.fade = 1; G.fadeDir = -1;
+  }
   // 待ち: すり足で間合いを保ちながら、次の手を選ぶ
   function stIdle(e, p, dx, ad, t, A) {
     faceTo(e, p);

@@ -4357,12 +4357,25 @@ if (t === 84) X.toast(p.chars.kurenai.down || p.chars.aoi.down ? '黒瀬「…�
 if (t === 170) R.snd('select');
 if (t === 130) { e.expr = 'n_wounded'; e.exprT = 9999; }
 if (t === 196) { R.snd('shutter'); G.flash = 1; e.expr = 'n_laugh'; X.toast('黒瀬「いい顔だ、撮らせてもらった。――行け。姫は、龍の足もとだ」', '#d9b8ff'); }
+if (t === 204 && !e.endTalked && R.TALKS && R.TALKS.kurose_end) {
+e.endTalked = true; G.toast = null;
+R.beginTalk('kurose_end', { vs: e, onEnd: function () { ahead(e); } });
+return;
+}
 if (t >= 204) {
-for (i = 0; i < 5; i++) X.dropItem('crystal', e.x + rand(-30, 30), e.y - 30);
-X.dropItem('potion', e.x, e.y - 40);
+var ix = e.endTalked ? G.pl.x + 56 : e.x;
+for (i = 0; i < 5; i++) X.dropItem('crystal', ix + rand(-30, 30), e.y - 30);
+X.dropItem('potion', ix, e.y - 40);
 X.burst(e.x, e.y - 26, 20, ['#ffffff', PUR[1], '#cfe8ff'], 4, 26);
 R.midBossDone(e);
 }
+}
+function ahead(e) {
+var p = G.pl, m = e.mid, tx = m ? m.arena[1] - 40 : p.x;
+if (tx > p.x && X.groundAt(tx)) { p.x = tx; p.vx = 0; }
+p.face = 1; p.inv = Math.max(p.inv, 60);
+G.cam.x = R.clamp(p.x - R.W * 0.42 + 26, 0, G.S.len - R.W);
+G.fade = 1; G.fadeDir = -1;
 }
 function stIdle(e, p, dx, ad, t, A) {
 faceTo(e, p);
@@ -7276,6 +7289,18 @@ kurose: [
 { who: 'kurose', face: 'reach', text: ['黒瀬 龍士。通りすがりの、ただの空手使いだ。', 'さあ――二人まとめて、かかってこい。'] },
 { who: 'kurenai', face: 'anger', pose: 'stance', text: ['言ったね！　よーし、行くよ、蒼！'] }
 ],
+kurose_end: [
+{ who: 'kurenai', face: 'joy', text: ['よーし、通してもらったし、先を急ごう！', '黒瀬さん、撮った写真、あとで見せてね！'] },
+{ who: 'aoi', face: 'normal', text: ['……ありがとう、黒瀬さん。', '行こう、紅。龍の足もとまで、あと少しだよ。'] },
+{ who: 'kurose', face: 'old', exit: true, text: ['…………。', '――さて。聞いているんだろう、通信の向こうの君。'] },
+{ who: 'shikaku', face: 'smile', text: ['……あれ、ばれてた？　こちら四角。', 'あの二人の武器を作った、ただのメカニックだよ。'] },
+{ who: 'kurose', face: 'grin', text: ['ただの、か。……君は、結界のことに詳しいな。', 'どこで塞がり、どこで途切れるか。全部知っていた。'] },
+{ who: 'kurose', face: 'camera', text: ['橋を塞いだ場所も、結界の上の航路も。', 'まるで――結界を張った、本人のようだ。'] },
+{ who: 'shikaku', face: 'serious', text: ['…………。', '解析が得意なだけだよ。それ以上の意味は、ないさ。'] },
+{ who: 'kurose', face: 'old', text: ['そうか。だが、ファインダー越しだと、', '嘘は、よく見える。'] },
+{ who: 'shikaku', face: 'smile', text: ['ふふっ、怖いなあ。……でも、もう遅いよ。', '月は、もうじゅうぶん紅くなった。'] },
+{ who: 'kurose', face: 'grin', text: ['……四角 明宏。その名前、覚えておこう。'] }
+],
 idachi: [
 { who: 'idachi', face: 'smile', text: ['――ここまで登ってきたか。', '風の中、よく落ちなかったな。いい根性だ。'] },
 { who: 'kurenai', face: 'anger', text: ['だれ！？　ちょっと、そこどいて！', 'あたしたち、この先の《龍》に用があるの！'] },
@@ -7313,20 +7338,23 @@ function count(ln) { var n = 0, i; for (i = 0; i < ln.text.length; i++) n += ln.
 function shownOf(tk) { return tk.full ? 999 : Math.max(0, Math.floor((tk.t - 6) * SPEED)); }
 R.beginTalk = function (key, opt) {
 var C = G.pl.chars, lines = R.TALKS[key].filter(function (ln) { return !(C[ln.who] && C[ln.who].down); });
-G.talk = { key: key, lines: lines, i: 0, t: 0, T: 0, inT: 0, outT: -1, full: false, prev: null, vs: (opt && opt.vs) || null, mid: !!(opt && opt.mid) };
+G.talk = { key: key, lines: lines, i: 0, t: 0, T: 0, inT: 0, outT: -1, full: false, prev: null, vs: (opt && opt.vs) || null, mid: !!(opt && opt.mid), onEnd: (opt && opt.onEnd) || null };
 G.state = 'talk'; G.stateT = 0;
 };
 function leave(tk) { tk.outT = 0; tk.prev = null; R.snd('switch'); }
 function finish() {
-var vs = G.talk.vs || G.talk.mid;
+var vs = G.talk.vs || G.talk.mid, cb = G.talk.onEnd;
 G.pl.animT = G.talk.T;
 G.talk = null; G.state = 'play'; G.stateT = 0;
 if (!vs) R.openStage();
+if (cb) cb();
 }
 R.updateTalk = function (ok, skip) {
 var tk = G.talk, ln;
 if (!tk) { G.state = 'play'; return; }
 G.t++; tk.T++; tk.inT++;
+if (tk.inT >= IN && tk.lines[tk.i].exit) tk.exitOn = true;
+if (tk.exitOn) tk.exitT = (tk.exitT || 0) + 1;
 if (tk.vs && tk.vs.talkPose) tk.vs.talkPose(tk.vs, tk.inT >= IN && tk.outT < 0 && tk.lines[tk.i].who === tk.vs.talkWho, tk.T);
 if (G.fadeDir) { G.fade = R.clamp(G.fade + G.fadeDir * 0.04, 0, 1); if (G.fade === 0 || G.fade === 1) G.fadeDir = 0; }
 if (tk.prev && ++tk.prev.t > 8) tk.prev = null;
@@ -7344,14 +7372,17 @@ else leave(tk);
 R.talkChars = function (g, cam, draw) {
 var tk = G.talk; if (!tk) return;
 var ln = tk.lines[tk.i], p = G.pl, kx = p.x, started = tk.inT >= IN;
-function actor(who, x, face, ph, leap) {
+function actor(who, x, face, ph, leap, run) {
 var S = R.STAND[who], st = S.idle, f, br, y = p.y, a = 1, v;
 var speaking = started && tk.outT < 0 && ln.who === who;
 if (speaking && ln.pose === 'event') { f = R.frame(who, 'event', 1); st = null; }
 else { if (speaking && ln.pose === 'stance') st = S.stance; f = R.frame(who, st === S.idle ? 'idle' : 'stance', st.i); }
 if (st) { v = R.breath(st, tk.T + ph); br = { knee: st.knee, neck: st.neck, d: v[0], e: v[1] }; }
 if (speaking && tk.t < 14) y -= Math.round(5 * Math.sin(PI * tk.t / 14));
-if (leap && tk.outT >= 0) {
+if (run > 0) {
+x += run * Math.min(3.6, run * 0.3); f = R.frame(who, 'run', Math.floor(run / 4) % R.SPR[who].run.length); br = null; face = 1;
+if (x - cam > R.W + 40) return;
+} else if (leap && tk.outT >= 0) {
 v = Math.min(1, tk.outT / 26);
 x -= leap * R.ease(v); y -= Math.round(74 * Math.sin(PI * v * 0.8)); a = 1 - v * v;
 f = R.frame(who, 'jump', v < 0.3 ? 2 : v < 0.65 ? 3 : 4); br = null;
@@ -7363,8 +7394,9 @@ if (tk.vs) {
 var fc = tk.vs.x >= kx ? 1 : -1, act = p.who, par = act === 'kurenai' ? 'aoi' : 'kurenai';
 var bx = kx - fc * 30;
 bx = fc > 0 ? Math.max(bx, cam + 8) : Math.min(bx, cam + R.W - 8);
-if (!p.chars[par].down) actor(par, bx, fc, 40, fc * 44);
-actor(act, kx, fc, 0, 0);
+var ex = tk.exitOn ? tk.exitT : 0;
+if (!p.chars[par].down) actor(par, bx, fc, 40, fc * 44, Math.max(0, ex - 4));
+actor(act, kx, fc, 0, 0, Math.max(0, ex - 14));
 return;
 }
 if (tk.mid) kx = Math.min(kx, cam + R.W - GAP - 24);
