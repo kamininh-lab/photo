@@ -485,7 +485,7 @@
     g.save(); g.setTransform(S, 0, 0, S, 0, oy * S);
     g.imageSmoothingEnabled = (S === 3); if (S === 3) g.imageSmoothingQuality = 'high';      // 1.5 倍だけは、にじませたほうがドットがそろって見える
     if (R.Idachi && G.boss) R.Idachi.drawHi(g, cam);      // ステージ 2 のボス「井立」は、主人公と同じ細かい層・同じ大きさで描く（53_idachi.js）
-    if (G.state === 'talk') { R.talkChars(g, cam, charDraw); g.restore(); return; }          // 会話シーンでは、二人の立ち姿を並べる（65_talk.js）
+    if (G.state === 'talk') { if (R.Mako) R.Mako.draw(g, cam); R.talkChars(g, cam, charDraw); g.restore(); return; }          // 会話シーンでは、二人の立ち姿を並べる（65_talk.js）
     // 残像（交代で跳び去る相棒は、元の色のまま薄れていく）
     for (i = 0; i < G.ghosts.length; i++) {
       var gh = G.ghosts[i], gu = gh.t / gh.life;
@@ -517,6 +517,7 @@
       charDraw(g, f, p.x - cam, p.y, p.face, R.flipRot(p), psx, psy, p.hurtFlash > 0 && G.state === 'play' ? '#ffffff' : null, br);
     }
     if (R.Drone) R.Drone.draw(g, cam);      // 2P: 四角のドローン（58_drone.js）
+    if (R.Mako) R.Mako.draw(g, cam);        // 助っ人: 大森 茉子（36_mako.js）
     // スプライトのコマを使ったエフェクト（合体技のとどめの光の柱）
     for (i = 0; i < G.fx.length; i++) {
       e = G.fx[i]; if (e.type !== 'sprfx') continue;

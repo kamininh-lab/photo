@@ -128,17 +128,34 @@
       { who: 'kurenai', face: 'anger', pose: 'stance', text: ['龍でもなんでも、どーんと来い！', '姫さまは、返してもらうよ！'] },
       { who: 'aoi', face: 'normal', pose: 'stance', text: ['二人で、ひとつ。', '――行くよ、紅！'] }
     ],
-    // 玉龍が怒ったとき（HP が半分を切ったとき。35_dragon.js の roar から。はじめての 1 回だけ）
+    // 玉龍が真の力を解き放ったとき（HP が半分を切ったとき。35_dragon.js の roar から。はじめての 1 回だけ）。
+    //   最後に蒼が押されかけたところで、助っ人の大森が駆けつける（36_mako.js → 会話 mako）
     dragon_rage: [
-      { who: 'shikaku', face: 'shout', text: ['龍の力が跳ね上がった！　怒ってるよ！', '攻撃が速くなる。足もとの光の柱にも気をつけて！'] },
-      { who: 'kurenai', face: 'joy', text: ['怒った？　こっちは、まだまだ元気いっぱいだよ！'] },
-      { who: 'aoi', face: 'normal', pose: 'stance', text: ['落ち着いて、紅。流れは、もう読めてる。', 'あと半分――一緒に押し切ろう！'] }
+      { who: 'shikaku', face: 'shout', text: ['龍の力が跳ね上がった！　これが、真の力……！', '動きが速い。一撃も重い。まともに受けたら危ないよ！'] },
+      { who: 'kurenai', face: 'damage', text: ['うわっ、さっきまでと全然ちがう……！', 'で、でも、ここで引くわけには……！'] },
+      { who: 'aoi', face: 'normal', pose: 'stance', text: ['落ち着いて、紅。流れは、読めてる。', '……読めてる、けど――このままじゃ、押し切られる。'] }
+    ],
+    // 助っ人「大森 茉子」が駆けつけたとき（36_mako.js から。はじめての 1 回だけ）。大森は二人のお姉さん役。
+    //   紅は「茉子ねえ」、蒼は「茉子さん」と呼ぶ。決め台詞はシートの「無理はしないで。――ちゃんと、私が支えるから。」
+    //   四角の「予定には、なかった」は、四角が黒幕であることの伏線（kurose_end）
+    mako: [
+      { who: 'mako', face: 'command', text: ['――そこまで。二人とも、いったん息を整えて。', '回復は、私が引き受けるから。'] },
+      { who: 'kurenai', face: 'joy', text: ['茉子ねえ！？　なんで、ここに！？'] },
+      { who: 'mako', face: 'joy', text: ['かわいい後輩たちが、龍に挑んでるって聞いたの。', '放っておけるわけ、ないでしょう？'] },
+      { who: 'aoi', face: 'shy', text: ['茉子さん……。', '来てくれて、すごくうれしい。'] },
+      { who: 'mako', face: 'puzzled', text: ['蒼。また一人で、全部背負おうとしてたでしょう。', '紅も。顔に「無茶してます」って書いてあるよ。'] },
+      { who: 'kurenai', face: 'silly', text: ['うっ……ばれてる……。'] },
+      { who: 'shikaku', face: 'serious', text: ['……大森 茉子さん。玉龍高校の。', '――予定には、なかったけど。……助かるよ。'] },
+      { who: 'mako', face: 'anger', text: ['無理はしないで。', '――ちゃんと、私が支えるから。'] },
+      { who: 'kurenai', face: 'joy', pose: 'stance', text: ['よーし、百人力！', '行っくよー、蒼！'] },
+      { who: 'aoi', face: 'joy', pose: 'stance', text: ['うん。茉子さん、背中はお願いね。'] }
     ],
     // 玉龍を倒したあと（50_game.js の updBossTrigger から）。終わると、ステージクリア → エンディング
     dragon_end: [
       { who: 'kurenai', face: 'joy', text: ['やったぁ……！', '龍、倒したよー！'] },
       { who: 'shikaku', face: 'smile', text: ['龍の反応、消失……。', 'そして――姫さまの反応、確認！　無事だよ！'] },
       { who: 'aoi', face: 'shy', text: ['……よかった。', '間に合ったんだね。'] },
+      { who: 'mako', face: 'relief', text: ['……ふう。二人とも、よくがんばったね。', 'あとで、ちゃんと手当てさせてね。'] },
       { who: 'kurenai', face: 'joy', text: ['へへっ、四角、ありがとね！', '最後まで、ずーっと見ててくれて！'] },
       { who: 'shikaku', face: 'smile', text: ['お礼はいいよ。武器の手入れは、帰ってからね。', '――二人とも、おつかれさま。'] },
       { who: 'aoi', face: 'normal', text: ['……紅い月が、沈んでいく。', '井立さんの言っていた答えも、この先にあるはず。'] },
@@ -203,6 +220,9 @@
     kurose: { side: 1, col: '#c98bff', dark: '#170a30', lite: '#4a2890', mid: '#2e1960', plate: '#2a1650', name: '黒瀬', kana: 'くろせ', en: 'KUROSE RYUJI', icon: null, portrait: true, pics: true, img: 'midPic_' },
     // 井立: ステージ 2 のボス。絵は smile（左上の大きな絵）/ close（真剣な寄り）/ shout（拳を突き出して叫ぶ）/ kick（蹴り）
     idachi: { side: 1, col: '#7af3ff', dark: '#050d26', lite: '#1a4aa8', mid: '#0e2a66', plate: '#0c2458', name: '井立', kana: 'いだち', en: 'IDACHI KAISEI', icon: null, pics: true, img: 'idaPic_' },
+    // 大森 茉子: 助っ人の回復役（36_mako.js）。pics = 表情ごとの絵（09_mako_art.js）:
+    //   normal / command 支援指示 / heal 回復 / sad / silly おとぼけ / shy 照れ / joy 喜び / anger 怒り（冷静）/ surprise / puzzled 困惑 / relief 安堵
+    mako: { side: -1, col: '#ff8ae0', dark: '#1e0a2e', lite: '#6a2a8a', mid: '#3e1660', plate: '#3a1452', name: '大森', kana: 'おおもり', en: 'OMORI MAKO', icon: null, pics: true },
     // 四角: 通信で話す。pics = 表情ごとの絵（09_shikaku_art.js）、tag = 帯に出す小さな札
     shikaku: { side: 1, col: '#ffc84a', dark: '#07122e', lite: '#1c4a86', mid: '#123260', plate: '#143058', name: '四角', kana: 'よすみ', en: 'YOSUMI AKIHIRO', icon: null, pics: true, tag: '通信中  ‐  SUPPORT' }
   };
@@ -210,6 +230,9 @@
   (function () {
     var D = window.REBELL_SHIKAKU || {}, k, im;
     for (k in D) { im = new Image(); im.src = D[k]; PICS['shikaku_' + k] = im; }
+    var M = (window.REBELL_MAKO && window.REBELL_MAKO.pics) || {};      // 大森の絵も（smile は joy と同じ絵）
+    for (k in M) { im = new Image(); im.src = M[k]; PICS['mako_' + k] = im; }
+    if (PICS.mako_joy) PICS.mako_smile = PICS.mako_joy;
   })();
 
   function count(ln) { var n = 0, i; for (i = 0; i < ln.text.length; i++) n += ln.text[i].length; return n; }
@@ -220,7 +243,7 @@
   //   inT = 入りの演出、outT = 終わりの演出（-1 = まだ）、full = 台詞を全部出したか、prev = すべり出ていく前のカットイン
   //   opt.vs = 向かい合っている相手（中ボス）。ステージの途中の会話で、終わったらそのまま戦いに戻る
   R.beginTalk = function (key, opt) {
-    var C = G.pl.chars, lines = R.TALKS[key].filter(function (ln) { return !(C[ln.who] && C[ln.who].down); });      // 戦闘不能の子の台詞は飛ばす
+    var C = G.pl.chars, lines = R.TALKS[key].filter(function (ln) { return !(C[ln.who] && C[ln.who].down) && !(ln.who === 'mako' && !(G.mako && G.mako.on)); });      // 戦闘不能の子の台詞は飛ばす（大森の台詞は、大森が来ているときだけ）
     G.talk = { key: key, lines: lines, i: 0, t: 0, T: 0, inT: 0, outT: -1, full: false, prev: null, vs: (opt && opt.vs) || null, mid: !!(opt && opt.mid), onEnd: (opt && opt.onEnd) || null };      // onEnd = 会話が終わったときに呼ぶ      // mid = 相手のいない、ステージの途中・終わりの会話（二人が向かい合って話す）
     G.state = 'talk'; G.stateT = 0;
   };

@@ -464,6 +464,7 @@
     if (p.st === 'dash' && !p.justDone) { p.justDone = true; justDodge(p); }
     if (p.inv > 0 || p.st === 'dash' || p.st === 'special' || p.st === 'cross') return false;
     if (R.Drone && R.Drone.block(R.GX)) return false;      // 2P のドローンのシールドが、1 回だけ防ぐ
+    if (R.Mako && R.Mako.block(R.GX)) return false;        // 助っ人の大森のプロテクション（光の膜）も、1 回だけ防ぐ
     // 紅は大鎌を振っている間、攻撃を受けてもひるまない（ダメージは 7 割）
     var armor = p.who === 'kurenai' && p.st === 'attack' && !p.atk.dive && p.stT <= p.atk.h1 + 2;
     if (armor) dmg *= 0.7;
@@ -1577,7 +1578,8 @@
     if (!fromCheckpoint || !G.stg || G.stg.stage !== idx) G.stg = { stage: idx, time: 0, combo: 0, dmg: 0, hurts: 0, best: 0, retry: 0 };      // このステージだけの成績（クリアの評価に使う）
     else G.stg.retry++;
     if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; G.tHint = {}; G.idaMet = false; G.idaHint = null; G.dragonMet = false; G.dragonRageMet = false; }
-    if (!fromCheckpoint) G.guardMet = false;
+    if (!fromCheckpoint) { G.guardMet = false; G.makoMet = false; }
+    G.mako = null;      // 助っ人の大森（36_mako.js）は、龍が真の力を解き放つたびに駆けつける
     G.guardWait = null; G.guardEnd = false; G.endTalked = false;
     G.dragonEnd = false;      // 中ボスを倒したか・もう会ったか（やり直しても覚えておく。ステージを最初から始めるときだけ戻す）
     S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });
@@ -1777,6 +1779,7 @@
     if (G.stg && !G.bossDefeated) G.stg.time++;
     updMovers(); updPlayer(); updSprings(); updGimmicks(); updPShots();
     if (R.Drone) R.Drone.update(R.GX);      // 2P: 四角のドローン（テンキー。58_drone.js）
+    if (R.Mako) R.Mako.update(R.GX);        // 助っ人: 大森 茉子（36_mako.js）
     if (G.slow > 0) G.slow--;
     if (G.cross) updCross(); else if (!(G.slow > 0) || G.t % 3 === 0) { updEnemies(); updShots(); }
     if (!G.cross) updTouch();

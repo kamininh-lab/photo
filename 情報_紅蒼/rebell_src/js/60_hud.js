@@ -324,6 +324,24 @@
       g.globalAlpha = 1;
     }
   }
+  // 右下: 助っ人の大森（36_mako.js）の状態。顔と、リカバー・プロテクションが使えるまでの帯。ドローンが出ていれば、その上に
+  var makoPic = null;
+  function makoHud(g) {
+    if (!makoPic && window.REBELL_MAKO && window.REBELL_MAKO.pics) { makoPic = new Image(); makoPic.src = window.REBELL_MAKO.pics.normal; }
+    var m = G.mako; if (!m || !m.on || G.state === 'pause') return;
+    var C = R.MAKO_CFG, x = 1452, y = G.drone && G.drone.on ? 776 : 916, i;
+    panel(g, x, y, 440, 132, 14, 'rgba(34,10,48,.86)', '#ff8ae0', 4);
+    if (makoPic && makoPic.complete && makoPic.naturalWidth) { g.save(); g.beginPath(); g.rect(x + 12, y + 12, 150, 108); g.clip(); g.drawImage(makoPic, x + 4, y + 12, 159, 108); g.restore(); }
+    g.strokeStyle = '#ff8ae0'; g.lineWidth = 3; g.strokeRect(x + 12, y + 12, 150, 108);
+    T(g, '助っ人  大森 茉子', x + 178, y + 36, 24, '#ff8ae0', 'left', UI, '#1e0a2e', 5);
+    var rows = [['リカバー', 1 - m.healCd / C.HEAL_CD, m.healT > 0, '#7dffc4'], ['プロテクト', m.domeT > 0 ? 1 : 1 - m.domeCd / C.DOME_CD, m.domeT > 0, '#9af0ff']];
+    for (i = 0; i < 2; i++) {
+      var r = rows[i], yy = y + 66 + i * 38, ready = r[1] >= 1;
+      T(g, r[0], x + 178, yy + 10, 21, ready ? '#ffffff' : '#b89ac8', 'left', UI, '#1e0a2e', 4);
+      g.fillStyle = '#1e0a2e'; g.fillRect(x + 300, yy - 6, 126, 20);
+      g.fillStyle = r[2] ? ((G.t >> 3) % 2 ? '#ffffff' : r[3]) : ready ? r[3] : '#5a3a7a'; g.fillRect(x + 302, yy - 4, 122 * clamp(r[1], 0, 1), 16);
+    }
+  }
   R.drawHUD = function (g) {
     var p = G.pl, i;
     // 文字（ダメージ数字）
@@ -356,6 +374,7 @@
     logo(g, 1296, 100, 0.86);
     minimap(g);
     droneHud(g);
+    makoHud(g);
     // コンボ
     if (G.combo >= 2) {
       g.save(); g.translate(1680, 392); var s = 1 + G.comboPop * 0.035; g.scale(s, s); g.transform(1, 0, -0.18, 1, 0, 0);

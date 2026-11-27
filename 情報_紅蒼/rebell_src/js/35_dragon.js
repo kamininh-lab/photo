@@ -5,12 +5,15 @@
 //   rush    … 炎をまとった突進。画面の端から、こちらのいる高さを横一文字に駆け抜け、いったん画面の外へ消える（return で上から戻る）
 //   fireball… 高い所から火球を落とす   breath … 斜め上から炎を吹き下ろす   pillar … 光の柱（怒りの間だけ）
 //   land → rest … 何度か攻めると、右の岸に降りて羽を休める（ここが攻めどき）→ takeoff でまた飛び立つ
+//   体力が半分を切ると、真の力を解き放つ（phase 2）: 動きが約 1.33 倍に速くなり（3 フレームに 1 回もう 1 コマ進める）、一撃が 1.25 倍に重くなる。
+//     紅い炎の気をまとい、光の柱と、空から火球の雨を降らせる meteor が加わる。吠えている間に、助っ人の大森（36_mako.js）が駆けつける
 // 向きは e.face（-1 = 左。絵のまま）、e.rot は体の傾き（正 = 頭が上がる）。e.y は足元。
 (function () {
   'use strict';
   var R = window.REBELL, PI = Math.PI, clamp = R.clamp, GY = R.GY;
   var D = window.REBELL_DRAGON || { frames: {} }, FR = D.frames, img = null, tmp = null, tctx = null, emb = null, G, X;
   var PIV = 46;      // 傾けるときの中心（足元からの高さ）
+  var PW = 1;        // 一撃の重さ（真の力を解き放つと 1.25）
   function rand(a, b) { return a + Math.random() * (b - a); }
 
   // 絵を読み込む（90_main.js から。終わったら done）
@@ -63,7 +66,8 @@
     else { setFr(e, 'wing', (e.t % 22) < 11 ? 3 : 2); e.front = true; e.rot = 0; }
   }
   function ghost(e) { e.trail.push({ x: e.x, y: e.y, fn: e.fn, fi: e.fi, face: e.face, rot: e.rot, a: 0.5 }); }
-  function hit(b, dmg, dir, big) { if (R.overlap(b, X.box(G.pl))) X.hurtPlayer(dmg, dir, big); }
+  function hit(b, dmg, dir, big) { if (R.overlap(b, X.box(G.pl))) X.hurtPlayer(Math.round(dmg * PW), dir, big); }
+  function shoot(o) { o.dmg = Math.round(o.dmg * PW); X.shoot(o); }
   function toHover(e, cd) {
     var p = G.pl;
     go(e, 'hover'); e.cd = cd; e.evade = e.phase === 2 ? 2 : 1; e.side = e.x >= p.x ? 1 : -1; e.rot = 0;
@@ -71,12 +75,13 @@
   function pick(e) {
     var rage = e.phase === 2, k;
     if (e.count >= (rage ? 4 : 3)) { go(e, 'land'); return; }
-    var opts = rage ? ['swoop', 'rush', 'fireball', 'breath', 'pillar', 'swoop', 'rush'] : ['swoop', 'rush', 'fireball', 'breath', 'swoop'];
+    var opts = rage ? ['swoop', 'rush', 'fireball', 'breath', 'pillar', 'meteor', 'swoop', 'rush'] : ['swoop', 'rush', 'fireball', 'breath', 'swoop'];
     do { k = opts[(Math.random() * opts.length) | 0]; } while (k === e.last);
     e.last = k; e.count++; e.again = false; go(e, k);
   }
   function rageOn(e) {
-    e.phase = 2; go(e, 'roar'); e.invul = 80; G.rage = true; R.snd('roar'); X.toast('玉龍が怒りに燃えている…！', '#ff7a8a');
+    e.phase = 2; go(e, 'roar'); e.invul = 80; G.rage = true; R.snd('roar'); X.toast('玉龍が真の力を解き放った…！　動きが速く、一撃が重くなる！', '#ff7a8a');
+    G.flash = 1; X.shake(12); X.burst(e.x, e.y - 50, 40, ['#ff2e48', '#ffd36a', '#ffffff'], 6, 40, 0.04);
   }
 
   function die(e) {
@@ -97,10 +102,12 @@
     G = R.game; X = R.GX;
     var p = G.pl, A0 = G.arena ? G.arena[0] : e.homeX - 420, A1 = G.arena ? G.arena[1] : e.homeX + 90;
     var rage = e.phase === 2, dx = p.x - e.x, i, m, u, t, tx, ty, n;
+    PW = rage ? 1.25 : 1;
     e.t++; e.stT++; e.front = false; e.hide = false; e.glow = 0; t = e.stT;
     if (e.invul > 0) e.invul--;
     for (i = e.trail.length - 1; i >= 0; i--) { e.trail[i].a -= 0.07; if (e.trail[i].a <= 0) e.trail.splice(i, 1); }
     if (e.st === 'die') { die(e); return; }
+    if (rage && e.t % 2 === 0 && !e.hide) X.part(e.x + rand(-60, 60), e.y - rand(10, 80), rand(-0.4, 0.4), -rand(0.6, 1.6), rand(16, 28), Math.random() < 0.5 ? '#ff2e48' : '#ffb03a', 2, 0, true);      // 真の力: 紅い炎の気
 
     if (e.bannerT > 0 && --e.bannerT === 0) G.bossIntro = 110;      // 会話のあとに、題字を出す
     if (e.st === 'intro') {      // 岸の上で吠えてから、飛び立つ
@@ -190,7 +197,7 @@
       if (t > 20 && u === 0 && (t - 20) / 24 <= n) {
         m = mouth(e);
         var fx = p.x + rand(-26, 26) + p.vx * 18, T = 60, fy = Math.min(GY, p.y);
-        X.shoot({ type: 'fireball', x: m[0], y: m[1], vx: (fx - m[0]) / T, vy: (fy - m[1] - 0.5 * 0.14 * T * T) / T, g: 0.14, life: 200, dmg: 13, r: 7, ty: fy });
+        shoot({ type: 'fireball', x: m[0], y: m[1], vx: (fx - m[0]) / T, vy: (fy - m[1] - 0.5 * 0.14 * T * T) / T, g: 0.14, life: 200, dmg: 13, r: 7, ty: fy });
         R.snd('fire');
       }
       if (t > 20 + 24 * (n + 1)) toHover(e, rage ? 26 : 44);
@@ -209,25 +216,35 @@
         m = mouth(e);
         var an = Math.atan2(e.aimY - m[1], e.aimX - m[0]);
         if (t % 8 === 0) R.snd('fire');
-        for (i = 0; i < 2; i++) { var sp = rand(3.8, 4.8), aa = an + rand(-0.09, 0.09); X.shoot({ type: 'flame', x: m[0], y: m[1], vx: Math.cos(aa) * sp, vy: Math.sin(aa) * sp, life: rand(36, 48), dmg: 11, r: 5 }); }
+        for (i = 0; i < 2; i++) { var sp = rand(3.8, 4.8), aa = an + rand(-0.09, 0.09); shoot({ type: 'flame', x: m[0], y: m[1], vx: Math.cos(aa) * sp, vy: Math.sin(aa) * sp, life: rand(36, 48), dmg: 11, r: 5 }); }
       } else { e.rot += clamp(0 - e.rot, -0.03, 0.03); setFr(e, 'breath', 4); if (t > 34 + len + 20) toHover(e, rage ? 24 : 40); }
     } else if (e.st === 'pillar') {      // 光の柱（怒りの間だけ）
       glide(e, clamp(e.x, A0 + 80, A1 - 80), 104, 0.06, 2.4); e.face = dx >= 0 ? 1 : -1; e.rot = 0.12;
       setFr(e, 'roar', t < 10 ? 1 : (t >> 3) % 2 ? 2 : 3);
       if (t === 10) {
         R.snd('roar'); X.shake(5);
-        for (i = 0; i < 5; i++) X.shoot({ type: 'pillar', x: A0 + 44 + i * 102 + rand(-20, 20), y: GY, vx: 0, vy: 0, life: 110, dmg: 16, w: 26, h: 120, warn: 56 });
-        X.shoot({ type: 'pillar', x: p.x, y: GY, vx: 0, vy: 0, life: 110, dmg: 16, w: 26, h: 120, warn: 56 });
+        for (i = 0; i < 5; i++) shoot({ type: 'pillar', x: A0 + 44 + i * 102 + rand(-20, 20), y: GY, vx: 0, vy: 0, life: 110, dmg: 16, w: 26, h: 120, warn: 56 });
+        shoot({ type: 'pillar', x: p.x, y: GY, vx: 0, vy: 0, life: 110, dmg: 16, w: 26, h: 120, warn: 56 });
       }
       if (t > 96) toHover(e, 30);
+    } else if (e.st === 'meteor') {      // 火球の雨（真の力のときだけ）: 高く昇り、地面に落ちる場所を光の輪で知らせてから、火球を次々に降らせる
+      glide(e, clamp((A0 + A1) / 2, A0 + 80, A1 - 80), 70, 0.06, 3); e.face = dx >= 0 ? 1 : -1; e.rot = 0.18;
+      setFr(e, 'roar', t < 12 ? 1 : (t >> 3) % 2 ? 2 : 3); e.glow = 1;
+      if (t === 12) { R.snd('roar'); X.shake(6); e.drops = []; for (i = 0; i < 7; i++) e.drops.push(A0 + 50 + (A1 - A0 - 100) * (i + rand(-0.3, 0.3)) / 6); e.drops.push(p.x); e.drops.sort(function () { return Math.random() - 0.5; }); }
+      if (t > 12 && e.drops && (t - 12) % 9 === 0 && e.drops.length) {
+        var dxp = e.drops.pop(), TT = 46; m = mouth(e);
+        shoot({ type: 'fireball', x: m[0], y: m[1], vx: (dxp - m[0]) / TT, vy: (GY - m[1] - 0.5 * 0.14 * TT * TT) / TT, g: 0.14, life: 200, dmg: 12, r: 7, ty: GY });
+        X.fx({ type: 'ring', x: dxp, y: GY - 2, life: TT, r: 14, col: '#ff7a8a', flat: true }); R.snd('fire');
+      }
+      if (t > 12 + 9 * 9 + 30) toHover(e, 30);
     } else if (e.st === 'land') {      // 岸に降りる
       glide(e, e.homeX, GY, 0.08, 4.2);
       if (e.y < GY - 26) wingAnim(e); else { setFr(e, 'walk', 0); e.rot = 0; e.face = dx >= 0 ? 1 : -1; }
       if ((e.y >= GY - 1.5 && Math.abs(e.x - e.homeX) < 8) || t > 130) {
         e.x = e.homeX; e.y = GY; e.rot = 0; e.face = dx >= 0 ? 1 : -1;
         X.shake(9); R.snd('special_red'); X.dust(e.x - 50, GY, 10); X.dust(e.x + 50, GY, 10);
-        X.shoot({ type: 'shock', x: e.x - 70, y: GY, vx: -3.2, vy: 0, life: 200, dmg: 14, w: 18, h: 26 });
-        X.shoot({ type: 'shock', x: e.x + 70, y: GY, vx: 3.2, vy: 0, life: 200, dmg: 14, w: 18, h: 26 });
+        shoot({ type: 'shock', x: e.x - 70, y: GY, vx: -3.2, vy: 0, life: 200, dmg: 14, w: 18, h: 26 });
+        shoot({ type: 'shock', x: e.x + 70, y: GY, vx: 3.2, vy: 0, life: 200, dmg: 14, w: 18, h: 26 });
         if (p.ground) hit({ x: e.x - 120, y: GY - 30, w: 240, h: 32 }, 14, p.x >= e.x ? 1 : -1, true);
         if (!e.told) { e.told = true; X.toast('玉龍が羽を休めている…今だ！', '#ffe04a'); }
         go(e, 'rest');
@@ -240,6 +257,8 @@
       setFr(e, 'roar', t < 10 ? 0 : t < 20 ? 1 : (t >> 3) % 2 ? 2 : 3); e.rot = 0.1;
       if (t === 24 && !G.dragonRageMet && R.TALKS && R.TALKS.dragon_rage && R.beginTalk) { G.dragonRageMet = true; R.beginTalk('dragon_rage', { vs: e }); return; }      // はじめて怒ったとき: 短い会話
       if (t % 5 === 0) X.shake(5);
+      if (t === 30 && R.Mako && !R.Mako.on()) R.Mako.arrive();      // 助っ人の大森が駆けつける
+      if (t > 80 && R.Mako && !R.Mako.ready()) { e.stT = 80; return; }      // 大森が降り立って、話し終えるまで吠えたまま待つ
       if (t > 80) { if (e.y >= GY - 2) go(e, 'takeoff'); else toHover(e, 16); e.count = 0; }
     }
   }
@@ -255,6 +274,12 @@
       g.globalAlpha = 0.5 + 0.3 * k; g.fillStyle = '#ffd0ec'; g.fillRect(0, e.rowY - 59, R.W, 1); g.fillRect(0, e.rowY - 16, R.W, 1);
       g.restore();
     }
+    if (e.phase === 2 && e.st !== 'die') {      // 真の力: 体のまわりに、脈打つ紅い気
+      k = 0.5 + 0.5 * Math.sin(e.t * 0.12);
+      g.save(); g.globalCompositeOperation = 'lighter';
+      var ag = g.createRadialGradient(x, e.y - 46, 10, x, e.y - 46, 96); ag.addColorStop(0, 'rgba(255,60,80,' + (0.22 + 0.12 * k) + ')'); ag.addColorStop(1, 'rgba(255,60,80,0)');
+      g.fillStyle = ag; g.fillRect(x - 100, e.y - 146, 200, 200); g.restore();
+    }
     for (i = 0; i < e.trail.length; i++) { q = e.trail[i]; blit(g, q.fn, q.fi, q.x - cam, q.y, q.face, q.rot, q.a * 0.6, 0.55); }
     blit(g, e.fn, e.fi, x + jx, e.y, e.face, e.rot, 1, e.flash > 0 && (e.flash >> 1) % 2 === 0 ? 0.85 : 0);
     if (e.glow && !e.front) {      // 攻撃の前ぶれ: 口もとの光
@@ -265,13 +290,18 @@
     }
   }
 
+  // 真の力: 3 フレームに 1 回、もう 1 回動かす（吠えている・倒れていくとき、会話のときは、ふつうの速さ）
+  function fastUpd(e) {
+    upd(e);
+    if (e.phase === 2 && e.st !== 'die' && e.st !== 'roar' && R.game.state === 'play' && (e.fastN = (e.fastN || 0) + 1) % 3 === 0) upd(e);
+  }
   var EMB = ['wing', 3];
   R.Dragon = {
     init: function (e) {
       e.w = 110; e.h = 90; e.hp = e.max = 1800; e.exp = 0; e.armor = true; e.phase = 1;
       e.t = 0; e.cd = 40; e.count = 0; e.evade = 1; e.side = -1; e.rot = 0; e.trail = []; e.homeX = e.x; e.face = -1;
       e.st = 'intro'; e.stT = 0; setFr(e, 'roar', 0);
-      e.upd = upd; e.draw = draw; e.boxes = boxes;
+      e.upd = fastUpd; e.draw = draw; e.boxes = boxes;
     },
     // 起動ロゴの紋章に使う絵（翼を広げた正面の姿）。[キャンバス, 中心 x, 中心 y]
     emblem: function () {
