@@ -123,7 +123,9 @@ doc.add_heading('ステージの前', level=2)
 note('雨の降るネオンの廃都。水道橋の上に機械兵があふれている。四角から通信が入り、武器のおさらいをする。')
 talk('stage1')
 doc.add_heading('ボス戦　重機兵ガーディアン', level=2)
-note('水道橋の終わりで、重機兵ガーディアン（HEAVY GUARDIAN）が道を塞ぐ。会話はなく、倒すとステージクリア。')
+note('水道橋の終わり。重機兵ガーディアン（HEAVY GUARDIAN）が、地響きを立てて歩いてくる。')
+talk('guard')
+note('会話のあと「WARNING　重機兵ガーディアン」の帯が出て、戦いが始まる。倒すとステージクリア。')
 
 # ---- 第二章 ----
 doc.add_heading('第二章　天を衝く鉄塔', level=1)

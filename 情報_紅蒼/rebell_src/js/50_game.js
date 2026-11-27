@@ -1577,6 +1577,8 @@
     if (!fromCheckpoint || !G.stg || G.stg.stage !== idx) G.stg = { stage: idx, time: 0, combo: 0, dmg: 0, hurts: 0, best: 0, retry: 0 };      // このステージだけの成績（クリアの評価に使う）
     else G.stg.retry++;
     if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; G.tHint = {}; G.idaMet = false; G.idaHint = null; G.dragonMet = false; G.dragonRageMet = false; }
+    if (!fromCheckpoint) G.guardMet = false;
+    G.guardWait = null;
     G.dragonEnd = false;      // 中ボスを倒したか・もう会ったか（やり直しても覚えておく。ステージを最初から始めるときだけ戻す）
     S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });
     S.items.forEach(function (q) { G.items.push({ type: q[0], x: q[1], y: q[2], t: 0, open: false }); });
@@ -1698,6 +1700,16 @@
       if (b.type === 'dragon') G.sakuraOn = true;      // 龍との戦いが始まると、桜吹雪
       G.bossIntro = 110; R.bgm('boss'); R.snd(b.type === 'dragon' ? 'roar' : 'explosion'); shake(8);
       G.enemies = G.enemies.filter(function (e) { return e === G.boss || (e.x > b.arena[0] - 40 && e.x < b.arena[1]); });
+      // 重機兵: 画面に入ってくるまでは攻撃せずに歩いてくる。入ってきたら紅・蒼・四角の会話。WARNING の帯は、会話のあとに出す
+      if (b.type === 'guard' && !G.guardMet && R.TALKS && R.TALKS.guard) { G.guardWait = 0; G.boss.cd = 9999; G.bossIntro = 0; }
+    }
+    if (G.guardWait !== undefined && G.guardWait !== null && G.boss && G.boss.type === 'guard') {
+      var gb = G.boss;
+      if (G.guardWait === 'banner') { G.guardWait = null; G.bossIntro = 110; gb.cd = 50; }      // 会話が終わって戻ってきた
+      else if (gb.x < G.cam.x + R.W - 34 || ++G.guardWait > 300) {      // 画面に入った（来なければ 5 秒で）
+        G.guardMet = true; G.guardWait = 'banner'; G.shots = [];
+        R.beginTalk('guard', { vs: gb }); return;
+      }
     }
     if (G.bossIntro > 0) G.bossIntro--;
     if (G.bossDefeated) {

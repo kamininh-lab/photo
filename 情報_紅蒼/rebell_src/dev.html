@@ -3620,6 +3620,8 @@ G.style = newStyle(); if (p) p.counterT = 0;
 if (!fromCheckpoint || !G.stg || G.stg.stage !== idx) G.stg = { stage: idx, time: 0, combo: 0, dmg: 0, hurts: 0, best: 0, retry: 0 };
 else G.stg.retry++;
 if (!fromCheckpoint) { G.midDone = false; G.midMet = false; G.midHint = null; G.tHint = {}; G.idaMet = false; G.idaHint = null; G.dragonMet = false; G.dragonRageMet = false; }
+if (!fromCheckpoint) G.guardMet = false;
+G.guardWait = null;
 G.dragonEnd = false;
 S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });
 S.items.forEach(function (q) { G.items.push({ type: q[0], x: q[1], y: q[2], t: 0, open: false }); });
@@ -3730,6 +3732,15 @@ G.boss = spawn(b.type, b.x, GY); G.boss.name = b.name; G.boss.sub = b.sub; G.ene
 if (b.type === 'dragon') G.sakuraOn = true;
 G.bossIntro = 110; R.bgm('boss'); R.snd(b.type === 'dragon' ? 'roar' : 'explosion'); shake(8);
 G.enemies = G.enemies.filter(function (e) { return e === G.boss || (e.x > b.arena[0] - 40 && e.x < b.arena[1]); });
+if (b.type === 'guard' && !G.guardMet && R.TALKS && R.TALKS.guard) { G.guardWait = 0; G.boss.cd = 9999; G.bossIntro = 0; }
+}
+if (G.guardWait !== undefined && G.guardWait !== null && G.boss && G.boss.type === 'guard') {
+var gb = G.boss;
+if (G.guardWait === 'banner') { G.guardWait = null; G.bossIntro = 110; gb.cd = 50; }
+else if (gb.x < G.cam.x + R.W - 34 || ++G.guardWait > 300) {
+G.guardMet = true; G.guardWait = 'banner'; G.shots = [];
+R.beginTalk('guard', { vs: gb }); return;
+}
 }
 if (G.bossIntro > 0) G.bossIntro--;
 if (G.bossDefeated) {
@@ -6948,6 +6959,16 @@ stage1: [
 { who: 'shikaku', face: 'shout', text: ['機械兵、来るよ！　道案内と解析は、ぼくに任せて。', '行って、二人とも！'] },
 { who: 'kurenai', face: 'joy', pose: 'event', text: ['よーし、行っくよー、蒼！', '待ってて、姫さま。いま助けに行くからね！'] },
 { who: 'aoi', face: 'joy', pose: 'stance', text: ['うん。背中は任せて、紅。', '四角、案内をお願いね。'] }
+],
+guard: [
+{ who: 'kurenai', face: 'silly', text: ['わわっ、なにあれ！？　でっかい機械兵！', '道、ふさがれちゃってるよー！'] },
+{ who: 'shikaku', face: 'serious', text: ['――重機兵ガーディアン。この水道橋の門番だ。', '装甲が厚くて、ふつうの機械兵とはわけが違う。'] },
+{ who: 'aoi', face: 'normal', text: ['動きは重そう。でも、一撃も重そうだね。', '四角、何か弱いところはある？'] },
+{ who: 'shikaku', face: 'serious', text: ['地面を叩くと、衝撃波が左右に走る。跳んでよけて。', '突進は、壁にぶつかったあとが隙だらけだよ。'] },
+{ who: 'shikaku', face: 'smile', text: ['それと、攻撃をダッシュでぎりぎりよけてみて。', '見切れたら、反撃の一撃が重くなる。'] },
+{ who: 'kurenai', face: 'joy', text: ['ぎりぎりでよけて、どーんと反撃！', 'へへっ、そういうの大好き！'] },
+{ who: 'aoi', face: 'joy', pose: 'stance', text: ['ふふっ、紅らしいね。', '私が流れを読むから、合わせていこう。'] },
+{ who: 'kurenai', face: 'anger', pose: 'stance', text: ['よーし、まずはこいつから！', '行っくよー、蒼！'] }
 ],
 tower: [
 { who: 'kurenai', face: 'silly', text: ['うわー……てっぺん、見えない！', 'これ、雲の上まで続いてるんじゃない？'] },
