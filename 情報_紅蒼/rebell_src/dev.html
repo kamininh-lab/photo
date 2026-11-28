@@ -6057,7 +6057,7 @@ function any(m, codes) { for (var i = 0; i < codes.length; i++) if (m[codes[i]])
 function anyLatch() { for (var k in latch) if (latch[k]) return true; return false; }
 var SPEED = 2.8, SHOT = 7, REP_CD = 900, REP_HEAL = 0.25, SHD_CD = 1200, SHD_LEN = 420, IDLE = 150;
 R.DRONE_CFG = { REP_CD: REP_CD, SHD_CD: SHD_CD };
-R.DRONE_BROKEN = true;
+R.DRONE_BROKEN = function () { return !!(G.S && G.S.ch && G.S.ch !== 1); };
 var img = null;
 function pic() { if (!img && window.REBELL_DRONE) { img = new Image(); img.src = window.REBELL_DRONE; } return img; }
 pic();
@@ -6078,8 +6078,9 @@ feed: function (code, down) { if (down && !held[code]) latch[code] = true; held[
 feedReset: function () { held = {}; },
 update: function (X) {
 var d = drone(), p = G.pl, i, s;
+if (d.on && R.DRONE_BROKEN()) { d.on = false; d.leaving = 0; d.shots = []; d.shieldT = 0; d.healT = 0; }
 if (!d.on) {
-if (anyLatch() && G.state === 'play' && R.DRONE_BROKEN) {
+if (anyLatch() && G.state === 'play' && R.DRONE_BROKEN()) {
 if (!(d.brokenT > 0)) { X.toast('四角のドローンは、故障していて動かない……（2P は使えません）', '#ffc84a'); R.snd('deny'); d.brokenT = 240; }
 } else if (anyLatch() && G.state === 'play') launch(d, p, X);
 if (d.brokenT > 0) d.brokenT--;

@@ -21,7 +21,7 @@
   // SPEED = 飛ぶ速さ / SHOT = 弾の間隔 / REP = 修理の待ち時間・回復の割合 / SHD = シールドの待ち時間・続く時間 / IDLE = ついていくまでの時間
   var SPEED = 2.8, SHOT = 7, REP_CD = 900, REP_HEAL = 0.25, SHD_CD = 1200, SHD_LEN = 420, IDLE = 150;
   R.DRONE_CFG = { REP_CD: REP_CD, SHD_CD: SHD_CD };
-  R.DRONE_BROKEN = true;      // ドローンは故障中（false に戻すと、また 2P で使える）
+  R.DRONE_BROKEN = function () { return !!(G.S && G.S.ch && G.S.ch !== 1); };      // 第2章のステージでは故障中（2026-11-28 の要望。第1章では使える）
   var img = null;
   function pic() { if (!img && window.REBELL_DRONE) { img = new Image(); img.src = window.REBELL_DRONE; } return img; }
   pic();      // 起動時に読み込んでおく（呼んだ瞬間に絵が間に合うように）
@@ -46,8 +46,9 @@
     // 毎フレーム（R.updatePlay から）。X = 50_game.js の部品
     update: function (X) {
       var d = drone(), p = G.pl, i, s;
+      if (d.on && R.DRONE_BROKEN()) { d.on = false; d.leaving = 0; d.shots = []; d.shieldT = 0; d.healT = 0; }      // 第1章で出したまま第2章へ来たら、引っこめる
       if (!d.on) {
-        if (anyLatch() && G.state === 'play' && R.DRONE_BROKEN) {      // 故障中（2026-11-28 の要望。とりあえず 2P は使えない）: テンキーを押すと、知らせるだけ
+        if (anyLatch() && G.state === 'play' && R.DRONE_BROKEN()) {      // 第2章では故障中: テンキーを押すと、知らせるだけ
           if (!(d.brokenT > 0)) { X.toast('四角のドローンは、故障していて動かない……（2P は使えません）', '#ffc84a'); R.snd('deny'); d.brokenT = 240; }
         } else if (anyLatch() && G.state === 'play') launch(d, p, X);
         if (d.brokenT > 0) d.brokenT--;
