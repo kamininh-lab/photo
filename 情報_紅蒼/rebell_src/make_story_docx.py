@@ -229,6 +229,8 @@ note('このみさんの原画とともに。')
 for s in ['龍は倒れた。だが、姫はまだ結界の中。', '裏切りの夜が明け、街に朝の色が戻る。', '――ふたりの反逆は、ここから始まる。']:
     para(s, align=WD_ALIGN_PARAGRAPH.CENTER, size=12, after=4)
 para()
+para('第1章　KAGOSHIMA CITY', align=WD_ALIGN_PARAGRAPH.CENTER, size=12, after=0, color=RGBColor(0xB0, 0x80, 0x20))
+para('完', align=WD_ALIGN_PARAGRAPH.CENTER, size=16, bold=True, color=RGBColor(0xB0, 0x80, 0x20))
 para('THANK YOU FOR PLAYING', align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, color=RGBColor(0x1E, 0x6F, 0xC0))
 
 doc.save(OUT)

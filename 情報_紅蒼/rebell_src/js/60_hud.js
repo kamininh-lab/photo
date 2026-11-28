@@ -1371,10 +1371,18 @@
     g.restore();
     T(g, 'Original Illustration by このみ', px + pw / 2, py + ph + 40, 24, '#c8b8ff', 'center', SERIF);
     logo(g, 1380, 200, 1.2);
-    T(g, '龍は倒れた。だが、姫はまだ結界の中。', 1380, 380, 40, '#ffd0ec', 'center', MIN, '#1a0c40', 8);      // 四角の裏切りのあと（会話 dragon_end）
-    T(g, '裏切りの夜が明け、街に朝の色が戻る。', 1380, 440, 40, '#ffffff', 'center', MIN, '#1a0c40', 8);
-    T(g, '――ふたりの反逆は、ここから始まる。', 1380, 500, 34, '#ffffff', 'center', MIN, '#1a0c40', 8);
-    g.save(); g.translate(420, 60); stats(g, 560); g.restore();
+    T(g, '龍は倒れた。だが、姫はまだ結界の中。', 1380, 356, 40, '#ffd0ec', 'center', MIN, '#1a0c40', 8);      // 四角の裏切りのあと（会話 dragon_end）
+    T(g, '裏切りの夜が明け、街に朝の色が戻る。', 1380, 410, 40, '#ffffff', 'center', MIN, '#1a0c40', 8);
+    T(g, '――ふたりの反逆は、ここから始まる。', 1380, 462, 34, '#ffffff', 'center', MIN, '#1a0c40', 8);
+    var ca = Math.max(0, Math.min(1, (t - 50) / 40));      // 「第1章　完」: 少し遅れて浮かび上がる（ステージ 1〜4 = 第1話〜第4話で、第1章 KAGOSHIMA CITY）
+    if (ca > 0) {
+      g.globalAlpha = a * ca;
+      g.fillStyle = 'rgba(255,211,106,.6)'; g.fillRect(1090, 496, 120, 2); g.fillRect(1550, 496, 120, 2);
+      T(g, '第1章　KAGOSHIMA CITY　完', 1380, 534, 34, '#ffd36a', 'center', MIN, '#1a0c40', 8);
+      g.fillRect(1090, 556, 580, 2);
+      g.globalAlpha = a;
+    }
+    g.save(); g.translate(420, 64); stats(g, 560); g.restore();
     T(g, 'キャラクターデザイン・原案　このみ', 1380, 850, 28, '#ffffff', 'center', UI, '#120a30', 6);
     T(g, 'ゲーム制作　Claude  ×  Codex', 1380, 892, 24, '#c8b8ff', 'center', UI, '#120a30', 5);
     T(g, 'THANK YOU FOR PLAYING', 1380, 950, 38, '#7af3ff', 'center', SERIF, '#120a30', 6);
