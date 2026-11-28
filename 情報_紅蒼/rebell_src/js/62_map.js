@@ -1,12 +1,12 @@
 // 全体マップ（ステージを選ぶ画面）。章ごとに 1 枚。下絵の上に、地名・道のりのマス・ステージのマス・紅と蒼を描く。
 //   第1章 KAGOSHIMA CITY     … サイバーパンクの鹿児島市（下絵は 09_map_art.js。make_world_map.py が描く）。ステージは第1話〜第4話
-//   第2章 IBUSUKI・TANIYAMA  … 指宿・谷山方面（下絵は 09_map2_art.js。make_world_map2.py が描く）。ステージはまだ無く、マスは「準備中」
+//   第2章 IBUSUKI・TANIYAMA  … 指宿・谷山方面（下絵は 09_map2_art.js。make_world_map2.py が描く）。いま遊べるのは第1話（谷山）だけで、ほかのマスは「準備中」
 // 画面は 1920x1080 の仮想座標（HUD と同じ。下絵の 1 ドット = 2）。
 //   ← → （↑ ↓ でも）… となりのステージのマスへ、道のりに沿って走る（行けるのは、クリアしたステージと、その次まで）
 //   決定            … いまいるマスのステージを始める（ステージの前の会話から）
 // 流れ: はじめから → 第1章のマップ（道の入口から第1話のマスへ走ってくる）→ 決定でステージ → クリア → マップ（次のマスへの道が開き、自動で走っていく）
 //       最後のステージをクリアしたときだけ、マップをはさまずエンディングへ（90_main.js）。クリアしたステージは、選び直して何度でも遊べる
-//       エンディングで決定 → 第2章のマップ（下見。マスは見て回れるが、始められない。決定でタイトルへ）
+//       エンディングで決定 → 第2章のプロローグ → 第2章のマップ（どのマスへも行ける。ステージのあるマスは決定で始まり、準備中のマスは始められない。Esc でタイトルへ）
 (function () {
   'use strict';
   var R = window.REBELL, G = R.game, U = R.UI, T = U.T, panel = U.panel, PI = Math.PI, clamp = R.clamp;
@@ -24,7 +24,7 @@
       // 水道橋の上（左下の台地 → 甲突川を越えて城山のふもと）→ 城山の鉄塔の足もと → てっぺん → 航路 → 学園の真上の飛空艇 → 学園。
       //   make_world_map.py の絵（AQ・TX/TY/TT・ROUTE・DOME）と合わせてある
       PATH: [[6, 532], [64, 478], [122, 424], [210, 343], [297, 262], [297, 100], [340, 70], [395, 48], [446, 38], [480, 46], [480, 126]],
-      NODE: [2, 4, 5, 10],
+      NODE: [2, 4, 5, 10], stages: [0, 1, 2, 3],      // stages = マスごとの R.STAGES の番号
       INFO: [
         { name: '水道橋', dx: 0, dy: 74, desc: '雨の降るネオンの廃都。機械兵のうろつく水道橋を渡り、門番を倒せ。' },
         { name: '鉄塔', dx: 0, dy: 76, desc: '学園への橋は、結界の中。雲の上まで続く鉄塔を、てっぺんまで登れ。' },
@@ -44,12 +44,12 @@
     },
     {
       // 第2章（2026-11-28 の要望）: 指宿・谷山方面。マスは 谷山 → 平川動物公園 → 喜入 → 指宿 → 開聞岳（ユーザーが選んだ 5 つ）。
-      //   ステージはまだ無いので preview = 下見（どのマスへも行けるが、始められない）。ステージができたら、preview を外して STAGES とつなぐ
+//   free = どのマスへも行ける（クリアの順番を問わない）。stages = マスごとの R.STAGES の番号（null = 準備中）
       //   道のりは、鹿児島市街（上の端）から海ぞいに南へ。make_world_map2.py の絵（ZOO・BASE・KATOP など）と合わせてある
-      no: '第2章', name: 'IBUSUKI・TANIYAMA', art: 'REBELL_MAP2', preview: true,
+      no: '第2章', name: 'IBUSUKI・TANIYAMA', art: 'REBELL_MAP2', free: true,
       PATH: [[262, -8], [258, 40], [236, 100], [196, 122], [168, 146], [140, 166], [166, 186], [192, 210], [216, 234], [232, 256], [252, 284], [284, 322], [322, 358],
         [362, 384], [388, 404], [409, 424], [398, 452], [360, 472], [300, 480], [252, 484], [205, 456]],
-      NODE: [2, 5, 9, 15, 20],
+      NODE: [2, 5, 9, 15, 20], stages: [4, null, null, null, null],      // 第1話 = 谷山（40_stage.js の taniyama）
       INFO: [
         { name: '谷山', dx: 104, dy: 14, title: '谷山', sub: 'TANIYAMA  -  BAYSIDE INDUSTRIAL ZONE', desc: ['鹿児島市の南、海ぞいの工業地帯。', '七ツ島には、メガソーラーが広がる。'] },
         { name: '平川動物公園', dx: -44, dy: 82, title: '平川動物公園', sub: 'HIRAKAWA ZOO', desc: ['海を見下ろす、丘の上の動物園。', 'となりの公園に、ロケットの模型が立つ。'] },
@@ -102,19 +102,23 @@
     if (cleared && k + 1 < C.NODE.length && G.unlocked < k + 1) { G.unlocked = k + 1; m.to = k + 1; m.wait = 70; m.newT = 200; }      // 次のマスへの道が開く
     G.state = 'map'; G.stateT = 0; R.bgm('title');
   };
-  // 下見の章のマップを開く（第2章。エンディングのあと。90_main.js から）: 道の入口から、最初のマスへ走ってくる
-  R.openMapPreview = function (ch) {
-    if (!CH[ch]) return false;
-    G.map = { ch: ch, at: 0, d: 0, to: 0, t: 0, wait: 0, newT: 0, face: 1, moveT: 0 };
+  // 第2章からのマップを開く。k = いるマス（-1 = 道の入口から、最初のマスへ走ってくる。プロローグのあと）
+  R.openMapCh = function (ch, k) {
+    var C = CH[ch]; if (!C) return false;
+    if (!G.ranks) G.ranks = {};
+    G.map = { ch: ch, at: Math.max(0, k), d: k < 0 ? 0 : C.ND[k], to: k < 0 ? 0 : null, t: 0, wait: 0, newT: 0, face: 1, moveT: 0 };
     G.state = 'map'; G.stateT = 0; R.bgm('title');
     return true;
   };
+  R.openMapPreview = function (ch) { return R.openMapCh(ch, -1); };
+  R.mapNode = function (ch, idx) { var C = CH[ch]; return C ? Math.max(0, C.stages.indexOf(idx)) : 0; };      // そのステージは、章のマップの何番目のマスか
   // クリアの評価を覚える（よいほうを残す）
   R.mapRecord = function (idx, rank) { if (!G.ranks) G.ranks = {}; if (rank && better(rank, G.ranks[idx])) G.ranks[idx] = rank; };
 
   R.updateMap = function (ok) {
     var m = G.map, I = R.input; if (!m) { R.openMap(0, false); return; }
-    var C = CH[m.ch || 0], pre = !!C.preview, max = pre ? C.NODE.length - 1 : G.unlocked;
+    var C = CH[m.ch || 0], free = !!C.free, max = free ? C.NODE.length - 1 : G.unlocked;
+    if (free && I.hit.pause && m.to === null) { R.snd('select'); G.map = null; G.state = 'title'; G.stateT = 0; G.titleFade = 24; return; }      // Esc でタイトルへ
     m.t++; if (m.newT > 0) m.newT--;
     if (m.wait > 0) { if (--m.wait === 0) R.snd('levelup'); return; }
     if (m.to !== null) {      // 道のりに沿って走る
@@ -128,8 +132,9 @@
     var dir = (I.hit.right || I.hit.up) ? 1 : (I.hit.left || I.hit.down) ? -1 : 0;
     if (dir) { var k = m.at + dir; if (k >= 0 && k <= max && k < C.NODE.length) m.to = k; else R.snd('deny'); }
     else if (ok && m.t > 24) {
-      if (pre) { R.snd('select'); G.map = null; G.state = 'title'; G.stateT = 0; G.titleFade = 24; }      // 下見の章: ステージはまだ無い。タイトルへ戻る
-      else { R.snd('start'); R.startStage(m.at, false, R.STAGES[m.at].talk); }
+      var st = C.stages[m.at];
+      if (st === null || st === undefined || !R.STAGES[st]) R.snd('deny');      // 準備中のマス
+      else { R.snd('start'); R.startStage(st, false, R.STAGES[st].talk); }
     }
   };
 
@@ -145,9 +150,9 @@
 
   R.drawMap = function (g) {
     var m = G.map; if (!m) return;
-    var C = CH[m.ch || 0], pre = !!C.preview, ND = C.ND, INFO = C.INFO, img = C.img;
-    var t = m.t, k, p, lit = pre ? ND[ND.length - 1] : ND[Math.min(G.unlocked || 0, ND.length - 1)], q, moving = m.to !== null;
-    var MAIN = pre ? '#7af3ff' : PINK;      // マスの色（下見の章は水色）
+    var C = CH[m.ch || 0], free = !!C.free, ND = C.ND, INFO = C.INFO, img = C.img;
+    var t = m.t, k, p, lit = free ? ND[ND.length - 1] : ND[Math.min(G.unlocked || 0, ND.length - 1)], q, moving = m.to !== null;
+    function ready(n) { var v = C.stages[n]; return v !== null && v !== undefined && !!R.STAGES[v]; }      // ステージのあるマスか（ないマスは「準備中」で水色）
     g.save();
     g.imageSmoothingEnabled = false;
     if (img && img.complete && img.naturalWidth) g.drawImage(img, 0, 0, 1920, 1080); else { g.fillStyle = '#140a30'; g.fillRect(0, 0, 1920, 1080); }
@@ -175,8 +180,8 @@
     }
     // ステージのマス
     for (k = 0; k < C.NODE.length; k++) {
-      p = at(C, ND[k]); var open = pre || k <= (G.unlocked || 0), rank = !pre && G.ranks && G.ranks[k], here = !moving && m.at === k, I2 = INFO[k];
-      var col = !open ? '#5a5280' : rank ? GOLD : MAIN, r = 34 + (here ? 3 * Math.sin(t * 0.14) : 0);
+      p = at(C, ND[k]); var open = free || k <= (G.unlocked || 0), rank = ready(k) && G.ranks && G.ranks[C.stages[k]], here = !moving && m.at === k, I2 = INFO[k];
+      var col = !open ? '#5a5280' : rank ? GOLD : ready(k) ? PINK : '#7af3ff', r = 34 + (here ? 3 * Math.sin(t * 0.14) : 0);
       if (open) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = here ? 0.5 + 0.2 * Math.sin(t * 0.14) : 0.25; diamond(g, p[0], p[1], r + 18); g.fillStyle = col; g.fill(); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
       diamond(g, p[0], p[1], r); g.fillStyle = open ? '#1c0f44' : '#141030'; g.fill(); g.lineWidth = 6; g.strokeStyle = col; g.stroke();
       diamond(g, p[0], p[1], r - 9); g.lineWidth = 2; g.strokeStyle = open ? '#ffffff' : '#3a3460'; g.stroke();
@@ -199,7 +204,7 @@
     if (!moving && m.wait <= 0) {      // いまいるマスの上で、はずむ矢印
       var ay = pk[1] - 150 + Math.sin(t * 0.16) * 8;
       g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(pk[0] - 16, ay - 20); g.lineTo(pk[0] + 16, ay - 20); g.lineTo(pk[0], ay); g.closePath(); g.fill();
-      g.lineWidth = 4; g.strokeStyle = MAIN; g.stroke();
+      g.lineWidth = 4; g.strokeStyle = ready(m.at) ? PINK : '#7af3ff'; g.stroke();
     }
     // 題（第1章は左上、第2章は右上。道とマスにかからない場所と幅）
     var bx = C.box[0], by = C.box[1];
@@ -208,18 +213,18 @@
     T(g, C.name, bx + 164, by + 54, 40, '#ffffff', 'left', U.font, '#120a30', 6);
     T(g, 'REBELL ― 紅蒼交錯', bx + 30, by + 96, 26, '#ffb8e6', 'left', U.font, '#120a30', 5);
     T(g, '← → ： マスを移動', C.hint[0], C.hint[1], 26, '#d8d0ff', C.hint[2], U.font, '#120a30', 5);
-    if (pre) T(g, '準備中  ―  COMING SOON', C.hint[0], C.hint[1] + 40, 26, (t >> 5) % 2 ? '#7af3ff' : '#d8f8ff', C.hint[2], U.font, '#120a30', 5);
+    if (free) T(g, 'Esc ： タイトルへ', C.hint[0], C.hint[1] + 40, 26, '#d8d0ff', C.hint[2], U.font, '#120a30', 5);
     // 下: いまいる（向かっている）ステージ
-    var s = moving ? m.to : m.at, S = pre ? INFO[s] : R.STAGES[s], rk = !pre && G.ranks && G.ranks[s];
+    var s = moving ? m.to : m.at, rd = ready(s), S = rd ? R.STAGES[C.stages[s]] : INFO[s], rk = rd && G.ranks && G.ranks[C.stages[s]];
     var ix = C.info[0], iy = C.info[1], iw = C.info[2], ih = C.info[3], rx = ix + iw - 42, lines = [].concat(INFO[s].desc);
-    panel(g, ix, iy, iw, ih, 18, 'rgba(14,8,40,.88)', rk ? GOLD : MAIN, 5);
+    panel(g, ix, iy, iw, ih, 18, 'rgba(14,8,40,.88)', rk ? GOLD : rd ? PINK : '#7af3ff', 5);
     T(g, S.title, ix + 40, iy + 58, 46, '#ffffff', 'left', U.font, '#120a30', 6);
     T(g, S.sub, ix + 42, iy + 92, 22, '#b8b0e0', 'left', U.font);
     for (k = 0; k < lines.length; k++) T(g, lines[k], ix + 42, iy + 134 + k * 36, 27, '#ffe8f6', 'left', U.font, '#120a30', 4);
-    if (pre) T(g, '準備中', rx, iy + 62, 34, '#7af3ff', 'right', U.font, '#120a30', 6);
+    if (!rd) T(g, '準備中', rx, iy + 62, 34, '#7af3ff', 'right', U.font, '#120a30', 6);
     else if (rk) { T(g, 'CLEAR', rx, iy + 42, 26, GOLD, 'right', U.font, '#120a30', 5); T(g, 'RANK ' + rk, rx, iy + 86, 44, GOLD, 'right', U.font, '#120a30', 6); }
     else if ((t >> 4) % 2) T(g, 'NEW !', rx, iy + 66, 40, PINK, 'right', U.font, '#120a30', 6);
-    if (!moving && m.wait <= 0 && (t >> 5) % 2 === 0) T(g, pre ? 'Enter / Space ： タイトルへ' : 'Enter / Space ： 出発', rx, iy + ih - 16, 28, '#ffffff', 'right', U.font, '#120a30', 5);
+    if (!moving && m.wait <= 0 && rd && (t >> 5) % 2 === 0) T(g, 'Enter / Space ： 出発', rx, iy + ih - 16, 28, '#ffffff', 'right', U.font, '#120a30', 5);
     if (m.newT > 0 && m.wait <= 0 && m.newT > 60) T(g, '新しい道が開いた！', C.newAt[0], C.newAt[1], 54, (t >> 3) % 2 ? '#ffffff' : GOLD, 'center', U.font, '#120a30', 9);
     if (t < 24) { g.fillStyle = 'rgba(0,0,0,' + (1 - t / 24) + ')'; g.fillRect(0, 0, 1920, 1080); }      // 暗い画面から現れる
     g.restore();

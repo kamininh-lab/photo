@@ -176,7 +176,7 @@
       g.fillStyle = (G.t >> 4) % 2 ? '#a050ff' : '#7a2be0'; g.beginPath(); g.moveTo(mx, my - 8); g.lineTo(mx + 6, my); g.lineTo(mx, my + 8); g.lineTo(mx - 6, my); g.fill();
     }
     // ゴール（宝箱の印）
-    var gx = bx + S.boss.x * sx, gy = by - 24;
+    var gx = bx + (S.boss ? S.boss.x : S.goal[0] + S.goal[2] / 2) * sx, gy = by - 24;      // ボスのいないステージ（谷山）は、ゴールの標識
     g.fillStyle = '#7a4a18'; g.fillRect(gx - 14, gy - 2, 28, 24); g.fillStyle = '#ffc83e'; g.fillRect(gx - 11, gy + 1, 22, 18);
     g.fillStyle = '#7a4a18'; g.fillRect(gx - 11, gy + 7, 22, 3); g.fillRect(gx - 3, gy + 5, 6, 8); g.fillStyle = '#fff3b0'; g.fillRect(gx - 1, gy + 7, 2, 4);
     // 自分（赤い菱形）

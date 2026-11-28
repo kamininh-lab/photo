@@ -19,6 +19,7 @@
     city: { beam: '#9ae8ff', beams: 4, rain: 110, slant: 0.2, rainCol: ['#9ae8ff', '#ff9ad8', '#c8c0ff'], fog: ['255,60,170', '40,200,255'], cars: 4, blimp: true },
     tower: { beam: '#c8f4ff', beams: 3, rain: 80, slant: 0.55, rainCol: ['#c8f4ff', '#9ae8ff', '#ffb0e0'], fog: null, cars: 5, blimp: true },
     sky: { beam: '#ffb0e0', beams: 2, rain: 0, slant: 0, rainCol: [], fog: null, cars: 5, blimp: true },
+    taniyama: { beam: '#ffffff', beams: 0, rain: 0, slant: 0, rainCol: [], fog: null, cars: 0, blimp: false },      // 第2章 第1話（昼）: 雨もネオンも出さない
     school: { beam: '#ff3a5a', beams: 3, rain: 40, slant: 0.12, rainCol: ['#ffb0c8', '#c8c0ff'], fog: ['255,40,90', '160,60,255'], cars: 3, blimp: false }
   };
   function theme(S) { return THEME[S.id] || THEME.city; }

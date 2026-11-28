@@ -233,8 +233,8 @@ para('第1章　KAGOSHIMA CITY', align=WD_ALIGN_PARAGRAPH.CENTER, size=12, after
 para('完', align=WD_ALIGN_PARAGRAPH.CENTER, size=16, bold=True, color=RGBColor(0xB0, 0x80, 0x20))
 para('THANK YOU FOR PLAYING', align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, color=RGBColor(0x1E, 0x6F, 0xC0))
 
-# ---- 第2章（準備中） ----
-doc.add_heading('第2章　IBUSUKI・TANIYAMA（準備中）', level=1)
+# ---- 第2章 ----
+doc.add_heading('第2章　IBUSUKI・TANIYAMA', level=1)
 doc.add_heading('プロローグ', level=2)
 note('エンディングで決定を押すと、まがまがしい帝国の城と、不気味な月を背に、一行ずつ浮かび上がる。'
      '（血の色の空。月は縦に裂けた瞳のようで、ひびが走り、血がしたたる。とがった塔のならぶ城には紅い旗と明かり。探照灯が空をなめる）')
@@ -250,7 +250,20 @@ note('プロローグが終わると（決定で飛ばせる）、第2章の全�
      '（北が上。左に薩摩半島、中央に錦江湾、右に大隅半島、上の端に桜島の南側）。')
 note('マスは 5 つ。鹿児島市街から、海ぞいに南へ下る道のり: '
      '谷山（海ぞいの工業地帯）→ 平川動物公園 → 喜入（石油の基地）→ 指宿（砂むし温泉と知林ヶ島）→ 開聞岳。')
-note('ステージと台詞は、まだ無い。マスは「準備中」で、見て回れるが始められない。決定を押すと、タイトルへ戻る。')
+note('いま遊べるのは第1話（谷山）だけ。ほかのマスは「準備中」で、見て回れるが始められない。Esc でタイトルへ戻る。')
+
+doc.add_heading('第1話　谷山　白昼の臨海通り', level=2)
+para('STAGE 1  -  TANIYAMA BAYSIDE', size=9, color=RGBColor(0x80, 0x80, 0x90))
+doc.add_heading('ステージの前', level=3)
+note('裏切りの夜が明けた、まぶしい昼の谷山。青空の下、港のクレーンとメガソーラー、ヤシの並木がつづく臨海通り。'
+     '街のあちこちに、帝国の手配書（WANTED　反逆者 REBELL ― 紅・蒼）が立っている。四角からの通信は、もうない。')
+talk('taniyama')
+doc.add_heading('臨海通り', level=3)
+note('第1章の第1話より長い道のりを、右へ走り抜ける。積まれたコンテナを登り、海ぞいの運河を跳び越える。帝国の機兵とドローンが見回っている。ボスはいない。'
+     '通りの終わり、「平川・喜入・指宿」の道路標識の下に着くと――「臨海通りを抜けた！ ― 南へ」')
+doc.add_heading('臨海通りを抜けたあと', level=3)
+talk('taniyama_end')
+note('会話が終わると、ステージクリア。第2章のマップへ戻る。')
 
 doc.save(OUT)
 print('saved', OUT, {k: len(v) for k, v in TALKS.items()})

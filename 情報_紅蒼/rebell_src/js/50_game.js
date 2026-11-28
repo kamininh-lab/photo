@@ -1616,7 +1616,7 @@
   R.openStage = function () { var S = G.S; G.card = { t: 0, title: S.title, sub: S.sub }; R.bgm(S.bgm); };
   // ステージクリアの評価（S 〜 D）: タイム・最大コンボ・受けたダメージ・スタイルランクを、それぞれ 0 〜 3 点で数える（合計 12 点）
   //   PAR = ステージごとの目安の秒数。縦と空のステージは敵が少ないので、コンボの目安を低くしてある。やり直した回数だけ、ダメージの点が下がる
-  var PAR = { city: 180, tower: 200, sky: 120, school: 360 };
+  var PAR = { city: 180, tower: 200, sky: 120, school: 360, taniyama: 240 };
   R.stageGrade = function () {
     var s = G.stg, S = G.S; if (!s || !S) return null;
     var sec = s.time / 60, par = PAR[S.id] || 240, ct = S.sky || S.vertical ? [20, 10, 4] : [50, 30, 12];

@@ -17,7 +17,7 @@
 
   // 背景の看板などに重ねる文字（ドット絵の上に高解像度で描く）
   function decals() {
-    var S = G.S; if (S.id !== 'school') return;
+    var S = G.S; if (S.id === 'taniyama') { dayDecals(S); return; } if (S.id !== 'school') return;
     var BG = R.BG, cam = R.viewCam, gp = BG.gatePlaque, sg = BG.schoolSign, f = '"Yu Gothic","Yu Gothic UI","Meiryo",sans-serif';
     F.save(); F.setTransform(SCALE, 0, 0, SCALE, 0, 0); F.textBaseline = 'middle'; F.textAlign = 'center';
     var sx = R.schoolX(cam) + sg.x, sy = 19 + sg.y;      // 校舎の絵と同じ高さ（40_stage.js の drawBackdrop）
@@ -35,6 +35,23 @@
     }
     F.restore();
   }
+  // 谷山（昼）: 手配書の立て看板と、ゴールの道路標識の文字
+  function dayDecals(S) {
+    var cam = R.viewCam, oy = R.viewOy, f = '"Yu Gothic","Yu Gothic UI","Meiryo",sans-serif', GYv = R.GY;
+    F.save(); F.setTransform(SCALE, 0, 0, SCALE, 0, 0); F.textBaseline = 'middle'; F.textAlign = 'center';
+    (S.posters || []).forEach(function (px) {
+      var x = px - cam; if (x < -40 || x > R.W) return;
+      F.font = 'bold 5.6px ' + f; F.fillStyle = '#a00a1e'; F.fillText('WANTED', x + 18, GYv - 60 + oy);
+      F.font = 'bold 3.4px ' + f; F.fillStyle = '#ffffff'; F.fillText('反逆者 REBELL ― 紅・蒼', x + 18, GYv - 40 + oy);
+    });
+    var gx = S.goal[0] + 30 - cam;
+    if (gx > -150 && gx < R.W) {
+      F.fillStyle = '#ffffff'; F.font = 'bold 9px ' + f; F.fillText('平川・喜入・指宿', gx + 70, GYv - 92 + oy);
+      F.font = 'bold 5px ' + f; F.fillText('HIRAKAWA / KIIRE / IBUSUKI  →', gx + 70, GYv - 80 + oy);
+      F.font = '4.4px ' + f; F.fillText('国道 226 号　R226', gx + 70, GYv - 71 + oy);
+    }
+    F.restore();
+  }
   // 光のにじみ。明るい所だけを縮めた絵から取り出して、上から足す。
   // 主人公のスプライトは、にじみで色が白っぽくならないよう、このあとで描く
   function doBloom() {
@@ -46,8 +63,8 @@
     F.drawImage(glowC, 0, 0, cv.width, cv.height); F.restore();
   }
   function vignette() {
-    var gr = F.createRadialGradient(960, 540, 420, 960, 540, 1150);
-    gr.addColorStop(0, 'rgba(6,2,24,0)'); gr.addColorStop(1, 'rgba(6,2,24,.5)'); F.fillStyle = gr; F.fillRect(0, 0, 1920, 1080);
+    var gr = F.createRadialGradient(960, 540, 420, 960, 540, 1150), dk = G.S && G.S.day ? 0.16 : 0.5;      // 昼のステージは、まわりをあまり暗くしない
+    gr.addColorStop(0, 'rgba(6,2,24,0)'); gr.addColorStop(1, 'rgba(6,2,24,' + dk + ')'); F.fillStyle = gr; F.fillRect(0, 0, 1920, 1080);
   }
 
   function compose() {
@@ -60,7 +77,7 @@
       if (R.Cyber) R.Cyber.holo(F, SCALE, G.S, R.viewCam, R.viewOy, G.t);      // ホログラムの看板（細かい解像度で）
       R.renderMid(fg); F.imageSmoothingEnabled = false; F.drawImage(fgC, 0, 0, cv.width, cv.height);
       R.renderFront(fg);
-      if (bloom) doBloom();
+      if (bloom && !G.S.day) doBloom();      // 昼のステージは、光のにじみを出さない（白くとびすぎるので）
       R.renderChars(F, SCALE);
       F.setTransform(1, 0, 0, 1, 0, 0); F.globalAlpha = 1; F.imageSmoothingEnabled = false; F.drawImage(fgC, 0, 0, cv.width, cv.height);
     }
@@ -125,7 +142,9 @@
         if (G.stateT > 60 && ok) {
           R.snd('select');
           var gr = R.stageGrade && R.stageGrade(); if (R.mapRecord && gr) R.mapRecord(G.stageIdx, gr.rank);
-          if (G.stageIdx + 1 < R.STAGES.length) {
+          var CS = R.STAGES[G.stageIdx], last1 = R.STAGES.filter(function (q) { return !q.ch || q.ch === 1; }).length - 1;
+          if (CS.ch && CS.ch !== 1 && R.openMapCh) R.openMapCh(CS.ch - 1, R.mapNode(CS.ch - 1, G.stageIdx), false);      // 第2章のステージ: 第2章のマップへ戻る
+          else if (G.stageIdx < last1) {
             if (R.openMap) R.openMap(G.stageIdx, true);      // 全体マップへ戻る（次のマスへの道が開く）。HP と SP は、前のステージを終えたときのまま持ち越す（回復しない）
             else R.startStage(G.stageIdx + 1, false, R.STAGES[G.stageIdx + 1].talk);
           } else { G.state = 'ending'; G.stateT = 0; R.bgm('title'); }

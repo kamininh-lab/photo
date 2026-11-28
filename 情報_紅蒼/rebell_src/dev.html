@@ -1070,6 +1070,7 @@ var THEME = {
 city: { beam: '#9ae8ff', beams: 4, rain: 110, slant: 0.2, rainCol: ['#9ae8ff', '#ff9ad8', '#c8c0ff'], fog: ['255,60,170', '40,200,255'], cars: 4, blimp: true },
 tower: { beam: '#c8f4ff', beams: 3, rain: 80, slant: 0.55, rainCol: ['#c8f4ff', '#9ae8ff', '#ffb0e0'], fog: null, cars: 5, blimp: true },
 sky: { beam: '#ffb0e0', beams: 2, rain: 0, slant: 0, rainCol: [], fog: null, cars: 5, blimp: true },
+taniyama: { beam: '#ffffff', beams: 0, rain: 0, slant: 0, rainCol: [], fog: null, cars: 0, blimp: false },
 school: { beam: '#ff3a5a', beams: 3, rain: 40, slant: 0.12, rainCol: ['#ffb0c8', '#c8c0ff'], fog: ['255,40,90', '160,60,255'], cars: 3, blimp: false }
 };
 function theme(S) { return THEME[S.id] || THEME.city; }
@@ -1269,7 +1270,8 @@ TMP = R.mk(260, 260);
 return SRC;
 }
 function progress(S, camX, oy) {
-var i = R.STAGES.indexOf(S), n = R.STAGES.length, f;
+var i = R.STAGES.indexOf(S), n = R.STAGES.filter(function (q) { return !q.ch || q.ch === 1; }).length, f;
+if (S.ch && S.ch !== 1) return 0;
 if (i < 0) return 0;
 if (S.vertical) f = clamp(oy / Math.max(1, 165 - S.goal[1] + 20), 0, 1);
 else f = clamp(camX / Math.max(1, S.len - R.W), 0, 1);
@@ -2145,6 +2147,33 @@ sakura: [96, 2170, 2600],
 gate: 196,
 mid: { type: 'karate', x: 2545, arena: [2190, 2670], trigger: 2300, name: '黒瀬 龍士', sub: 'MID BOSS  -  KUROSE RYUJI', bgm: 'midboss' },
 boss: { type: 'dragon', x: 3160, arena: [2740, 3250], trigger: 2752, name: '玉　龍', sub: 'GYOKURYU  -  THE JADE DRAGON' }
+},
+{
+id: 'taniyama', ch: 2, day: true, title: '第1話　谷山　白昼の臨海通り', sub: 'STAGE 1  -  TANIYAMA BAYSIDE', bgm: 'city', len: 5400,
+talk: 'taniyama', endTalk: 'taniyama_end', goalMsg: '臨海通りを抜けた！ ― 南へ',
+ground: [[0, 1320], [1400, 2620], [2700, 3920], [3996, 5400]],
+blocks: [[420, 64, 30], [484, 64, 58], [900, 70, 32], [1180, 56, 40], [1560, 64, 32], [1624, 64, 64], [1688, 64, 96],
+[2050, 60, 36], [2780, 64, 30], [2844, 64, 62], [3300, 70, 40], [4100, 64, 34], [4164, 64, 68], [4600, 60, 40]],
+spikes: [[700, 30], [1500, 30], [2300, 36], [3060, 30], [3620, 36], [4420, 30]],
+springs: [1000, 2480, 3700],
+movers: [[1310, 140, 60, 70, 0, 160], [3910, 130, 56, 60, -20, 150]],
+plats: [[560, 120, 70], [660, 96, 60], [960, 130, 70], [1100, 104, 60], [1760, 100, 80], [1880, 128, 60], [2150, 120, 70], [2260, 92, 60],
+[2420, 124, 64], [2930, 110, 70], [3040, 140, 60], [3180, 100, 70], [3420, 126, 64], [3520, 96, 60], [3760, 130, 70],
+[4240, 100, 70], [4360, 124, 60], [4700, 116, 70], [4820, 90, 60], [4960, 128, 64]],
+enemies: [['robot', 330], ['robot', 620], ['drone', 690, 70], ['robot', 820], ['robot', 1060], ['drone', 1130, 80], ['robot', 1240],
+['drone', 1700, 50], ['robot', 1820], ['robot', 1960], ['drone', 2120, 90], ['robot', 2200], ['robot', 2340], ['drone', 2440, 70],
+['robot', 2900], ['drone', 2960, 80], ['robot', 3000], ['robot', 3150], ['drone', 3260, 60], ['robot', 3400],
+['robot', 3500], ['drone', 3600, 70], ['drone', 4260, 60], ['drone', 4380, 50], ['robot', 4300], ['robot', 4480],
+['drone', 4560, 80], ['robot', 4680], ['robot', 4880], ['drone', 4980, 70], ['robot', 5060]],
+items: [['crystal', 450, 140], ['crystal', 516, 112], ['crystal', 595, 100], ['crystal', 690, 76], ['crystal', 995, 110], ['crystal', 1130, 84],
+['chest', 1212, 152], ['crystal', 1340, 120], ['crystal', 1590, 140], ['crystal', 1656, 108], ['crystal', 1720, 76], ['potion', 1800, 80],
+['crystal', 1910, 108], ['crystal', 2185, 100], ['crystal', 2290, 72], ['crystal', 2452, 104], ['crystal', 2812, 140], ['crystal', 2876, 110],
+['crystal', 2965, 90], ['crystal', 3070, 120], ['chest', 3215, 80], ['crystal', 3452, 106], ['crystal', 3550, 76], ['crystal', 3795, 110],
+['crystal', 3936, 110], ['potion', 4196, 104], ['crystal', 4275, 80], ['crystal', 4390, 104], ['crystal', 4735, 96], ['crystal', 4850, 70],
+['crystal', 4992, 108]],
+checkpoints: [150, 1440, 2740, 4040],
+posters: [300, 1150, 2000, 2560, 3500, 4500],
+goal: [5200, GY, 200]
 }
 ];
 function bricks(P, r, x, y, w, h, bright) {
@@ -2376,12 +2405,155 @@ gr.addColorStop(0, 'rgba(' + rgb + ',1)'); gr.addColorStop(0.35, 'rgba(' + rgb +
 c.fillStyle = gr; c.fillRect(0, 84, 960, 66);
 return cv;
 }
+var DAY = { sky0: '#3e9cf2', sky1: '#9fd8ff', sky2: '#fff0d6', walk: ['#d8cbb4', '#c4b59c', '#ece2cc', '#a8987e'], road: ['#4a4f60', '#5a6072', '#3a3e4c'] };
+function buildDaySky() {
+var cv = R.mk(R.W, R.H), c = cv.getContext('2d'), P = R.painter(c), r = R.rng(8101), gr = c.createLinearGradient(0, 0, 0, R.H), i;
+gr.addColorStop(0, DAY.sky0); gr.addColorStop(0.55, DAY.sky1); gr.addColorStop(1, DAY.sky2); c.fillStyle = gr; c.fillRect(0, 0, R.W, R.H);
+var sg = c.createRadialGradient(392, 44, 6, 392, 44, 90); sg.addColorStop(0, 'rgba(255,255,235,.95)'); sg.addColorStop(0.25, 'rgba(255,246,200,.45)'); sg.addColorStop(1, 'rgba(255,246,200,0)');
+c.fillStyle = sg; c.fillRect(0, 0, R.W, R.H);
+P.disc(392, 44, 15, '#fffbe8'); P.disc(392, 44, 12, '#ffffff');
+for (i = 0; i < 90; i++) P.px(r() * R.W, 4 + r() * 100, 'rgba(255,255,255,.35)');
+return cv;
+}
+function buildDayClouds() {
+var cv = R.mk(960, 110), P = R.painter(cv.getContext('2d')), r = R.rng(8202), L = [], i, k, q;
+for (i = 0; i < 9; i++) { var cx = r() * 960, cy = 24 + r() * 60, n = 4 + (r() * 4 | 0); for (k = 0; k < n; k++) L.push([cx + (k - n / 2) * 13 + r() * 6, cy - r() * 8, 10 + r() * 12, 6 + r() * 5]); }
+[['#b9d8f2', 0, 3], ['#ffffff', 0, 0], ['#ffffff', -2, -2]].forEach(function (s, j) {
+for (i = 0; i < L.length; i++) for (k = -1; k <= 1; k++) { q = L[i]; P.ell(Math.round(q[0] + k * 960 + s[1]), Math.round(q[1] + s[2]), Math.round(q[2] * (j === 2 ? 0.6 : 1)), Math.round(q[3] * (j === 2 ? 0.5 : 1)), s[0]); }
+});
+return cv;
+}
+function buildDayFar() {
+var cv = R.mk(960, R.H), c = cv.getContext('2d'), P = R.painter(c), r = R.rng(8303), x, y, i;
+for (x = 0; x < 960; x++) { var h = 22 + 10 * Math.sin(x * 0.011) + 6 * Math.sin(x * 0.037 + 1) + 3 * Math.sin(x * 0.09); P.rect(x, 150 - h, 1, h, '#9fc6de'); P.rect(x, 150 - h, 1, 1, '#c6e2f2'); }
+for (x = -150; x <= 150; x++) {
+var u = Math.abs(x) / 150, hh = 78 * Math.pow(1 - u, 1.15) + (Math.abs(x + 24) < 26 ? 7 * (1 - Math.abs(x + 24) / 26) : 0);
+P.rect(360 + x, 152 - hh, 1, hh, '#7fa8c8'); P.rect(360 + x, 152 - hh, 1, 2, '#a8c8de');
+if (x < 0 && r() < 0.5) P.rect(360 + x, 152 - hh + 4 + (r() * hh * 0.6 | 0), 1, 3, '#6f98b8');
+}
+for (i = 0; i < 26; i++) { var t = i / 25; P.ell(356 + t * 120 + r() * 8, 66 - t * 38 + r() * 6, 8 + t * 18, 5 + t * 8, 'rgba(236,240,246,' + (0.8 - t * 0.6) + ')'); }
+var gr = c.createLinearGradient(0, 150, 0, R.H); gr.addColorStop(0, '#5fb0e0'); gr.addColorStop(1, '#2f7ec0'); c.fillStyle = gr; c.fillRect(0, 150, 960, R.H - 150);
+for (i = 0; i < 260; i++) { x = r() * 960 | 0; y = 152 + (r() * 110 | 0); P.rect(x, y, 2 + (r() * 6 | 0), 1, r() < 0.5 ? '#bfe8ff' : '#ffffff'); }
+for (i = 0; i < 3; i++) { x = 120 + i * 300 + (r() * 80 | 0); P.rect(x, 158 + i * 3, 14, 3, '#f4f8ff'); P.rect(x + 3, 155 + i * 3, 6, 3, '#d8e4f4'); P.px(x + 8, 154 + i * 3, '#ff4060'); }
+return cv;
+}
+function buildDayMid() {
+var cv = R.mk(960, R.H), c = cv.getContext('2d'), P = R.painter(c), r = R.rng(8404), x, y, i, k;
+var B = ['#f2e6d8', '#e8d8f0', '#d8ecf4', '#f6dcd8', '#e0f0e0'];
+P.rect(0, 172, 960, R.H - 172, '#b8c4cc'); P.rect(0, 172, 960, 2, '#e8f0f4');
+for (k = 0; k < 2; k++) {
+var sx0 = 40 + k * 500;
+for (y = 0; y < 4; y++) for (x = 0; x < 9; x++) {
+var px0 = sx0 + x * 22 + y * 6, py0 = 150 + y * 6;
+P.poly([[px0, py0 + 5], [px0 + 18, py0 + 5], [px0 + 22, py0], [px0 + 4, py0]], '#2a5ab8'); P.rect(px0 + 5, py0 + 1, 16, 1, '#7ab0ff'); P.rect(px0 + 2, py0 + 3, 16, 1, '#3e70d0');
+}
+}
+for (x = 0; x < 960;) {
+var w = 40 + (r() * 50 | 0), h = 24 + (r() * 60 | 0), col = B[(r() * B.length) | 0];
+if (!((x > 30 && x < 270) || (x > 530 && x < 770)) || h < 40) {
+P.rect(x, 172 - h, w, h, col); P.rect(x, 172 - h, w, 2, '#ffffff'); P.rect(x + w - 3, 172 - h, 3, h, 'rgba(0,0,0,.08)');
+for (y = 172 - h + 6; y < 166; y += 7) for (i = x + 4; i < x + w - 6; i += 7) P.rect(i, y, 4, 3, r() < 0.15 ? '#ffd36a' : '#8fc4e8');
+if (r() < 0.35) { P.rect(x + 4, 172 - h - 6, 14, 5, r() < 0.5 ? '#ff4fb0' : '#37b8e6'); P.rect(x + 5, 172 - h - 5, 12, 1, '#ffffff'); }
+}
+x += w + 2 + (r() * 10 | 0);
+}
+[150, 420, 700].forEach(function (cx, n) {
+var top = 60 + n * 8;
+P.rect(cx, top, 4, 172 - top, '#e04848'); P.rect(cx + 30, top, 4, 172 - top, '#e04848');
+for (y = top; y < 172; y += 12) { P.line(cx + 2, y, cx + 32, y + 12, 1, '#c03838'); P.rect(cx, y, 34, 1, y % 24 ? '#ffffff' : '#e04848'); }
+P.rect(cx - 30, top - 6, 96, 6, '#f4f4f4'); P.rect(cx - 30, top - 6, 96, 1, '#ffffff'); P.rect(cx - 30, top - 1, 96, 1, '#c8c8d0');
+P.rect(cx - 10 + n * 6, top, 10, 6, '#3a3e4c'); P.rect(cx - 6 + n * 6, top + 6, 1, 22, '#3a3e4c'); P.rect(cx - 10 + n * 6, top + 28, 10, 6, ['#ff9a3a', '#3ab0a0', '#4a7ae0'][n]);
+P.px(cx + 2, top - 8, '#ff3048'); P.px(cx + 32, top - 8, '#ff3048');
+});
+for (i = 0; i < 14; i++) { x = r() * 940 | 0; var ch2 = ['#ff9a3a', '#3ab0a0', '#4a7ae0', '#e05050', '#f0c040'][i % 5]; P.rect(x, 162, 22, 10, ch2); P.rect(x, 162, 22, 1, '#ffffff'); for (k = x + 3; k < x + 22; k += 3) P.rect(k, 164, 1, 7, 'rgba(0,0,0,.18)'); }
+for (i = 0; i < 8; i++) {
+x = 60 + i * 120 + (r() * 30 | 0); var th = 38 + (r() * 16 | 0);
+for (y = 0; y < th; y++) P.rect(x + Math.round(Math.sin(y * 0.05) * 2), 172 - y, 3, 1, y % 3 ? '#8a6a48' : '#a8845c');
+var tx = x + 1 + Math.round(Math.sin(th * 0.05) * 2), ty = 172 - th;
+for (k = 0; k < 7; k++) { var an = -Math.PI / 2 + (k - 3) * 0.55; for (y = 0; y < 16; y++) P.rect(tx + Math.cos(an) * y, ty + Math.sin(an) * y * 0.6 + y * y * 0.035, 2, 2, y % 4 ? '#3aa050' : '#58c068'); }
+}
+return cv;
+}
+function dayPlat(P, x, y, w) {
+P.rect(x, y, w, 6, '#9aa4b4'); P.rect(x, y, w, 1, '#ffffff'); P.rect(x, y + 1, w, 1, '#f0c040'); P.rect(x, y + 5, w, 1, '#5a6272');
+for (var i = x + 4; i < x + w - 2; i += 8) P.rect(i, y + 2, 2, 2, '#6a7484');
+P.line(x + 4, y + 6, x + 12, y + 14, 1, '#6a7484'); P.line(x + w - 4, y + 6, x + w - 12, y + 14, 1, '#6a7484');
+}
+function container(P, r, x, h, w, S) {
+var y = GY - h, deep = !S.ground.some(function (g) { return x + w / 2 >= g[0] && x + w / 2 <= g[1]; }), hh = deep ? R.H - y : h;
+var cols = [['#ff9a3a', '#ffc27a', '#c86a20'], ['#3ab0a0', '#7ae0d0', '#24806e'], ['#4a7ae0', '#8ab0ff', '#2c50a8'], ['#e05050', '#ff9090', '#a83030']], col = cols[(x / 7 | 0) % 4], k;
+P.rect(x, y, w, hh, col[0]); P.rect(x, y, w, 2, col[1]); P.rect(x, y, 2, hh, col[1]); P.rect(x + w - 2, y, 2, hh, col[2]);
+for (k = x + 5; k < x + w - 3; k += 4) P.rect(k, y + 4, 1, hh - 6, col[2]);
+for (k = y + 30; k < y + hh; k += 30) P.rect(x, k, w, 2, col[2]);
+P.rect(x + w / 2 - 6, y + 8, 12, 6, '#ffffff'); P.rect(x + w / 2 - 5, y + 9, 10, 1, col[2]); P.rect(x + w / 2 - 5, y + 11, 6, 1, col[2]);
+}
+function daySpikes(P, x, w) {
+P.rect(x, GY - 3, w, 3, '#f0c040'); for (var i = x; i < x + w; i += 6) P.rect(i, GY - 3, 3, 3, '#2a2a30');
+for (i = 0; i + 6 <= w; i += 6) { P.poly([[x + i, GY - 3], [x + i + 3, GY - 11], [x + i + 6, GY - 3]], '#c8d0dc'); P.poly([[x + i + 2, GY - 3], [x + i + 3, GY - 9], [x + i + 3, GY - 3]], '#ffffff'); }
+}
+function buildTown(S, BG) {
+var cv = R.mk(S.len, R.H), c = cv.getContext('2d'), P = R.painter(c), r = R.rng(8505), x, i, k;
+for (i = 0; i + 1 < S.ground.length; i++) {
+var x0 = S.ground[i][1], x1 = S.ground[i + 1][0], gr = c.createLinearGradient(0, GY, 0, R.H);
+gr.addColorStop(0, 'rgba(20,50,90,.2)'); gr.addColorStop(0.35, '#1a4a78'); gr.addColorStop(1, '#0a2448'); c.fillStyle = gr; c.fillRect(x0, GY - 10, x1 - x0, R.H - GY + 10);
+for (k = 0; k < 18; k++) P.rect(x0 + (r() * (x1 - x0 - 8) | 0), 232 + (r() * 34 | 0), 3 + (r() * 6 | 0), 1, '#6ab8f0');
+P.rect(x0, 228, x1 - x0, 1, '#8ad0ff');
+}
+S.ground.forEach(function (g) {
+var x0 = g[0], x1 = g[1], w = x1 - x0;
+for (x = x0 + 40; x < x1 - 20; x += 150) {
+var th = 70 + (r() * 20 | 0), y;
+for (y = 0; y < th; y++) P.rect(x + Math.round(Math.sin(y * 0.04) * 2), GY - y, 4, 1, y % 4 ? '#8a6a48' : '#a8845c');
+var tx = x + 2 + Math.round(Math.sin(th * 0.04) * 2), ty = GY - th;
+for (k = 0; k < 9; k++) { var an = -Math.PI / 2 + (k - 4) * 0.42; for (y = 0; y < 22; y++) P.rect(tx + Math.cos(an) * y, ty + Math.sin(an) * y * 0.6 + y * y * 0.03, 3, 2, y % 5 ? '#2e9a48' : '#5ac46a'); }
+}
+for (x = x0 + 115; x < x1 - 20; x += 150) {
+P.rect(x, GY - 76, 2, 76, '#6a7484'); P.rect(x, GY - 76, 12, 2, '#6a7484'); P.rect(x + 9, GY - 74, 6, 3, '#e8f4ff'); P.rect(x + 8, GY - 71, 8, 1, '#37b8e6');
+}
+for (x = x0 + 6; x < x1 - 6; x += 24) { P.rect(x, 176, 3, 16, '#b8c0cc'); P.rect(x, 176, 1, 16, '#ffffff'); }
+P.rect(x0 + 4, 178, w - 8, 4, '#e8eef4'); P.rect(x0 + 4, 178, w - 8, 1, '#ffffff'); P.rect(x0 + 4, 181, w - 8, 1, '#9aa4b0');
+P.rect(x0, GY, w, 10, DAY.walk[0]);
+for (x = x0; x < x1; x += 10) { P.rect(x, GY, 1, 10, DAY.walk[1]); if (r() < 0.3) P.rect(x + 2, GY + 2 + (r() * 6 | 0), 5, 1, DAY.walk[2]); }
+P.rect(x0, GY + 4, w, 1, DAY.walk[1]); P.rect(x0, GY, w, 1, '#ffffff'); P.rect(x0, GY + 1, w, 1, DAY.walk[2]);
+P.rect(x0, GY + 10, w, 3, '#e8e8ec'); P.rect(x0, GY + 13, w, 1, '#9a9aa4');
+P.rect(x0, GY + 14, w, 34, DAY.road[0]);
+for (x = x0; x < x1; x += 4) if (r() < 0.35) P.rect(x, GY + 15 + (r() * 32 | 0), 2, 1, DAY.road[1]);
+for (x = x0 + 10; x < x1 - 20; x += 40) P.rect(x, GY + 30, 20, 2, '#ffffff');
+P.rect(x0, GY + 48, w, R.H - GY - 48, '#c8ccd4'); P.rect(x0, GY + 48, w, 2, '#e8ecf0');
+for (x = x0; x < x1; x += 24) P.rect(x, GY + 50, 1, R.H - GY - 50, '#a8acb8');
+for (x = x0 + 30; x < x1 - 30; x += 120) { P.rect(x, GY + 58, 10, 6, '#3a3e4c'); P.rect(x + 2, GY + 60, 6, 2, '#ff9a3a'); }
+P.rect(x0, GY, 2, R.H - GY, '#9aa4b0'); P.rect(x1 - 2, GY, 2, R.H - GY, '#7a8494');
+});
+(S.posters || []).forEach(function (px) {
+P.rect(px + 4, GY - 40, 2, 40, '#6a7484'); P.rect(px + 30, GY - 40, 2, 40, '#6a7484');
+P.rect(px, GY - 66, 36, 30, '#a00a1e'); P.rect(px + 2, GY - 64, 32, 26, '#fff4e0');
+P.ell(px + 11, GY - 50, 5, 6, '#ff8a3a'); P.ell(px + 11, GY - 49, 3, 4, '#f0c8a8');
+P.ell(px + 25, GY - 50, 5, 6, '#3a48d8'); P.ell(px + 25, GY - 49, 3, 4, '#f0c8a8');
+P.rect(px + 2, GY - 42, 32, 4, '#a00a1e');
+});
+var gl = S.goal, gx = gl[0] + 30;
+P.rect(gx, GY - 110, 4, 110, '#8a94a4'); P.rect(gx + 136, GY - 110, 4, 110, '#8a94a4'); P.rect(gx, GY - 110, 140, 4, '#8a94a4');
+P.rect(gx + 8, GY - 104, 124, 40, '#1e8a4e'); P.rect(gx + 9, GY - 103, 122, 38, '#ffffff'); P.rect(gx + 10, GY - 102, 120, 36, '#1e8a4e');
+for (x = gl[0]; x < gl[0] + gl[2]; x += 8) { P.rect(x, GY + 2, 4, 3, '#ffffff'); P.rect(x + 4, GY + 5, 4, 3, '#ffffff'); }
+S.blocks.forEach(function (b) { container(P, r, b[0], b[2], b[1], S); });
+S.spikes.forEach(function (k2) { daySpikes(P, k2[0], k2[1]); });
+S.plats.forEach(function (p) { dayPlat(P, p[0], p[1], p[2]); });
+return cv;
+}
+R.drawDay = function (g, S, camX, t) {
+var BG = R.BG, x;
+g.drawImage(BG.daySky, 0, 0);
+x = -Math.round(camX * 0.02 + t * 0.05) % 960; g.drawImage(BG.dayCloud, x, 0); g.drawImage(BG.dayCloud, x + 960, 0);
+x = -Math.round(camX * 0.04) % 960; g.drawImage(BG.dayFar, x - 60, 0); g.drawImage(BG.dayFar, x + 900, 0);
+x = -Math.round(camX * 0.25) % 960; g.drawImage(BG.dayMid, x, 0); g.drawImage(BG.dayMid, x + 960, 0);
+};
 R.buildStages = function () {
 var BG = R.BG = window.REBELL_BG_SCHOOL.build();
 BG.viaduct = buildViaduct(); BG.lattice = buildLattice();
+BG.daySky = buildDaySky(); BG.dayCloud = buildDayClouds(); BG.dayFar = buildDayFar(); BG.dayMid = buildDayMid();
 BG.cloudFar = buildClouds(6101, ['#231d55', '#3a2f7a', '#6a4a9a'], 0.8); BG.cloudNear = buildClouds(6202, ['#2a2062', '#4a3a8c', '#c86aa8'], 1.25);
 R.STAGES.forEach(function (S) {
-S.layer = S.id === 'city' ? buildCity(S, BG) : S.vertical ? buildTower(S) : S.sky ? R.mk(4, 4) : buildSchool(S, BG);
+S.layer = S.id === 'city' ? buildCity(S, BG) : S.day ? buildTown(S, BG) : S.vertical ? buildTower(S) : S.sky ? R.mk(4, 4) : buildSchool(S, BG);
 S.solids = S.ground.map(function (g) { return { x: g[0], y: GY, w: g[1] - g[0], h: 120 }; });
 S.blockRects = (S.blocks || []).map(function (b) { return { x: b[0], y: GY - b[2], w: b[1], h: b[2] + 60 }; });
 S.solids = S.solids.concat(S.blockRects);
@@ -2392,6 +2564,7 @@ S.platRects = S.plats.map(function (p) { return { x: p[0], y: p[1], w: p[2] }; }
 R.schoolX = function (camX) { return Math.round(150 - camX * 0.22); };
 R.drawBackdrop = function (g, S, camX, t, rage, oy) {
 var BG = R.BG, x, y, CY = R.Cyber;
+if (S.day) { R.drawDay(g, S, camX, t); return; }
 g.drawImage(BG.sky, 0, 0);
 if (R.Moon) R.Moon.draw(g, S, camX, t, oy || 0);
 if (CY) CY.sky(g, S, camX, t, oy || 0);
@@ -3921,7 +4094,7 @@ G.state = 'play'; G.stateT = 0; G.fade = 1; G.fadeDir = -1;
 if (talk && R.TALKS && R.TALKS[talk]) R.beginTalk(talk); else R.openStage();
 };
 R.openStage = function () { var S = G.S; G.card = { t: 0, title: S.title, sub: S.sub }; R.bgm(S.bgm); };
-var PAR = { city: 180, tower: 200, sky: 120, school: 360 };
+var PAR = { city: 180, tower: 200, sky: 120, school: 360, taniyama: 240 };
 R.stageGrade = function () {
 var s = G.stg, S = G.S; if (!s || !S) return null;
 var sec = s.time / 60, par = PAR[S.id] || 240, ct = S.sky || S.vertical ? [20, 10, 4] : [50, 30, 12];
@@ -5717,7 +5890,7 @@ R.drawBackdrop(bg, S, cam, G.t, G.rage, oy);
 if (S.vertical) {
 bg.drawImage(S.layer, cam, clamp(-oy - S.top, 0, S.layer.height - R.H), R.W, R.H, 0, 0, R.W, R.H);
 } else bg.drawImage(S.layer, cam, 0, R.W, R.H, 0, oy, R.W, R.H);
-if (R.Cyber) R.Cyber.near(bg, S, cam, G.t, oy);
+if (R.Cyber && !S.day) R.Cyber.near(bg, S, cam, G.t, oy);
 if (G.slow > 0) { bg.fillStyle = 'rgba(40,70,220,' + (0.24 * Math.min(1, G.slow / 12)) + ')'; bg.fillRect(0, 0, R.W, R.H); }
 var X = G.cross;
 if (X) {
@@ -6395,7 +6568,7 @@ var mx = bx + S.mid.x * sx, my = by - 12;
 g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(mx, my - 11); g.lineTo(mx + 9, my); g.lineTo(mx, my + 11); g.lineTo(mx - 9, my); g.fill();
 g.fillStyle = (G.t >> 4) % 2 ? '#a050ff' : '#7a2be0'; g.beginPath(); g.moveTo(mx, my - 8); g.lineTo(mx + 6, my); g.lineTo(mx, my + 8); g.lineTo(mx - 6, my); g.fill();
 }
-var gx = bx + S.boss.x * sx, gy = by - 24;
+var gx = bx + (S.boss ? S.boss.x : S.goal[0] + S.goal[2] / 2) * sx, gy = by - 24;
 g.fillStyle = '#7a4a18'; g.fillRect(gx - 14, gy - 2, 28, 24); g.fillStyle = '#ffc83e'; g.fillRect(gx - 11, gy + 1, 22, 18);
 g.fillStyle = '#7a4a18'; g.fillRect(gx - 11, gy + 7, 22, 3); g.fillRect(gx - 3, gy + 5, 6, 8); g.fillStyle = '#fff3b0'; g.fillRect(gx - 1, gy + 7, 2, 4);
 var px = bx + G.pl.x * sx, py = by - 14 - clamp((R.GY - G.pl.y) * 0.5, 0, 60), r = 11 + ((G.t >> 4) % 2);
@@ -7554,7 +7727,7 @@ var CH = [
 {
 no: '第1章', name: 'KAGOSHIMA CITY', art: 'REBELL_MAP',
 PATH: [[6, 532], [64, 478], [122, 424], [210, 343], [297, 262], [297, 100], [340, 70], [395, 48], [446, 38], [480, 46], [480, 126]],
-NODE: [2, 4, 5, 10],
+NODE: [2, 4, 5, 10], stages: [0, 1, 2, 3],
 INFO: [
 { name: '水道橋', dx: 0, dy: 74, desc: '雨の降るネオンの廃都。機械兵のうろつく水道橋を渡り、門番を倒せ。' },
 { name: '鉄塔', dx: 0, dy: 76, desc: '学園への橋は、結界の中。雲の上まで続く鉄塔を、てっぺんまで登れ。' },
@@ -7573,10 +7746,10 @@ PLACES: [
 box: [36, 30, 560], hint: [64, 190, 'left'], info: [620, 884, 1260, 172], grad: [20, 1060, 960, 100], newAt: [960, 580]
 },
 {
-no: '第2章', name: 'IBUSUKI・TANIYAMA', art: 'REBELL_MAP2', preview: true,
+no: '第2章', name: 'IBUSUKI・TANIYAMA', art: 'REBELL_MAP2', free: true,
 PATH: [[262, -8], [258, 40], [236, 100], [196, 122], [168, 146], [140, 166], [166, 186], [192, 210], [216, 234], [232, 256], [252, 284], [284, 322], [322, 358],
 [362, 384], [388, 404], [409, 424], [398, 452], [360, 472], [300, 480], [252, 484], [205, 456]],
-NODE: [2, 5, 9, 15, 20],
+NODE: [2, 5, 9, 15, 20], stages: [4, null, null, null, null],
 INFO: [
 { name: '谷山', dx: 104, dy: 14, title: '谷山', sub: 'TANIYAMA  -  BAYSIDE INDUSTRIAL ZONE', desc: ['鹿児島市の南、海ぞいの工業地帯。', '七ツ島には、メガソーラーが広がる。'] },
 { name: '平川動物公園', dx: -44, dy: 82, title: '平川動物公園', sub: 'HIRAKAWA ZOO', desc: ['海を見下ろす、丘の上の動物園。', 'となりの公園に、ロケットの模型が立つ。'] },
@@ -7626,16 +7799,20 @@ if (k < 0) m.to = 0;
 if (cleared && k + 1 < C.NODE.length && G.unlocked < k + 1) { G.unlocked = k + 1; m.to = k + 1; m.wait = 70; m.newT = 200; }
 G.state = 'map'; G.stateT = 0; R.bgm('title');
 };
-R.openMapPreview = function (ch) {
-if (!CH[ch]) return false;
-G.map = { ch: ch, at: 0, d: 0, to: 0, t: 0, wait: 0, newT: 0, face: 1, moveT: 0 };
+R.openMapCh = function (ch, k) {
+var C = CH[ch]; if (!C) return false;
+if (!G.ranks) G.ranks = {};
+G.map = { ch: ch, at: Math.max(0, k), d: k < 0 ? 0 : C.ND[k], to: k < 0 ? 0 : null, t: 0, wait: 0, newT: 0, face: 1, moveT: 0 };
 G.state = 'map'; G.stateT = 0; R.bgm('title');
 return true;
 };
+R.openMapPreview = function (ch) { return R.openMapCh(ch, -1); };
+R.mapNode = function (ch, idx) { var C = CH[ch]; return C ? Math.max(0, C.stages.indexOf(idx)) : 0; };
 R.mapRecord = function (idx, rank) { if (!G.ranks) G.ranks = {}; if (rank && better(rank, G.ranks[idx])) G.ranks[idx] = rank; };
 R.updateMap = function (ok) {
 var m = G.map, I = R.input; if (!m) { R.openMap(0, false); return; }
-var C = CH[m.ch || 0], pre = !!C.preview, max = pre ? C.NODE.length - 1 : G.unlocked;
+var C = CH[m.ch || 0], free = !!C.free, max = free ? C.NODE.length - 1 : G.unlocked;
+if (free && I.hit.pause && m.to === null) { R.snd('select'); G.map = null; G.state = 'title'; G.stateT = 0; G.titleFade = 24; return; }
 m.t++; if (m.newT > 0) m.newT--;
 if (m.wait > 0) { if (--m.wait === 0) R.snd('levelup'); return; }
 if (m.to !== null) {
@@ -7649,8 +7826,9 @@ return;
 var dir = (I.hit.right || I.hit.up) ? 1 : (I.hit.left || I.hit.down) ? -1 : 0;
 if (dir) { var k = m.at + dir; if (k >= 0 && k <= max && k < C.NODE.length) m.to = k; else R.snd('deny'); }
 else if (ok && m.t > 24) {
-if (pre) { R.snd('select'); G.map = null; G.state = 'title'; G.stateT = 0; G.titleFade = 24; }
-else { R.snd('start'); R.startStage(m.at, false, R.STAGES[m.at].talk); }
+var st = C.stages[m.at];
+if (st === null || st === undefined || !R.STAGES[st]) R.snd('deny');
+else { R.snd('start'); R.startStage(st, false, R.STAGES[st].talk); }
 }
 };
 function diamond(g, x, y, r) { g.beginPath(); g.moveTo(x, y - r); g.lineTo(x + r, y); g.lineTo(x, y + r); g.lineTo(x - r, y); g.closePath(); }
@@ -7664,9 +7842,9 @@ g.drawImage(f.c, -f.ox, -f.oy); g.restore();
 }
 R.drawMap = function (g) {
 var m = G.map; if (!m) return;
-var C = CH[m.ch || 0], pre = !!C.preview, ND = C.ND, INFO = C.INFO, img = C.img;
-var t = m.t, k, p, lit = pre ? ND[ND.length - 1] : ND[Math.min(G.unlocked || 0, ND.length - 1)], q, moving = m.to !== null;
-var MAIN = pre ? '#7af3ff' : PINK;
+var C = CH[m.ch || 0], free = !!C.free, ND = C.ND, INFO = C.INFO, img = C.img;
+var t = m.t, k, p, lit = free ? ND[ND.length - 1] : ND[Math.min(G.unlocked || 0, ND.length - 1)], q, moving = m.to !== null;
+function ready(n) { var v = C.stages[n]; return v !== null && v !== undefined && !!R.STAGES[v]; }
 g.save();
 g.imageSmoothingEnabled = false;
 if (img && img.complete && img.naturalWidth) g.drawImage(img, 0, 0, 1920, 1080); else { g.fillStyle = '#140a30'; g.fillRect(0, 0, 1920, 1080); }
@@ -7691,8 +7869,8 @@ diamond(g, p[0], p[1], on ? 9 : 7); g.fillStyle = on ? (pass ? '#ffffff' : '#2a1
 g.lineWidth = 3; g.strokeStyle = on ? (pass ? PINK : '#c9b8ff') : '#4a4270'; g.stroke();
 }
 for (k = 0; k < C.NODE.length; k++) {
-p = at(C, ND[k]); var open = pre || k <= (G.unlocked || 0), rank = !pre && G.ranks && G.ranks[k], here = !moving && m.at === k, I2 = INFO[k];
-var col = !open ? '#5a5280' : rank ? GOLD : MAIN, r = 34 + (here ? 3 * Math.sin(t * 0.14) : 0);
+p = at(C, ND[k]); var open = free || k <= (G.unlocked || 0), rank = ready(k) && G.ranks && G.ranks[C.stages[k]], here = !moving && m.at === k, I2 = INFO[k];
+var col = !open ? '#5a5280' : rank ? GOLD : ready(k) ? PINK : '#7af3ff', r = 34 + (here ? 3 * Math.sin(t * 0.14) : 0);
 if (open) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = here ? 0.5 + 0.2 * Math.sin(t * 0.14) : 0.25; diamond(g, p[0], p[1], r + 18); g.fillStyle = col; g.fill(); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
 diamond(g, p[0], p[1], r); g.fillStyle = open ? '#1c0f44' : '#141030'; g.fill(); g.lineWidth = 6; g.strokeStyle = col; g.stroke();
 diamond(g, p[0], p[1], r - 9); g.lineWidth = 2; g.strokeStyle = open ? '#ffffff' : '#3a3460'; g.stroke();
@@ -7713,7 +7891,7 @@ hero(g, 'kurenai', pk[0], pk[1] - 30, moving ? m.face : 1, moving, m.moveT, t);
 if (!moving && m.wait <= 0) {
 var ay = pk[1] - 150 + Math.sin(t * 0.16) * 8;
 g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(pk[0] - 16, ay - 20); g.lineTo(pk[0] + 16, ay - 20); g.lineTo(pk[0], ay); g.closePath(); g.fill();
-g.lineWidth = 4; g.strokeStyle = MAIN; g.stroke();
+g.lineWidth = 4; g.strokeStyle = ready(m.at) ? PINK : '#7af3ff'; g.stroke();
 }
 var bx = C.box[0], by = C.box[1];
 panel(g, bx, by, C.box[2], 118, 16, 'rgba(14,8,40,.82)', '#c9b8ff', 4);
@@ -7721,17 +7899,17 @@ T(g, C.no, bx + 28, by + 54, 40, GOLD, 'left', U.font, '#120a30', 6);
 T(g, C.name, bx + 164, by + 54, 40, '#ffffff', 'left', U.font, '#120a30', 6);
 T(g, 'REBELL ― 紅蒼交錯', bx + 30, by + 96, 26, '#ffb8e6', 'left', U.font, '#120a30', 5);
 T(g, '← → ： マスを移動', C.hint[0], C.hint[1], 26, '#d8d0ff', C.hint[2], U.font, '#120a30', 5);
-if (pre) T(g, '準備中  ―  COMING SOON', C.hint[0], C.hint[1] + 40, 26, (t >> 5) % 2 ? '#7af3ff' : '#d8f8ff', C.hint[2], U.font, '#120a30', 5);
-var s = moving ? m.to : m.at, S = pre ? INFO[s] : R.STAGES[s], rk = !pre && G.ranks && G.ranks[s];
+if (free) T(g, 'Esc ： タイトルへ', C.hint[0], C.hint[1] + 40, 26, '#d8d0ff', C.hint[2], U.font, '#120a30', 5);
+var s = moving ? m.to : m.at, rd = ready(s), S = rd ? R.STAGES[C.stages[s]] : INFO[s], rk = rd && G.ranks && G.ranks[C.stages[s]];
 var ix = C.info[0], iy = C.info[1], iw = C.info[2], ih = C.info[3], rx = ix + iw - 42, lines = [].concat(INFO[s].desc);
-panel(g, ix, iy, iw, ih, 18, 'rgba(14,8,40,.88)', rk ? GOLD : MAIN, 5);
+panel(g, ix, iy, iw, ih, 18, 'rgba(14,8,40,.88)', rk ? GOLD : rd ? PINK : '#7af3ff', 5);
 T(g, S.title, ix + 40, iy + 58, 46, '#ffffff', 'left', U.font, '#120a30', 6);
 T(g, S.sub, ix + 42, iy + 92, 22, '#b8b0e0', 'left', U.font);
 for (k = 0; k < lines.length; k++) T(g, lines[k], ix + 42, iy + 134 + k * 36, 27, '#ffe8f6', 'left', U.font, '#120a30', 4);
-if (pre) T(g, '準備中', rx, iy + 62, 34, '#7af3ff', 'right', U.font, '#120a30', 6);
+if (!rd) T(g, '準備中', rx, iy + 62, 34, '#7af3ff', 'right', U.font, '#120a30', 6);
 else if (rk) { T(g, 'CLEAR', rx, iy + 42, 26, GOLD, 'right', U.font, '#120a30', 5); T(g, 'RANK ' + rk, rx, iy + 86, 44, GOLD, 'right', U.font, '#120a30', 6); }
 else if ((t >> 4) % 2) T(g, 'NEW !', rx, iy + 66, 40, PINK, 'right', U.font, '#120a30', 6);
-if (!moving && m.wait <= 0 && (t >> 5) % 2 === 0) T(g, pre ? 'Enter / Space ： タイトルへ' : 'Enter / Space ： 出発', rx, iy + ih - 16, 28, '#ffffff', 'right', U.font, '#120a30', 5);
+if (!moving && m.wait <= 0 && rd && (t >> 5) % 2 === 0) T(g, 'Enter / Space ： 出発', rx, iy + ih - 16, 28, '#ffffff', 'right', U.font, '#120a30', 5);
 if (m.newT > 0 && m.wait <= 0 && m.newT > 60) T(g, '新しい道が開いた！', C.newAt[0], C.newAt[1], 54, (t >> 3) % 2 ? '#ffffff' : GOLD, 'center', U.font, '#120a30', 9);
 if (t < 24) { g.fillStyle = 'rgba(0,0,0,' + (1 - t / 24) + ')'; g.fillRect(0, 0, 1920, 1080); }
 g.restore();
@@ -7933,6 +8111,27 @@ idachi_end: [
 { who: 'idachi', face: 'smile', text: ['結界の上の空を、飛空艇が渡っている。', '――その拳で、確かめてこい。'] },
 { who: 'kurenai', face: 'silly', text: ['……あれ？　なんか、悪い人じゃなさそう？'] },
 { who: 'aoi', face: 'joy', text: ['ふふっ。行こう、紅。', '答えは、あの龍のところにあるよ。'] }
+],
+taniyama: [
+{ who: 'kurenai', face: 'wry', text: ['うわ、まぶしい……。', 'あんな夜のあとでも、朝はちゃんと来るんだね。'] },
+{ who: 'aoi', face: 'sad', text: ['……うん。', '黒瀬さんのカメラ、まだ温かい気がする。'] },
+{ who: 'kurenai', face: 'regret', text: ['四角のこと……まだ、信じられないよ。', 'ずっと、一緒に戦ってると思ってたのに。'] },
+{ who: 'aoi', face: 'normal', text: ['私も。……でも、ここで立ち止まってたら、', '黒瀬さんに怒られちゃう気がする。'] },
+{ who: 'kurenai', face: 'surprise', text: ['ねえ蒼、あの貼り紙……！', 'あたしたちの顔が、でっかく描いてある！'] },
+{ who: 'aoi', face: 'puzzled', text: ['「反逆者（REBELL）　紅・蒼」……。', '帝国の手配書だね。もう、こんなところまで。'] },
+{ who: 'kurenai', face: 'wry', text: ['へへっ……似顔絵、ちょっと美人すぎない？', '……なんて、言ってる場合じゃないか。'] },
+{ who: 'aoi', face: 'normal', text: ['帝国の機兵も、見回ってるみたい。', '谷山の臨海通りを抜けて、南へ急ごう。'] },
+{ who: 'kurenai', face: 'resolve', pose: 'event', text: ['よーし！　カメラに写ってる「真実」、', 'ぜったい見つけてみせるんだから！'] },
+{ who: 'aoi', face: 'joy', pose: 'stance', text: ['うん。行こう、紅。', '――今度は、二人で。'] }
+],
+taniyama_end: [
+{ who: 'kurenai', face: 'joy', text: ['ふうっ、臨海通り、突破ー！', '昼間の街って、走ってて気持ちいいね！'] },
+{ who: 'aoi', face: 'relief', text: ['ふふっ、紅、ちょっと元気が戻ったね。'] },
+{ who: 'kurenai', face: 'smile', text: ['へへっ、蒼が隣にいるからだよ。'] },
+{ who: 'aoi', face: 'puzzled', text: ['……ねえ、紅。黒瀬さんのカメラ、', 'さっきから、小さく光ってる。'] },
+{ who: 'kurenai', face: 'surprise', text: ['ほんとだ！　画面に……地図？', '南の、丘の上に印がついてる！'] },
+{ who: 'aoi', face: 'normal', text: ['丘の上……平川のほうだね。', '黒瀬さんが、何かを残してくれたのかも。'] },
+{ who: 'kurenai', face: 'resolve', pose: 'event', text: ['よーし、次は平川だ！', '真実まで、一直線に行くよ！'] }
 ]
 };
 var WHO = {
@@ -8119,7 +8318,7 @@ var s = clamp(Math.round(cssW * dpr / R.W), 2, 5);
 if (s !== SCALE || cv.width !== R.W * s) { SCALE = s; cv.width = R.W * s; cv.height = R.H * s; }
 }
 function decals() {
-var S = G.S; if (S.id !== 'school') return;
+var S = G.S; if (S.id === 'taniyama') { dayDecals(S); return; } if (S.id !== 'school') return;
 var BG = R.BG, cam = R.viewCam, gp = BG.gatePlaque, sg = BG.schoolSign, f = '"Yu Gothic","Yu Gothic UI","Meiryo",sans-serif';
 F.save(); F.setTransform(SCALE, 0, 0, SCALE, 0, 0); F.textBaseline = 'middle'; F.textAlign = 'center';
 var sx = R.schoolX(cam) + sg.x, sy = 19 + sg.y;
@@ -8137,6 +8336,22 @@ F.fillStyle = '#d8d0ff'; F.fillText('玉　龍', gx + gp.w / 2, gy + gp.h / 2 + 
 }
 F.restore();
 }
+function dayDecals(S) {
+var cam = R.viewCam, oy = R.viewOy, f = '"Yu Gothic","Yu Gothic UI","Meiryo",sans-serif', GYv = R.GY;
+F.save(); F.setTransform(SCALE, 0, 0, SCALE, 0, 0); F.textBaseline = 'middle'; F.textAlign = 'center';
+(S.posters || []).forEach(function (px) {
+var x = px - cam; if (x < -40 || x > R.W) return;
+F.font = 'bold 5.6px ' + f; F.fillStyle = '#a00a1e'; F.fillText('WANTED', x + 18, GYv - 60 + oy);
+F.font = 'bold 3.4px ' + f; F.fillStyle = '#ffffff'; F.fillText('反逆者 REBELL ― 紅・蒼', x + 18, GYv - 40 + oy);
+});
+var gx = S.goal[0] + 30 - cam;
+if (gx > -150 && gx < R.W) {
+F.fillStyle = '#ffffff'; F.font = 'bold 9px ' + f; F.fillText('平川・喜入・指宿', gx + 70, GYv - 92 + oy);
+F.font = 'bold 5px ' + f; F.fillText('HIRAKAWA / KIIRE / IBUSUKI  →', gx + 70, GYv - 80 + oy);
+F.font = '4.4px ' + f; F.fillText('国道 226 号　R226', gx + 70, GYv - 71 + oy);
+}
+F.restore();
+}
 function doBloom() {
 glow.globalCompositeOperation = 'source-over'; glow.imageSmoothingEnabled = true;
 glow.drawImage(cv, 0, 0, glowC.width, glowC.height);
@@ -8146,8 +8361,8 @@ F.save(); F.setTransform(1, 0, 0, 1, 0, 0); F.globalCompositeOperation = 'lighte
 F.drawImage(glowC, 0, 0, cv.width, cv.height); F.restore();
 }
 function vignette() {
-var gr = F.createRadialGradient(960, 540, 420, 960, 540, 1150);
-gr.addColorStop(0, 'rgba(6,2,24,0)'); gr.addColorStop(1, 'rgba(6,2,24,.5)'); F.fillStyle = gr; F.fillRect(0, 0, 1920, 1080);
+var gr = F.createRadialGradient(960, 540, 420, 960, 540, 1150), dk = G.S && G.S.day ? 0.16 : 0.5;
+gr.addColorStop(0, 'rgba(6,2,24,0)'); gr.addColorStop(1, 'rgba(6,2,24,' + dk + ')'); F.fillStyle = gr; F.fillRect(0, 0, 1920, 1080);
 }
 function compose() {
 resize();
@@ -8159,7 +8374,7 @@ decals();
 if (R.Cyber) R.Cyber.holo(F, SCALE, G.S, R.viewCam, R.viewOy, G.t);
 R.renderMid(fg); F.imageSmoothingEnabled = false; F.drawImage(fgC, 0, 0, cv.width, cv.height);
 R.renderFront(fg);
-if (bloom) doBloom();
+if (bloom && !G.S.day) doBloom();
 R.renderChars(F, SCALE);
 F.setTransform(1, 0, 0, 1, 0, 0); F.globalAlpha = 1; F.imageSmoothingEnabled = false; F.drawImage(fgC, 0, 0, cv.width, cv.height);
 }
@@ -8223,7 +8438,9 @@ if (G.stateT === 97) R.snd('rankup');
 if (G.stateT > 60 && ok) {
 R.snd('select');
 var gr = R.stageGrade && R.stageGrade(); if (R.mapRecord && gr) R.mapRecord(G.stageIdx, gr.rank);
-if (G.stageIdx + 1 < R.STAGES.length) {
+var CS = R.STAGES[G.stageIdx], last1 = R.STAGES.filter(function (q) { return !q.ch || q.ch === 1; }).length - 1;
+if (CS.ch && CS.ch !== 1 && R.openMapCh) R.openMapCh(CS.ch - 1, R.mapNode(CS.ch - 1, G.stageIdx), false);
+else if (G.stageIdx < last1) {
 if (R.openMap) R.openMap(G.stageIdx, true);
 else R.startStage(G.stageIdx + 1, false, R.STAGES[G.stageIdx + 1].talk);
 } else { G.state = 'ending'; G.stateT = 0; R.bgm('title'); }

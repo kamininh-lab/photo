@@ -26,7 +26,8 @@
 
   // 進み具合（0〜1）
   function progress(S, camX, oy) {
-    var i = R.STAGES.indexOf(S), n = R.STAGES.length, f;
+    var i = R.STAGES.indexOf(S), n = R.STAGES.filter(function (q) { return !q.ch || q.ch === 1; }).length, f;      // 第1章のステージ（第1話〜第4話）の中での進み具合
+    if (S.ch && S.ch !== 1) return 0;
     if (i < 0) return 0;
     if (S.vertical) f = clamp(oy / Math.max(1, 165 - S.goal[1] + 20), 0, 1);
     else f = clamp(camX / Math.max(1, S.len - R.W), 0, 1);
