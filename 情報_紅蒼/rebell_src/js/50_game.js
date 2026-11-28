@@ -1621,7 +1621,7 @@
   R.openStage = function () { var S = G.S; G.card = { t: 0, title: S.title, sub: S.sub }; R.bgm(S.bgm); };
   // ステージクリアの評価（S 〜 D）: タイム・最大コンボ・受けたダメージ・スタイルランクを、それぞれ 0 〜 3 点で数える（合計 12 点）
   //   PAR = ステージごとの目安の秒数。縦と空のステージは敵が少ないので、コンボの目安を低くしてある。やり直した回数だけ、ダメージの点が下がる
-  var PAR = { city: 180, tower: 200, sky: 120, school: 360, taniyama: 240 };
+  var PAR = { city: 180, tower: 200, sky: 120, school: 360, taniyama: 240, hirakawa: 260 };
   R.stageGrade = function () {
     var s = G.stg, S = G.S; if (!s || !S) return null;
     var sec = s.time / 60, par = PAR[S.id] || 240, ct = S.sky || S.vertical ? [20, 10, 4] : [50, 30, 12];
@@ -1709,18 +1709,19 @@
     if (!G.boss && !G.bossDefeated && p.x > b.trigger) {
       G.arena = b.arena.slice();
       G.boss = spawn(b.type, b.x, GY); G.boss.name = b.name; G.boss.sub = b.sub; G.enemies.push(G.boss);
+      if (b.skin) G.boss.skin = b.skin; if (b.hp) G.boss.hp = G.boss.max = b.hp;      // 見た目と体力を変えたボス（第2章 第2話の機獣）
       if (b.type === 'dragon') G.sakuraOn = true;      // 龍との戦いが始まると、桜吹雪
       G.bossIntro = 110; R.bgm('boss'); R.snd(b.type === 'dragon' ? 'roar' : 'explosion'); shake(8);
       G.enemies = G.enemies.filter(function (e) { return e === G.boss || (e.x > b.arena[0] - 40 && e.x < b.arena[1]); });
       // 重機兵: 画面に入ってくるまでは攻撃せずに歩いてくる。入ってきたら紅・蒼・四角の会話。WARNING の帯は、会話のあとに出す
-      if (b.type === 'guard' && !G.guardMet && R.TALKS && R.TALKS.guard) { G.guardWait = 0; G.boss.cd = 9999; G.bossIntro = 0; }
+      if (b.type === 'guard' && !G.guardMet && R.TALKS && R.TALKS[b.talk || 'guard']) { G.guardWait = 0; G.boss.cd = 9999; G.bossIntro = 0; }      // b.talk / b.endTalk = このボスの前後の会話（なければ、第1章の重機兵のもの）
     }
     if (G.guardWait !== undefined && G.guardWait !== null && G.boss && G.boss.type === 'guard') {
       var gb = G.boss;
       if (G.guardWait === 'banner') { G.guardWait = null; G.bossIntro = 110; gb.cd = 50; }      // 会話が終わって戻ってきた
       else if (gb.x < G.cam.x + R.W - 34 || ++G.guardWait > 300) {      // 画面に入った（来なければ 5 秒で）
         G.guardMet = true; G.guardWait = 'banner'; G.shots = [];
-        R.beginTalk('guard', { vs: gb }); return;
+        R.beginTalk(b.talk || 'guard', { vs: gb }); return;
       }
     }
     if (G.bossIntro > 0) G.bossIntro--;
@@ -1729,7 +1730,7 @@
       // 龍を倒したあと: 紅・蒼・四角の会話をはさんでから、ステージクリアへ（会話が終わると stateT は 0 から数え直す）
       if (G.stateT === 40 && b.type === 'dragon' && !G.dragonEnd && R.TALKS && R.TALKS.dragon_end) { G.dragonEnd = true; G.shots = []; if (R.Mako && R.Mako.ensure) R.Mako.ensure(); R.beginTalk('dragon_end', { vs: G.boss || { x: p.x + 60 } }); return; }
       // 重機兵を倒したあとも同じように、会話をはさんでからステージクリアへ
-      if (G.stateT === 40 && b.type === 'guard' && !G.guardEnd && R.TALKS && R.TALKS.guard_end) { G.guardEnd = true; G.shots = []; R.beginTalk('guard_end', { vs: { x: G.boss ? G.boss.x : p.x + 60 } }); return; }
+      if (G.stateT === 40 && b.type === 'guard' && !G.guardEnd && R.TALKS && R.TALKS[b.endTalk || 'guard_end']) { G.guardEnd = true; G.shots = []; R.beginTalk(b.endTalk || 'guard_end', { vs: { x: G.boss ? G.boss.x : p.x + 60 } }); return; }
       if (G.stateT === 70) { G.arena = null; R.bgm('clear'); G.state = 'clear'; G.stateT = 0; }
     }
   }

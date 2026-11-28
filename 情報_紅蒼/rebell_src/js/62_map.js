@@ -49,7 +49,7 @@
       no: '第2章', name: 'IBUSUKI・TANIYAMA', art: 'REBELL_MAP2', free: true,
       PATH: [[262, -8], [258, 40], [236, 100], [196, 122], [168, 146], [140, 166], [166, 186], [192, 210], [216, 234], [232, 256], [252, 284], [284, 322], [322, 358],
         [362, 384], [388, 404], [409, 424], [398, 452], [360, 472], [300, 480], [252, 484], [205, 456]],
-      NODE: [2, 5, 9, 15, 20], stages: [4, null, null, null, null],      // 第1話 = 谷山（40_stage.js の taniyama）
+      NODE: [2, 5, 9, 15, 20], stages: [4, 5, null, null, null],      // 第1話 = 谷山（40_stage.js の taniyama）、第2話 = 平川動物公園（hirakawa）
       INFO: [
         { name: '谷山', dx: 104, dy: 14, title: '谷山', sub: 'TANIYAMA  -  BAYSIDE INDUSTRIAL ZONE', desc: ['鹿児島市の南、海ぞいの工業地帯。', '七ツ島には、メガソーラーが広がる。'] },
         { name: '平川動物公園', dx: -44, dy: 82, title: '平川動物公園', sub: 'HIRAKAWA ZOO', desc: ['海を見下ろす、丘の上の動物園。', 'となりの公園に、ロケットの模型が立つ。'] },

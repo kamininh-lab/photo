@@ -194,6 +194,17 @@
     c = S[an].frames[fr];
     if (e.flash > 0 && (e.flash >> 1) % 2 === 0) c = white(c);
     spr(g, c, x, e.y, e.face, S.ox, S.oy);
+    if (e.skin === 'beast') {      // 帝国の機獣（第2章 第2話）: ツノ・キバ・背びれ・尾・紅い目
+      var bx2 = Math.round(x), by2 = Math.round(e.y), f2 = e.face, hy2 = by2 - e.h, k2, gl = (G.t >> 3) % 2;
+      g.fillStyle = '#ffd36a'; g.beginPath(); g.moveTo(bx2 + f2 * 4, hy2 + 4); g.lineTo(bx2 + f2 * 18, hy2 - 14); g.lineTo(bx2 + f2 * 10, hy2 + 6); g.fill();
+      g.beginPath(); g.moveTo(bx2 - f2 * 6, hy2 + 4); g.lineTo(bx2 - f2 * 2, hy2 - 12); g.lineTo(bx2 + f2 * 1, hy2 + 6); g.fill();
+      g.fillStyle = '#fff3b0'; g.fillRect(bx2 + f2 * 14 - (f2 < 0 ? 1 : 0), hy2 - 10, 1, 6);
+      g.fillStyle = '#f4f4f8'; g.beginPath(); g.moveTo(bx2 + f2 * 10, hy2 + 22); g.lineTo(bx2 + f2 * 24, hy2 + 18); g.lineTo(bx2 + f2 * 12, hy2 + 28); g.fill();      // キバ
+      g.fillStyle = '#a00a1e'; for (k2 = 0; k2 < 4; k2++) { g.beginPath(); g.moveTo(bx2 - f2 * (8 + k2 * 2), hy2 + 14 + k2 * 10); g.lineTo(bx2 - f2 * (22 + k2 * 2), hy2 + 10 + k2 * 10); g.lineTo(bx2 - f2 * (8 + k2 * 2), hy2 + 22 + k2 * 10); g.fill(); }      // 背びれ
+      g.strokeStyle = '#5a5068'; g.lineWidth = 3; g.beginPath(); g.moveTo(bx2 - f2 * 12, by2 - 14); g.quadraticCurveTo(bx2 - f2 * 34, by2 - 10 + Math.sin(G.t * 0.1) * 4, bx2 - f2 * 38, by2 - 26 + Math.sin(G.t * 0.1) * 6); g.stroke();      // 尾
+      g.fillStyle = '#a00a1e'; g.fillRect(bx2 - f2 * 38 - 3, by2 - 30 + Math.round(Math.sin(G.t * 0.1) * 6), 6, 6);
+      g.fillStyle = gl ? '#ff3048' : '#ffb040'; g.fillRect(bx2 + f2 * 6 - 2, hy2 + 12, 5, 3);
+    }
     if (warn && (G.t >> 2) % 2) { var hx = Math.round(x), hy = Math.round(e.y - e.h - 16); g.fillStyle = '#ff3048'; g.fillRect(hx - 1, hy, 3, 7); g.fillRect(hx - 1, hy + 9, 3, 3); g.fillStyle = '#ffd0d6'; g.fillRect(hx, hy + 1, 1, 5); }
   }
   function drawShot(g, s, cam) {
@@ -417,6 +428,15 @@
     fg.fillStyle = '#16181e'; [x + 8, x + w - 10, cx + 8].forEach(function (wx) { fg.beginPath(); fg.arc(wx, GYv - 5, 5, 0, Math.PI * 2); fg.fill(); });
     fg.fillStyle = '#9aa4b0'; [x + 8, x + w - 10, cx + 8].forEach(function (wx) { fg.fillRect(wx - 1, GYv - 6, 2, 2); });
   }
+  // 動物園のゴンドラ: 屋根の上（y）に乗れる。画面の上まで、ロープがのびる
+  function gondola(fg, x, y, w, n) {
+    var col = ['#ff7a9a', '#6ac8ff', '#ffd36a', '#8ae08a'][n % 4], mx = x + (w >> 1), k;
+    fg.fillStyle = '#4a4458'; fg.fillRect(mx, -200, 1, y + 200 - 8); fg.fillRect(mx - 3, y - 8, 7, 3); fg.fillRect(mx - 1, y - 6, 3, 6);
+    fg.fillStyle = col; fg.fillRect(x, y, w, 24); fg.fillStyle = '#ffffff'; fg.fillRect(x, y, w, 2); fg.fillStyle = 'rgba(0,0,0,.2)'; fg.fillRect(x, y + 20, w, 4);
+    fg.fillStyle = '#2a3a58'; for (k = x + 5; k < x + w - 8; k += 14) fg.fillRect(k, y + 6, 10, 9);
+    fg.fillStyle = '#8ad0ff'; for (k = x + 5; k < x + w - 8; k += 14) fg.fillRect(k, y + 6, 10, 2);
+    fg.fillStyle = '#4a4458'; fg.fillRect(x + 3, y + 24, 2, 3); fg.fillRect(x + w - 5, y + 24, 2, 3);
+  }
   // クレーンのつり荷: コンテナの上（y）に乗れる。画面の上まで、ワイヤーがのびる
   function craneLoad(fg, x, y, w, n) {
     var col = n % 2 ? ['#e05050', '#ff9090', '#a83030'] : ['#f0c040', '#fff0a0', '#b08a20'], k, mx = x + (w >> 1);
@@ -469,6 +489,10 @@
     if (S.vertical) {      // 縦のステージ: 地形の絵は縦に長い。画面の上端に映る世界の y は -oy
       bg.drawImage(S.layer, cam, clamp(-oy - S.top, 0, S.layer.height - R.H), R.W, R.H, 0, 0, R.W, R.H);
     } else bg.drawImage(S.layer, cam, 0, R.W, R.H, 0, oy, R.W, R.H);
+    if (S.dusk) {      // 夕方: 景色の全体に、夕焼けの色をかぶせる（主人公と敵は、そのままの色）
+      var dg = bg.createLinearGradient(0, 0, 0, R.H); dg.addColorStop(0, '#c890c8'); dg.addColorStop(0.55, '#ffb890'); dg.addColorStop(1, '#e8a888');
+      bg.globalCompositeOperation = 'multiply'; bg.fillStyle = dg; bg.fillRect(0, 0, R.W, R.H); bg.globalCompositeOperation = 'source-over';
+    }
     if (R.Cyber && !S.day) R.Cyber.near(bg, S, cam, G.t, oy);      // ネオンの霧・蒸気・雲（14_cyber.js）
     if (G.slow > 0) { bg.fillStyle = 'rgba(40,70,220,' + (0.24 * Math.min(1, G.slow / 12)) + ')'; bg.fillRect(0, 0, R.W, R.H); }      // ジャスト回避のスロー中は青く沈む
     var X = G.cross;
@@ -497,6 +521,7 @@
     for (i = 0; i < MV.length; i++) {
       mx = Math.round(MV[i].x - cam); my = Math.round(MV[i].y); k = MV[i].w;
       if (MV[i].kind === 'truck') { if (mx < R.W + 30 && mx + k > -30) truck(fg, mx, my, k, Math.sin((G.time + MV[i].ph) / MV[i].per * Math.PI * 2) >= 0 ? 1 : -1, i); continue; }
+      if (MV[i].kind === 'gondola') { if (mx < R.W + 10 && mx + k > -10) gondola(fg, mx, my, k, i); continue; }
       if (MV[i].kind === 'crane') { if (mx < R.W + 10 && mx + k > -10) craneLoad(fg, mx, my, k, i); continue; }
       if (MV[i].kind) continue;      // 飛空艇・エアカーは skyWorld で描いた
       if (mx > R.W + 10 || mx + k < -10) continue;
@@ -542,7 +567,7 @@
     g.save(); g.setTransform(S, 0, 0, S, 0, oy * S);
     g.imageSmoothingEnabled = (S === 3); if (S === 3) g.imageSmoothingQuality = 'high';      // 1.5 倍だけは、にじませたほうがドットがそろって見える
     if (R.Idachi && G.boss) R.Idachi.drawHi(g, cam);      // ステージ 2 のボス「井立」は、主人公と同じ細かい層・同じ大きさで描く（53_idachi.js）
-    if (G.state === 'talk') { if (R.Mako) R.Mako.draw(g, cam); if (R.Karate && R.Karate.talkStand) R.Karate.talkStand(g, cam); R.talkChars(g, cam, charDraw); g.restore(); return; }          // 会話シーンでは、二人の立ち姿を並べる（65_talk.js）
+    if (G.state === 'talk') { if (R.Mako) R.Mako.draw(g, cam); if (R.Saki) R.Saki.draw(g, cam); if (R.Karate && R.Karate.talkStand) R.Karate.talkStand(g, cam); R.talkChars(g, cam, charDraw); g.restore(); return; }          // 会話シーンでは、二人の立ち姿を並べる（65_talk.js）
     // 残像（交代で跳び去る相棒は、元の色のまま薄れていく）
     for (i = 0; i < G.ghosts.length; i++) {
       var gh = G.ghosts[i], gu = gh.t / gh.life;

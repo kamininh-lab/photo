@@ -269,6 +269,48 @@
       { who: 'kurenai', face: 'surprise', text: ['ほんとだ！　画面に……地図？', '南の、丘の上に印がついてる！'] },
       { who: 'aoi', face: 'normal', text: ['丘の上……平川のほうだね。', '黒瀬さんが、何かを残してくれたのかも。'] },
       { who: 'kurenai', face: 'resolve', pose: 'event', text: ['よーし、次は平川だ！', '真実まで、一直線に行くよ！'] }
+    ],
+    // 第2章 第2話（平川動物公園）の前: 夕焼けの丘の上。動物園は帝国に乗っ取られ、檻に旗が立っている。カメラの印は、この奥
+    hirakawa: [
+      { who: 'kurenai', face: 'joy', text: ['わぁ、丘の上から海が見える！', '夕焼けで、桜島がまっ赤だよ！'] },
+      { who: 'aoi', face: 'normal', text: ['平川動物公園……。', '黒瀬さんのカメラの印は、この奥だね。'] },
+      { who: 'kurenai', face: 'silly', text: ['でも、なんか静かすぎない？', '動物の声が、ぜんぜん聞こえないよ。'] },
+      { who: 'aoi', face: 'puzzled', text: ['檻に、帝国の旗……。', 'みんな、閉じこめられてる。'] },
+      { who: 'kurenai', face: 'surprise', text: ['ねえ蒼、あれ……！', '機兵が、キリンやゾウの檻を見張ってる！'] },
+      { who: 'aoi', face: 'anger', text: ['帝国は、動物園まで自分のものにしたんだね。', '……許せない。'] },
+      { who: 'kurenai', face: 'serious', text: ['うん。茉子ねえがいなくても、', 'あたしたちで、ちゃんとやらなきゃ。'] },
+      { who: 'aoi', face: 'awaken', pose: 'stance', text: ['行こう、紅。', 'カメラの印まで、まっすぐに。'] },
+      { who: 'kurenai', face: 'resolve', pose: 'event', text: ['よーし、動物たちも、助けちゃおう！'] }
+    ],
+    // 第2話のボス「帝国機獣 ベヒモス」が画面に入ってきたとき（50_game.js。重機兵と同じ仕組みで、S.boss.talk から）。
+    //   四角の助言はもうない。蒼が、重機兵と同じ動き（地面を叩く衝撃波・突進のあとの隙）だと読む
+    beast: [
+      { who: 'kurenai', face: 'surprise', text: ['うわっ、でっかい……！', 'ツノに、キバ……機械の、獣！？'] },
+      { who: 'aoi', face: 'normal', text: ['帝国の機獣。園の主みたいに、居座ってる。', 'あれが、印の場所を守ってるんだね。'] },
+      { who: 'kurenai', face: 'wry', text: ['四角がいたら、弱点を教えてくれたのになぁ……。', '……ううん、もう頼らない！'] },
+      { who: 'aoi', face: 'smile', text: ['ふふっ。弱点なら、私が読むよ。', '水道橋の重機兵と、動きが似てる。'] },
+      { who: 'aoi', face: 'normal', text: ['地面を叩いたら、跳んでよけて。', '突進のあとは、隙だらけのはず。'] },
+      { who: 'kurenai', face: 'anger', pose: 'stance', text: ['りょーかいっ！', 'よーし、行っくよー、蒼！'] }
+    ],
+    // 機獣を倒したあと（S.boss.endTalk）。隠れていた大倉 咲が現れる（37_saki.js が、最初の台詞から立ち姿を出す）。終わると、ステージクリア。
+    //   咲は、やさしく穏やかで、ていねいに話す（二人を「紅さん」「蒼さん」と呼ぶ）。シートの決め台詞「まかせて！」に寄せた
+    //   黒瀬が咲にメモリーカードを預けていた・咲が同行を申し出る・次の印は喜入、は私の解釈（2026-11-28。ユーザー未確認）
+    beast_end: [
+      { who: 'kurenai', face: 'joy', text: ['やったー！　機獣、撃破！'] },
+      { who: 'aoi', face: 'relief', text: ['ふう……。', 'これで、動物たちの檻も開けられるね。'] },
+      { who: 'saki', face: 'surprise', text: ['あ、あのっ……！', 'もしかして、紅さんと、蒼さん……ですか？'] },
+      { who: 'kurenai', face: 'surprise', text: ['えっ、だれ！？　どこから！？'] },
+      { who: 'saki', face: 'normal', text: ['大倉 咲です。この動物園で、いきものたちのお世話をしています。', '機獣が来てから、ずっと隠れていて……。'] },
+      { who: 'saki', face: 'joy', text: ['助けてくれて、ありがとうございます！', 'みんなも、きっと喜んでます。'] },
+      { who: 'aoi', face: 'puzzled', text: ['咲さん。どうして、私たちの名前を？'] },
+      { who: 'saki', face: 'serious', text: ['黒瀬さんから、聞いていました。', '「カメラを持った二人が来たら、渡してくれ」って。'] },
+      { who: 'kurenai', face: 'surprise', text: ['黒瀬さんが！？', '……これ、メモリーカード？'] },
+      { who: 'saki', face: 'trouble', text: ['中身は、私にも見られません。', 'でも、あのカメラに入れれば、きっと――。'] },
+      { who: 'aoi', face: 'normal', text: ['……カメラの地図に、新しい印。', '今度は、喜入。海ぞいの、石油の基地だね。'] },
+      { who: 'saki', face: 'resolve', text: ['あの……私も、行かせてください。', 'いきものたちの力を借りれば、きっとお役に立てます。'] },
+      { who: 'kurenai', face: 'joy', pose: 'event', text: ['ほんと！？　百人力だよ、咲ちゃん！', 'よーし、次は喜入だ！'] },
+      { who: 'saki', face: 'smile', text: ['はいっ。――まかせてください！'] },
+      { who: 'aoi', face: 'joy', text: ['ふふっ。よろしくね、咲さん。'] }
     ]
   };
   // 話し手ごとの見た目。side = カットインがすべり込んでくる側（-1 = 左、1 = 右）。portrait = 顔グラフィックの代わりに、シートの大きな絵を使う
@@ -281,6 +323,8 @@
     // 大森 茉子: 助っ人の回復役（36_mako.js）。pics = 表情ごとの絵（09_mako_art.js）:
     //   normal / command 支援指示 / heal 回復 / sad / silly おとぼけ / shy 照れ / joy 喜び / anger 怒り（冷静）/ surprise / puzzled 困惑 / relief 安堵
     mako: { side: -1, col: '#ff8ae0', dark: '#1e0a2e', lite: '#6a2a8a', mid: '#3e1660', plate: '#3a1452', name: '大森', kana: 'おおもり', en: 'OMORI MAKO', icon: null, pics: true },
+    // 大倉 咲: 第2章 第2話で出会う（37_saki.js）。pics = 表情ごとの絵（09_saki_art.js）: normal / joy / relief / smile / serious / surprise / trouble / shy / resolve
+    saki: { side: 1, col: '#7ad8ff', dark: '#06142e', lite: '#1a5a9a', mid: '#103a6a', plate: '#0e3260', name: '大倉', kana: 'おおくら', en: 'OKURA SAKI', icon: null, pics: true },
     // 四角: 通信で話す。pics = 表情ごとの絵（09_shikaku_art.js）、tag = 帯に出す小さな札
     shikaku: { side: 1, col: '#ffc84a', dark: '#07122e', lite: '#1c4a86', mid: '#123260', plate: '#143058', name: '四角', kana: 'よすみ', en: 'YOSUMI AKIHIRO', icon: null, pics: true, tag: '通信中  ‐  SUPPORT', tag2: '黒幕  ‐  MASTERMIND' }      // tag2 = 裏切りを明かしたあとの札（台詞の turn: true から）
   };
@@ -291,6 +335,9 @@
     var M = (window.REBELL_MAKO && window.REBELL_MAKO.pics) || {};      // 大森の絵も（smile は joy と同じ絵）
     for (k in M) { im = new Image(); im.src = M[k]; PICS['mako_' + k] = im; }
     if (PICS.mako_joy) PICS.mako_smile = PICS.mako_joy;
+    var K = (window.REBELL_SAKI && window.REBELL_SAKI.pics) || {};      // 大倉 咲の絵（ない表情は normal で代える）
+    for (k in K) { im = new Image(); im.src = K[k]; PICS['saki_' + k] = im; }
+    if (PICS.saki_normal && !PICS.saki_smile) PICS.saki_smile = PICS.saki_normal;
   })();
 
   function count(ln) { var n = 0, i; for (i = 0; i < ln.text.length; i++) n += ln.text[i].length; return n; }

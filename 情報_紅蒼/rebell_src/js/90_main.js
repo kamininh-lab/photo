@@ -17,7 +17,7 @@
 
   // 背景の看板などに重ねる文字（ドット絵の上に高解像度で描く）
   function decals() {
-    var S = G.S; if (S.id === 'taniyama') { dayDecals(S); return; } if (S.id !== 'school') return;
+    var S = G.S; if (S.id === 'taniyama' || S.id === 'hirakawa') { dayDecals(S); return; } if (S.id !== 'school') return;
     var BG = R.BG, cam = R.viewCam, gp = BG.gatePlaque, sg = BG.schoolSign, f = '"Yu Gothic","Yu Gothic UI","Meiryo",sans-serif';
     F.save(); F.setTransform(SCALE, 0, 0, SCALE, 0, 0); F.textBaseline = 'middle'; F.textAlign = 'center';
     var sx = R.schoolX(cam) + sg.x, sy = 19 + sg.y;      // 校舎の絵と同じ高さ（40_stage.js の drawBackdrop）
@@ -44,7 +44,12 @@
       F.font = 'bold 5.6px ' + f; F.fillStyle = '#a00a1e'; F.fillText('WANTED', x + 18, GYv - 60 + oy);
       F.font = 'bold 3.4px ' + f; F.fillStyle = '#ffffff'; F.fillText('反逆者 REBELL ― 紅・蒼', x + 18, GYv - 40 + oy);
     });
-    var gx = S.goal[0] + 30 - cam;
+    (S.signs || []).forEach(function (q) {      // 動物園の案内板
+      var x = q[0] - cam; if (x < -70 || x > R.W) return;
+      F.font = 'bold ' + (q[1].length > 4 ? 7 : 9) + 'px ' + f; F.fillStyle = '#3a2a20'; F.fillText(q[1], x + 31, GYv - 59 + oy);
+      F.font = 'bold 3.6px ' + f; F.fillStyle = '#4a7a4a'; F.fillText(q[2], x + 31, GYv - 49 + oy);
+    });
+    var gx = S.goal ? S.goal[0] + 30 - cam : 9999;
     if (gx > -150 && gx < R.W) {
       F.fillStyle = '#ffffff'; F.font = 'bold 9px ' + f; F.fillText('平川・喜入・指宿', gx + 70, GYv - 92 + oy);
       F.font = 'bold 5px ' + f; F.fillText('HIRAKAWA / KIIRE / IBUSUKI  →', gx + 70, GYv - 80 + oy);
@@ -63,7 +68,7 @@
     F.drawImage(glowC, 0, 0, cv.width, cv.height); F.restore();
   }
   function vignette() {
-    var gr = F.createRadialGradient(960, 540, 420, 960, 540, 1150), dk = G.S && G.S.day ? 0.16 : 0.5;      // 昼のステージは、まわりをあまり暗くしない
+    var gr = F.createRadialGradient(960, 540, 420, 960, 540, 1150), dk = G.S && G.S.dusk ? 0.3 : G.S && G.S.day ? 0.16 : 0.5;      // 昼のステージは、まわりをあまり暗くしない
     gr.addColorStop(0, 'rgba(6,2,24,0)'); gr.addColorStop(1, 'rgba(6,2,24,' + dk + ')'); F.fillStyle = gr; F.fillRect(0, 0, 1920, 1080);
   }
 

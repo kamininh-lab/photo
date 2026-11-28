@@ -177,6 +177,38 @@
       checkpoints: [150, 1470, 2740, 4072],
       posters: [300, 1150, 2000, 2440, 3500, 4500],
       goal: [5200, GY, 200]
+    },
+    {
+      // 第2章 第2話（2026-11-28 の要望。ユーザーが選んだ形: 夕方の動物園・ボスあり・大倉 咲は会話で登場）: 平川動物公園。
+      //   day + dusk = 昼の絵の作りを使い、夕焼けの色をかぶせる（55_render.js の renderBack）。中景は動物園の丘（buildZooMid）、地形は buildZoo。
+      //   帝国に乗っ取られた園内を、右へ進む。岩（blocks）を登り、お堀（穴）をゴンドラ（movers の 'gondola'）や足場で渡る。
+      //   signs = 案内板 [x, 文字]（文字は 90_main.js の dayDecals）。cages = 檻 [x, 中の動物]（絵だけ）
+      //   ボスは、帝国の機獣（重機兵ガーディアンの動きを使い、ツノ・キバ・尾を描き足したもの。skin: 'beast'）。倒すと、大倉 咲が現れる（会話 beast_end）
+      id: 'hirakawa', ch: 2, day: true, dusk: true, title: '第2話　夕暮れの動物公園', sub: 'STAGE 2  -  HIRAKAWA ZOO', bgm: 'school', len: 4600,
+      talk: 'hirakawa',
+      ground: [[0, 980], [1076, 2100], [2196, 3200], [3296, 4600]],
+      blocks: [[360, 60, 34], [420, 60, 62], [760, 56, 40], [1300, 64, 36], [1364, 64, 70], [1700, 56, 44], [2400, 60, 36], [2460, 60, 66], [3420, 60, 36]],
+      spikes: [[600, 36], [1500, 36], [1880, 150], [3560, 36]],
+      springs: [880, 2280],
+      movers: [[975, 150, 50, 72, 0, 170, 'gondola'], [1872, 146, 52, 106, 0, 200, 'gondola'], [2096, 150, 50, 74, -10, 170, 'gondola'], [3196, 150, 50, 62, 0, 160, 'gondola']],
+      crumbles: [[2610, 156, 40], [2676, 132, 40]],
+      lasers: [[1620, 181, 40, 150, 0], [3640, 181, 40, 150, 50]],
+      plats: [[500, 120, 70], [640, 96, 60], [840, 128, 60], [1180, 120, 70], [1440, 96, 64], [1600, 124, 60], [2010, 112, 60], [2330, 112, 60],
+      [2540, 124, 60], [2744, 104, 70], [3000, 120, 70], [3110, 96, 60], [3480, 116, 64]],
+      enemies: [['robot', 300], ['drone', 560, 70], ['robot', 700], ['drone', 800, 60], ['robot', 1280], ['drone', 1460, 50],
+      ['robot', 1580], ['robot', 1780], ['drone', 1980, 60], ['robot', 2380], ['drone', 2520, 70], ['drone', 3400, 60], ['robot', 3520], ['robot', 3700]],
+      ambushes: [
+        { trigger: 2840, arena: [2670, 3190], waves: [[['robot', 2720], ['robot', 3140], ['drone', 2860, 132], ['drone', 3040, 132]], [['robot', 2710], ['robot', 2980], ['robot', 3150], ['drone', 2800, 132], ['drone', 3080, 132]]] }
+      ],
+      items: [['crystal', 390, 136], ['crystal', 450, 108], ['crystal', 535, 100], ['crystal', 670, 76], ['crystal', 870, 108], ['crystal', 1000, 126], ['crystal', 1050, 126],
+      ['crystal', 1215, 100], ['chest', 1396, 100], ['crystal', 1472, 76], ['crystal', 1630, 104], ['crystal', 1900, 122], ['crystal', 1960, 122], ['crystal', 2040, 92],
+      ['potion', 2130, 126], ['crystal', 2360, 92], ['crystal', 2490, 104], ['crystal', 2630, 136], ['crystal', 2696, 112], ['chest', 2778, 104], ['crystal', 3030, 100],
+      ['crystal', 3140, 76], ['crystal', 3222, 126], ['crystal', 3510, 96], ['potion', 3760, 176]],
+      checkpoints: [150, 1120, 2240, 3740],
+      posters: [240, 2180],
+      signs: [[60, '平川動物公園', 'HIRAKAWA ZOO'], [1100, 'ゾウ', 'ELEPHANT'], [2220, 'フラミンゴ', 'FLAMINGO'], [3310, 'コアラ館', 'KOALA HOUSE']],
+      cages: [[520, 'giraffe'], [1150, 'elephant'], [1640, 'zebra'], [2290, 'flamingo'], [2960, 'giraffe'], [3350, 'koala']],
+      boss: { type: 'guard', skin: 'beast', hp: 760, x: 4340, arena: [3820, 4580], trigger: 3910, name: '帝国機獣 ベヒモス', sub: 'IMPERIAL MECHA BEAST  -  BEHEMOTH', talk: 'beast', endTalk: 'beast_end' }
     }
   ];
 
@@ -592,21 +624,142 @@
     S.plats.forEach(function (p) { dayPlat(P, p[0], p[1], p[2]); });
     return cv;
   }
+  // ---- 夕方の平川動物公園（第2章 第2話）----
+  // 夕焼けの空（480x270）: 上は紫、地平線は橙。低い大きな夕日
+  function buildDuskSky() {
+    var cv = R.mk(R.W, R.H), c = cv.getContext('2d'), P = R.painter(c), r = R.rng(8606), gr = c.createLinearGradient(0, 0, 0, R.H), i;
+    gr.addColorStop(0, '#3a2a78'); gr.addColorStop(0.35, '#b0508c'); gr.addColorStop(0.62, '#ff9a5a'); gr.addColorStop(0.8, '#ffd68a'); gr.addColorStop(1, '#ffe8b0'); c.fillStyle = gr; c.fillRect(0, 0, R.W, R.H);
+    var sg = c.createRadialGradient(330, 142, 8, 330, 142, 130); sg.addColorStop(0, 'rgba(255,250,210,.95)'); sg.addColorStop(0.3, 'rgba(255,190,110,.5)'); sg.addColorStop(1, 'rgba(255,150,90,0)');
+    c.fillStyle = sg; c.fillRect(0, 0, R.W, R.H);
+    P.disc(330, 142, 22, '#fff0c0'); P.disc(330, 142, 18, '#fffbe0');
+    for (i = 0; i < 40; i++) P.px(r() * R.W, r() * 60, 'rgba(255,255,255,' + (0.3 + r() * 0.5) + ')');      // 一番星
+    for (i = 0; i < 7; i++) { var bx = 60 + r() * 360, by = 40 + r() * 70; P.rect(bx, by, 3, 1, '#2a1a40'); P.px(bx - 1, by - 1, '#2a1a40'); P.px(bx + 3, by - 1, '#2a1a40'); }      // ねぐらへ帰る鳥
+    return cv;
+  }
+  // 動物園の中景（左右がつながる 960x270）: 丘と森、観覧車、ロケットの模型、大きな鳥かご、キリンとゾウの影
+  function buildZooMid() {
+    var cv = R.mk(960, R.H), c = cv.getContext('2d'), P = R.painter(c), r = R.rng(8707), x, y, i, k;
+    for (x = 0; x < 960; x++) { var h = 34 + 16 * Math.sin(x * 0.0131) + 9 * Math.sin(x * 0.0327 + 1.3); P.rect(x, 176 - h, 1, h + 100, '#3f8a58'); P.rect(x, 176 - h, 1, 2, '#6ab878'); }      // 奥の丘
+    for (i = 0; i < 70; i++) { x = r() * 960; y = 150 + r() * 22; var tr = 7 + r() * 9; P.ell(x, y - tr, tr, tr * 1.1, r() < 0.5 ? '#2e7a48' : '#3a9058'); P.ell(x - 2, y - tr - 2, tr * 0.6, tr * 0.6, '#58b070'); P.rect(x - 1, y, 2, 6, '#6a4a30'); }      // 森
+    // 観覧車
+    var wx = 210, wy = 96, wr = 44;
+    P.line(wx, wy, wx - 22, 176, 2, '#c8ccd8'); P.line(wx, wy, wx + 22, 176, 2, '#c8ccd8');
+    for (k = 0; k < 12; k++) { var an = k * Math.PI / 6; P.line(wx, wy, wx + Math.cos(an) * wr, wy + Math.sin(an) * wr, 1, '#e8ecf4'); P.rect(wx + Math.cos(an) * wr - 3, wy + Math.sin(an) * wr - 2, 7, 6, ['#ff6a8a', '#ffd36a', '#6ac8ff', '#8ae08a'][k % 4]); }
+    for (k = 0; k < 48; k++) { var a2 = k * Math.PI / 24; P.px(wx + Math.cos(a2) * wr, wy + Math.sin(a2) * wr, '#ffffff'); }
+    P.disc(wx, wy, 4, '#ff6a8a');
+    // ロケットの模型（となりの錦江湾公園）
+    var rx = 640; P.rect(rx - 3, 70, 7, 104, '#f4f4f8'); P.rect(rx - 3, 70, 2, 104, '#ffffff'); P.rect(rx + 2, 70, 2, 104, '#c8ccd8'); P.poly([[rx - 3, 70], [rx + 0.5, 54], [rx + 4, 70]], '#e04848');
+    P.rect(rx - 7, 150, 4, 24, '#e8e8f0'); P.rect(rx + 4, 150, 4, 24, '#e8e8f0'); P.rect(rx - 3, 110, 7, 3, '#e04848'); P.rect(rx - 3, 140, 7, 2, '#3a3e4c');
+    // 大きな鳥かご（丸い屋根）
+    var cx2 = 820; P.ell(cx2, 150, 40, 36, 'rgba(232,236,244,.35)');
+    for (k = -5; k <= 5; k++) P.line(cx2 + k * 7, 176, cx2 + k * 4, 116, 1, '#dfe4ee');
+    for (k = 0; k < 4; k++) P.rect(cx2 - 38 + k * 2, 132 + k * 12, 76 - k * 4, 1, '#dfe4ee');
+    // キリンとゾウの影（丘の上）
+    function giraffe(gx, gy) { P.rect(gx, gy - 18, 16, 9, '#c88a3a'); P.rect(gx + 1, gy - 9, 2, 9, '#c88a3a'); P.rect(gx + 12, gy - 9, 2, 9, '#c88a3a'); P.line(gx + 14, gy - 16, gx + 22, gy - 40, 3, '#c88a3a'); P.rect(gx + 20, gy - 44, 8, 4, '#c88a3a'); P.px(gx + 22, gy - 46, '#6a4a20'); for (var q = 0; q < 6; q++) P.px(gx + 2 + q * 2, gy - 15 + (q % 2) * 3, '#8a5a20'); }
+    function elephant(ex, ey) { P.ell(ex, ey - 12, 14, 10, '#9aa0b4'); P.rect(ex - 10, ey - 6, 4, 6, '#8a90a4'); P.rect(ex + 5, ey - 6, 4, 6, '#8a90a4'); P.ell(ex + 14, ey - 16, 7, 7, '#9aa0b4'); P.line(ex + 19, ey - 14, ex + 22, ey - 2, 2, '#8a90a4'); P.ell(ex + 10, ey - 17, 4, 6, '#7a8094'); }
+    giraffe(90, 150); giraffe(470, 146); elephant(360, 158); elephant(720, 160);
+    // 手前の芝と生け垣
+    P.rect(0, 172, 960, R.H - 172, '#4a9a5c'); P.rect(0, 172, 960, 2, '#7ac888');
+    for (x = 0; x < 960; x += 12) P.ell(x + 6, 172, 8, 5, r() < 0.5 ? '#2e7a48' : '#3a9058');
+    return cv;
+  }
+  function rock(P, r, x, h, w, S) {      // 岩（石の段の代わり）。お堀の中なら、底まで続く
+    var y = GY - h, deep = !S.ground.some(function (g) { return x + w / 2 >= g[0] && x + w / 2 <= g[1]; }), hh = deep ? R.H - y : h, k, i;
+    P.rect(x, y, w, hh, '#8a7a6a'); P.rect(x, y, w, 2, '#c8b8a0'); P.rect(x, y, 2, hh, '#a89884'); P.rect(x + w - 2, y, 2, hh, '#5a4e42');
+    for (k = y + 4; k < y + hh - 2; k += 9) for (i = x + ((k / 9 | 0) % 2) * 7; i < x + w; i += 14) { P.rect(i, k, 13, 8, r() < 0.5 ? '#7a6c5e' : '#948472'); P.rect(i, k, 13, 1, '#a89884'); }
+    for (i = x; i < x + w; i += 3) if (r() < 0.5) P.rect(i, y, 2, 2 + (r() * 4 | 0), r() < 0.5 ? '#4a9a5c' : '#6ab878');      // こけ
+  }
+  function deck(P, x, y, w) {      // 木のデッキ（足場）
+    P.rect(x, y, w, 6, '#a8703c'); P.rect(x, y, w, 1, '#e0b078'); P.rect(x, y + 5, w, 1, '#6a4420');
+    for (var i = x + 8; i < x + w; i += 10) P.rect(i, y + 1, 1, 4, '#7a5028');
+    P.rect(x + 4, y + 6, 3, 10, '#7a5028'); P.rect(x + w - 7, y + 6, 3, 10, '#7a5028'); P.line(x + 6, y + 14, x + 16, y + 6, 1, '#7a5028'); P.line(x + w - 6, y + 14, x + w - 16, y + 6, 1, '#7a5028');
+  }
+  function thorns(P, x, w) {      // いばらの柵（帝国が張った。触れると痛い）
+    P.rect(x, GY - 3, w, 3, '#3a2a30');
+    for (var i = 0; i + 6 <= w; i += 6) { P.poly([[x + i, GY - 3], [x + i + 3, GY - 12], [x + i + 6, GY - 3]], '#8a1024'); P.poly([[x + i + 2, GY - 3], [x + i + 3, GY - 10], [x + i + 3, GY - 3]], '#ff4a5e'); }
+  }
+  function cage(P, r, x, kind) {      // 檻（帝国の旗つき）。中に、動物の影
+    var w = 76, h = 62, y = GY - h, k;
+    P.rect(x, y, w, h, 'rgba(30,24,44,.55)');
+    var ax = x + w / 2, ay = GY - 2, col = '#1c1630';
+    if (kind === 'giraffe') { P.rect(ax - 12, ay - 22, 20, 10, col); P.rect(ax - 11, ay - 12, 3, 12, col); P.rect(ax + 4, ay - 12, 3, 12, col); P.line(ax + 6, ay - 20, ax + 14, ay - 50, 4, col); P.rect(ax + 12, ay - 54, 10, 5, col); }
+    else if (kind === 'elephant') { P.ell(ax - 4, ay - 20, 20, 15, col); P.rect(ax - 18, ay - 10, 6, 10, col); P.rect(ax + 4, ay - 10, 6, 10, col); P.ell(ax + 16, ay - 26, 10, 10, col); P.line(ax + 24, ay - 22, ax + 27, ay - 4, 3, col); }
+    else if (kind === 'zebra') { P.rect(ax - 14, ay - 24, 26, 11, col); P.rect(ax - 13, ay - 13, 3, 13, col); P.rect(ax + 7, ay - 13, 3, 13, col); P.line(ax + 10, ay - 22, ax + 17, ay - 34, 5, col); P.rect(ax + 14, ay - 38, 10, 6, col); }
+    else if (kind === 'flamingo') { for (k = -1; k <= 1; k++) { P.ell(ax + k * 18, ay - 24, 6, 4, col); P.rect(ax + k * 18, ay - 20, 1, 20, col); P.line(ax + k * 18 + 4, ay - 26, ax + k * 18 + 7, ay - 38, 1, col); P.rect(ax + k * 18 + 6, ay - 40, 4, 2, col); } }
+    else { P.rect(ax - 2, ay - 56, 4, 56, '#3a2a20'); P.rect(ax - 20, ay - 40, 40, 3, '#3a2a20'); P.ell(ax + 8, ay - 46, 7, 7, col); P.ell(ax + 3, ay - 51, 3, 3, col); P.ell(ax + 13, ay - 51, 3, 3, col); }      // コアラ（木の上）
+    for (k = x; k <= x + w; k += 6) { P.rect(k, y, 2, h, '#5a5068'); P.rect(k, y, 1, h, '#8a80a0'); }
+    P.rect(x - 2, y - 4, w + 5, 5, '#3a3048'); P.rect(x - 2, y - 4, w + 5, 1, '#8a80a0'); P.rect(x - 2, GY - 4, w + 5, 4, '#3a3048');
+    P.rect(x + w - 10, y - 26, 2, 24, '#5a5068'); P.rect(x + w - 8, y - 26, 12, 9, '#a00a1e'); P.rect(x + w - 4, y - 23, 3, 3, '#ffd36a');      // 帝国の旗
+    P.rect(x + 4, y + 6, 8, 6, '#ff3048'); P.rect(x + 6, y + 8, 4, 2, '#ffd0d6');      // 錠
+  }
+  function buildZoo(S, BG) {
+    var cv = R.mk(S.len, R.H), c = cv.getContext('2d'), P = R.painter(c), r = R.rng(8808), x, i, k;
+    // 穴: お堀（水面に夕日がきらめく）
+    for (i = 0; i + 1 < S.ground.length; i++) {
+      var x0 = S.ground[i][1], x1 = S.ground[i + 1][0], gr = c.createLinearGradient(0, GY, 0, R.H);
+      gr.addColorStop(0, 'rgba(20,60,80,.2)'); gr.addColorStop(0.3, '#1e6a88'); gr.addColorStop(1, '#0e3a58'); c.fillStyle = gr; c.fillRect(x0, GY - 8, x1 - x0, R.H - GY + 8);
+      for (k = 0; k < 20; k++) P.rect(x0 + (r() * (x1 - x0 - 8) | 0), 226 + (r() * 40 | 0), 3 + (r() * 6 | 0), 1, r() < 0.4 ? '#ffd68a' : '#7ad0e8');
+      P.rect(x0, 222, x1 - x0, 1, '#a8e8f8');
+    }
+    S.ground.forEach(function (g) {
+      var x0 = g[0], x1 = g[1], w = x1 - x0;
+      for (x = x0 + 70; x < x1 - 30; x += 190) {      // 木
+        var th = 50 + (r() * 20 | 0); P.rect(x, GY - th, 5, th, '#6a4a30'); P.rect(x, GY - th, 2, th, '#8a6a48');
+        P.ell(x + 2, GY - th - 8, 24, 20, '#2e7a48'); P.ell(x - 8, GY - th - 2, 14, 12, '#3a9058'); P.ell(x + 12, GY - th - 12, 14, 12, '#58b070');
+      }
+      for (x = x0 + 150; x < x1 - 20; x += 190) {      // 園の街灯（まるい灯り）
+        P.rect(x, GY - 60, 2, 60, '#4a4458'); P.disc(x + 1, GY - 64, 5, '#fff0b0'); P.disc(x + 1, GY - 64, 3, '#ffffff');
+      }
+      // 木の柵
+      for (x = x0 + 6; x < x1 - 6; x += 16) { P.rect(x, 174, 4, 18, '#a8703c'); P.rect(x, 174, 1, 18, '#e0b078'); P.poly([[x, 174], [x + 2, 170], [x + 4, 174]], '#a8703c'); }
+      P.rect(x0 + 4, 179, w - 8, 3, '#8a5a30'); P.rect(x0 + 4, 179, w - 8, 1, '#e0b078'); P.rect(x0 + 4, 186, w - 8, 2, '#8a5a30');
+      // 園路（れんが）と、その下の土・石垣
+      P.rect(x0, GY, w, 12, '#c88a6a');
+      for (k = 0; k < 2; k++) for (x = x0 - (k * 8); x < x1; x += 16) { P.rect(x, GY + k * 6, 15, 5, r() < 0.5 ? '#d89a78' : '#b87a5a'); }
+      P.rect(x0, GY, w, 1, '#ffe0c0'); P.rect(x0, GY + 12, w, 2, '#7a5a48');
+      P.rect(x0, GY + 14, w, 22, '#4a9a5c'); for (x = x0; x < x1; x += 5) if (r() < 0.5) P.rect(x, GY + 14 + (r() * 20 | 0), 2, 2, r() < 0.5 ? '#6ab878' : '#3a8048');
+      for (x = x0 + 20; x < x1 - 10; x += 60) { var fc = ['#ff7a9a', '#ffd36a', '#ffffff', '#c89aff'][(x / 60 | 0) % 4]; for (k = 0; k < 5; k++) P.px(x + (r() * 16 | 0), GY + 17 + (r() * 14 | 0), fc); }      // 花
+      P.rect(x0, GY + 36, w, R.H - GY - 36, '#8a7a6a');
+      for (k = GY + 38; k < R.H; k += 10) for (x = x0 - ((k / 10 | 0) % 2) * 9; x < x1; x += 18) { P.rect(x, k, 17, 9, r() < 0.5 ? '#7a6c5e' : '#948472'); P.rect(x, k, 17, 1, '#a89884'); }
+      P.rect(x0, GY, 2, R.H - GY, '#a89884'); P.rect(x1 - 2, GY, 2, R.H - GY, '#5a4e42');
+    });
+    (S.cages || []).forEach(function (q) { cage(P, r, q[0], q[1]); });
+    // 案内板（文字は 90_main.js の dayDecals）と、帝国の手配書
+    (S.signs || []).forEach(function (q) { P.rect(q[0] + 4, GY - 44, 3, 44, '#6a4a30'); P.rect(q[0] + 55, GY - 44, 3, 44, '#6a4a30'); P.rect(q[0], GY - 72, 62, 30, '#3a2a20'); P.rect(q[0] + 2, GY - 70, 58, 26, '#f4e8c8'); P.rect(q[0] + 2, GY - 70, 58, 2, '#4a9a5c'); });
+    (S.posters || []).forEach(function (px) {
+      P.rect(px + 4, GY - 40, 2, 40, '#6a7484'); P.rect(px + 30, GY - 40, 2, 40, '#6a7484');
+      P.rect(px, GY - 66, 36, 30, '#a00a1e'); P.rect(px + 2, GY - 64, 32, 26, '#fff4e0');
+      P.ell(px + 11, GY - 50, 5, 6, '#ff8a3a'); P.ell(px + 11, GY - 49, 3, 4, '#f0c8a8'); P.ell(px + 25, GY - 50, 5, 6, '#3a48d8'); P.ell(px + 25, GY - 49, 3, 4, '#f0c8a8');
+      P.rect(px + 2, GY - 42, 32, 4, '#a00a1e');
+    });
+    // ボスの広場: コアラ館の建物（奥）
+    var bx = S.boss.arena[0] + 250;
+    P.rect(bx, GY - 96, 220, 96, '#e8dcc8'); P.rect(bx, GY - 96, 220, 3, '#ffffff'); P.poly([[bx - 14, GY - 96], [bx + 110, GY - 132], [bx + 234, GY - 96]], '#7a9a5a'); P.poly([[bx - 14, GY - 96], [bx + 110, GY - 132], [bx + 110, GY - 128], [bx - 2, GY - 96]], '#9aba72');
+    for (k = 0; k < 4; k++) { P.rect(bx + 20 + k * 50, GY - 70, 30, 36, '#3a4a68'); P.rect(bx + 20 + k * 50, GY - 70, 30, 2, '#8aa8d8'); }
+    P.rect(bx + 92, GY - 44, 36, 44, '#4a3a2a'); P.rect(bx + 94, GY - 42, 32, 42, '#1c1630');
+    P.rect(bx + 60, GY - 122, 3, 30, '#5a5068'); P.rect(bx + 63, GY - 122, 22, 14, '#a00a1e'); P.rect(bx + 71, GY - 118, 5, 5, '#ffd36a');
+    S.blocks.forEach(function (b) { rock(P, r, b[0], b[2], b[1], S); });
+    S.spikes.forEach(function (k2) { thorns(P, k2[0], k2[1]); });
+    S.plats.forEach(function (p) { deck(P, p[0], p[1], p[2]); });
+    return cv;
+  }
   R.drawDay = function (g, S, camX, t) {      // 昼の遠景（drawBackdrop から）
     var BG = R.BG, x;
-    g.drawImage(BG.daySky, 0, 0);
+    var mid = S.id === 'hirakawa' ? BG.zooMid : BG.dayMid;
+    g.drawImage(S.dusk ? BG.duskSky : BG.daySky, 0, 0);
     x = -Math.round(camX * 0.02 + t * 0.05) % 960; g.drawImage(BG.dayCloud, x, 0); g.drawImage(BG.dayCloud, x + 960, 0);
     x = -Math.round(camX * 0.04) % 960; g.drawImage(BG.dayFar, x - 60, 0); g.drawImage(BG.dayFar, x + 900, 0);
-    x = -Math.round(camX * 0.25) % 960; g.drawImage(BG.dayMid, x, 0); g.drawImage(BG.dayMid, x + 960, 0);
+    x = -Math.round(camX * 0.25) % 960; g.drawImage(mid, x, 0); g.drawImage(mid, x + 960, 0);
   };
 
   R.buildStages = function () {
     var BG = R.BG = window.REBELL_BG_SCHOOL.build();
     BG.viaduct = buildViaduct(); BG.lattice = buildLattice();
     BG.daySky = buildDaySky(); BG.dayCloud = buildDayClouds(); BG.dayFar = buildDayFar(); BG.dayMid = buildDayMid();
+    BG.duskSky = buildDuskSky(); BG.zooMid = buildZooMid();
     BG.cloudFar = buildClouds(6101, ['#231d55', '#3a2f7a', '#6a4a9a'], 0.8); BG.cloudNear = buildClouds(6202, ['#2a2062', '#4a3a8c', '#c86aa8'], 1.25);
     R.STAGES.forEach(function (S) {
-      S.layer = S.id === 'city' ? buildCity(S, BG) : S.day ? buildTown(S, BG) : S.vertical ? buildTower(S) : S.sky ? R.mk(4, 4) : buildSchool(S, BG);      // 空のステージの足場と乗り物は、55_render.js が毎フレーム描く
+      S.layer = S.id === 'city' ? buildCity(S, BG) : S.id === 'hirakawa' ? buildZoo(S, BG) : S.day ? buildTown(S, BG) : S.vertical ? buildTower(S) : S.sky ? R.mk(4, 4) : buildSchool(S, BG);      // 空のステージの足場と乗り物は、55_render.js が毎フレーム描く
       S.solids = S.ground.map(function (g) { return { x: g[0], y: GY, w: g[1] - g[0], h: 120 }; });
       S.blockRects = (S.blocks || []).map(function (b) { return { x: b[0], y: GY - b[2], w: b[1], h: b[2] + 60 }; });      // 石の段も、ぶつかる地形に入れる
       S.solids = S.solids.concat(S.blockRects);
