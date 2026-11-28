@@ -233,5 +233,13 @@ para('第1章　KAGOSHIMA CITY', align=WD_ALIGN_PARAGRAPH.CENTER, size=12, after
 para('完', align=WD_ALIGN_PARAGRAPH.CENTER, size=16, bold=True, color=RGBColor(0xB0, 0x80, 0x20))
 para('THANK YOU FOR PLAYING', align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, color=RGBColor(0x1E, 0x6F, 0xC0))
 
+# ---- 第2章（準備中） ----
+doc.add_heading('第2章　IBUSUKI・TANIYAMA（準備中）', level=1)
+note('エンディングで決定を押すと、第2章の全体マップが出る。舞台は、鹿児島市の南の谷山から、指宿・開聞岳まで'
+     '（北が上。左に薩摩半島、中央に錦江湾、右に大隅半島、上の端に桜島の南側）。')
+note('マスは 5 つ。鹿児島市街から、海ぞいに南へ下る道のり: '
+     '谷山（海ぞいの工業地帯）→ 平川動物公園 → 喜入（石油の基地）→ 指宿（砂むし温泉と知林ヶ島）→ 開聞岳。')
+note('ステージと台詞は、まだ無い。マスは「準備中」で、見て回れるが始められない。決定を押すと、タイトルへ戻る。')
+
 doc.save(OUT)
 print('saved', OUT, {k: len(v) for k, v in TALKS.items()})

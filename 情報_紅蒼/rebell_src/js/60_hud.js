@@ -1386,6 +1386,6 @@
     T(g, 'キャラクターデザイン・原案　このみ', 1380, 850, 28, '#ffffff', 'center', UI, '#120a30', 6);
     T(g, 'ゲーム制作　Claude  ×  Codex', 1380, 892, 24, '#c8b8ff', 'center', UI, '#120a30', 5);
     T(g, 'THANK YOU FOR PLAYING', 1380, 950, 38, '#7af3ff', 'center', SERIF, '#120a30', 6);
-    g.globalAlpha = 1; if (t > 120) blinkText(g, 'ENTER でタイトルへ', 1380, 1020, 30);
+    g.globalAlpha = 1; if (t > 120) blinkText(g, 'ENTER で 第2章のマップへ', 1380, 1020, 30);      // 90_main.js: 決定で、第2章のマップ（下見）へ
   };
 })();
