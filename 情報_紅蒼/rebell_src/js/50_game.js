@@ -1722,7 +1722,7 @@
     if (G.bossDefeated) {
       G.stateT++;
       // 龍を倒したあと: 紅・蒼・四角の会話をはさんでから、ステージクリアへ（会話が終わると stateT は 0 から数え直す）
-      if (G.stateT === 40 && b.type === 'dragon' && !G.dragonEnd && R.TALKS && R.TALKS.dragon_end) { G.dragonEnd = true; G.shots = []; R.beginTalk('dragon_end', { vs: G.boss || { x: p.x + 60 } }); return; }
+      if (G.stateT === 40 && b.type === 'dragon' && !G.dragonEnd && R.TALKS && R.TALKS.dragon_end) { G.dragonEnd = true; G.shots = []; if (R.Mako && R.Mako.ensure) R.Mako.ensure(); R.beginTalk('dragon_end', { vs: G.boss || { x: p.x + 60 } }); return; }
       // 重機兵を倒したあとも同じように、会話をはさんでからステージクリアへ
       if (G.stateT === 40 && b.type === 'guard' && !G.guardEnd && R.TALKS && R.TALKS.guard_end) { G.guardEnd = true; G.shots = []; R.beginTalk('guard_end', { vs: { x: G.boss ? G.boss.x : p.x + 60 } }); return; }
       if (G.stateT === 70) { G.arena = null; R.bgm('clear'); G.state = 'clear'; G.stateT = 0; }

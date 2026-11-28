@@ -3078,6 +3078,12 @@ window.REBELL_SHIKAKU = {
       var m = G.mako; m.sx = m.x; m.sy = m.y;
       R.snd('dash');
     },
+    // 龍を倒したあとの会話（dragon_end）の前に: 大森がまだ来ていなければ（一気に倒したとき）、会話なしで、その場に立たせる
+    ensure: function () {
+      var m = R.game.mako; if (m && m.on && !m.enter) return;
+      if (!(m && m.on)) R.Mako.arrive();
+      m = R.game.mako; m.x = m.tx; m.y = GY; m.st = 'idle'; m.t = 0; m.enter = false; m.face = R.game.pl.x >= m.x ? 1 : -1; R.game.makoMet = true;
+    },
     // 跳び込みと、はじめての会話が終わったか（35_dragon.js は、それまで吠えたまま待つ）
     ready: function () { var m = R.game.mako; return !m || !m.enter; },
     update: function (X_) {
@@ -3166,6 +3172,7 @@ window.REBELL_SHIKAKU = {
     draw: function (g, cam) {
       var m = R.game.mako; if (!m || !m.on) return;
       G = R.game; var p = G.pl, t = G.t, i, f, s, x = m.x - cam, y = m.y;
+      if (G.state === 'talk' && G.talk && G.talk.exitOn) x += Math.max(0, G.talk.exitT - 8) * 3.4;      // 会話の中で二人が走り去るとき、大森も一緒に（龍を倒したあとの脱出）
       g.save();
       // プロテクション: 主人公を包む、六角形の網の半球
       if (m.domeT > 0 && G.state !== 'talk') {
@@ -5415,7 +5422,7 @@ window.REBELL_SHIKAKU = {
     if (G.bossDefeated) {
       G.stateT++;
       // 龍を倒したあと: 紅・蒼・四角の会話をはさんでから、ステージクリアへ（会話が終わると stateT は 0 から数え直す）
-      if (G.stateT === 40 && b.type === 'dragon' && !G.dragonEnd && R.TALKS && R.TALKS.dragon_end) { G.dragonEnd = true; G.shots = []; R.beginTalk('dragon_end', { vs: G.boss || { x: p.x + 60 } }); return; }
+      if (G.stateT === 40 && b.type === 'dragon' && !G.dragonEnd && R.TALKS && R.TALKS.dragon_end) { G.dragonEnd = true; G.shots = []; if (R.Mako && R.Mako.ensure) R.Mako.ensure(); R.beginTalk('dragon_end', { vs: G.boss || { x: p.x + 60 } }); return; }
       // 重機兵を倒したあとも同じように、会話をはさんでからステージクリアへ
       if (G.stateT === 40 && b.type === 'guard' && !G.guardEnd && R.TALKS && R.TALKS.guard_end) { G.guardEnd = true; G.shots = []; R.beginTalk('guard_end', { vs: { x: G.boss ? G.boss.x : p.x + 60 } }); return; }
       if (G.stateT === 70) { G.arena = null; R.bgm('clear'); G.state = 'clear'; G.stateT = 0; }
@@ -9266,9 +9273,9 @@ window.REBELL_SHIKAKU = {
     g.restore();
     T(g, 'Original Illustration by このみ', px + pw / 2, py + ph + 40, 24, '#c8b8ff', 'center', SERIF);
     logo(g, 1380, 200, 1.2);
-    T(g, '龍は倒れ、囚われの姫は解き放たれた。', 1380, 380, 40, '#ffd0ec', 'center', MIN, '#1a0c40', 8);
-    T(g, '月は沈み、街に朝の色が戻る。', 1380, 440, 40, '#ffffff', 'center', MIN, '#1a0c40', 8);
-    T(g, '――ふたりの反逆は、まだ始まったばかり。', 1380, 500, 34, '#ffffff', 'center', MIN, '#1a0c40', 8);
+    T(g, '龍は倒れた。だが、姫はまだ結界の中。', 1380, 380, 40, '#ffd0ec', 'center', MIN, '#1a0c40', 8);      // 四角の裏切りのあと（会話 dragon_end）
+    T(g, '裏切りの夜が明け、街に朝の色が戻る。', 1380, 440, 40, '#ffffff', 'center', MIN, '#1a0c40', 8);
+    T(g, '――ふたりの反逆は、ここから始まる。', 1380, 500, 34, '#ffffff', 'center', MIN, '#1a0c40', 8);
     g.save(); g.translate(420, 60); stats(g, 560); g.restore();
     T(g, 'キャラクターデザイン・原案　このみ', 1380, 850, 28, '#ffffff', 'center', UI, '#120a30', 6);
     T(g, 'ゲーム制作　Claude  ×  Codex', 1380, 892, 24, '#c8b8ff', 'center', UI, '#120a30', 5);
@@ -9602,15 +9609,37 @@ window.REBELL_SHIKAKU = {
       { who: 'aoi', face: 'joy', pose: 'stance', text: ['うん。茉子さん、背中はお願いね。'] }
     ],
     // 玉龍を倒したあと（50_game.js の updBossTrigger から）。終わると、ステージクリア → エンディング
+    //   四角の裏切り（2026-11-28 の要望）: 龍はもともと四角が封じていて、わざと二人に倒させた。二人を始末しようとすると、
+    //   大森が二人を連れて脱出し、黒瀬がおとりになって皆を逃がし、やられる。
+    //   「龍は姫の番人だった」「四角が武器を止める」「黒瀬がカメラを託す」は、私の解釈（つじつま合わせ）
+    //   exit = この台詞から、二人が右へ走り去る（大森も一緒に。36_mako.js の draw）
     dragon_end: [
       { who: 'kurenai', face: 'joy', text: ['やったぁ……！', '龍、倒したよー！'] },
-      { who: 'shikaku', face: 'smile', text: ['龍の反応、消失……。', 'そして――姫さまの反応、確認！　無事だよ！'] },
-      { who: 'aoi', face: 'shy', text: ['……よかった。', '間に合ったんだね。'] },
+      { who: 'aoi', face: 'shy', text: ['……よかった。', 'これで、姫さまを迎えに行けるね。'] },
       { who: 'mako', face: 'relief', text: ['……ふう。二人とも、よくがんばったね。', 'あとで、ちゃんと手当てさせてね。'] },
       { who: 'kurenai', face: 'joy', text: ['へへっ、四角、ありがとね！', '最後まで、ずーっと見ててくれて！'] },
-      { who: 'shikaku', face: 'smile', text: ['お礼はいいよ。武器の手入れは、帰ってからね。', '――二人とも、おつかれさま。'] },
-      { who: 'aoi', face: 'normal', text: ['……紅い月が、沈んでいく。', '井立さんの言っていた答えも、この先にあるはず。'] },
-      { who: 'kurenai', face: 'joy', pose: 'event', text: ['うん！　姫さまを迎えに行こう、蒼！'] }
+      { who: 'shikaku', face: 'smile', text: ['うん。最後まで、ずっと見てたよ。', '――本当に、よく倒してくれたね。'] },
+      { who: 'shikaku', face: 'serious', text: ['あの龍を学園に封じたのは、ぼくだ。結界を張ったのも。', 'でも、封じた本人には、とどめが刺せなくてね。'] },
+      { who: 'aoi', face: 'normal', text: ['……四角？', '何を、言ってるの。'] },
+      { who: 'shikaku', face: 'smile', text: ['だから作ったんだ。龍を斬れる大鎌と、刀を。', 'それを振るえる二人が、ここまで来てくれるようにね。'] },
+      { who: 'kurenai', face: 'damage', text: ['うそ……。じゃあ、姫さまは……！？', '道案内も、解析も、ぜんぶ……！'] },
+      { who: 'shikaku', face: 'serious', text: ['姫さまは、ぼくの結界の中だよ。龍は、その番人だった。', '番人は、もういない。……二人のおかげでね。'] },
+      { who: 'aoi', face: 'normal', text: ['……井立さんが、龍を守っていたのは。', '「行けば、わかる」って、このことだったんだね。'] },
+      { who: 'shikaku', face: 'smile', text: ['役目は、ここまで。その武器は、ぼくが作った。', '――だから、止めるのも、ぼくだ。'] },
+      { who: 'kurenai', face: 'damage', text: ['えっ……大鎌が、光らない……！？', '蒼、刀は！？'] },
+      { who: 'aoi', face: 'normal', text: ['……だめ。', '魔法陣が、消えてる。'] },
+      { who: 'shikaku', face: 'shout', text: ['さよなら、二人とも。', '機械兵、全機――始末して。'] },
+      { who: 'mako', face: 'command', text: ['――そこまで。二人とも、私につかまって。', '言ったでしょう。ちゃんと、私が支えるって。'] },
+      { who: 'shikaku', face: 'serious', text: ['……大森 茉子。やっぱり、きみだけは予定になかった。', 'でも、出口は全部、塞いであるよ。'] },
+      { who: 'kurose', face: 'camera', text: ['――なら、こじ開けるまでだ。', 'いい顔になったな、四角 明宏。一枚、撮らせてもらう。'] },
+      { who: 'kurenai', face: 'silly', text: ['黒瀬さん！？'] },
+      { who: 'kurose', face: 'old', text: ['行け。ここは、俺が引き受ける。', 'このカメラは持っていけ。真実は、全部ここに写してある。'] },
+      { who: 'aoi', face: 'normal', text: ['黒瀬さん、一人じゃ……！'] },
+      { who: 'mako', face: 'anger', exit: true, text: ['……行くよ、紅、蒼。', 'あの人の覚悟を、無駄にしないで。'] },
+      { who: 'kurenai', face: 'anger', text: ['四角ぃーっ！　ぜったい、戻ってくるからね！', '姫さまも、黒瀬さんも、取り戻すんだから！'] },
+      { who: 'kurose', face: 'reach', text: ['黒瀬 龍士。通りすがりの、ただの空手使いだ。', 'さあ――まとめて、かかってこい。'] },
+      { who: 'shikaku', face: 'smile', text: ['……覚えておくと言ったのは、きみだったね。', 'ぼくも覚えておくよ。――おやすみ、黒瀬 龍士。'] },
+      { who: 'kurose', face: 'grin', text: ['……ふっ。', 'いい、月だ――。'] }
     ],
     // 中ボス「黒瀬 龍士」と初めて会ったとき（52_karate.js の enter から）。
     // シートの説明に沿わせてある: カメラを手にする異色の武闘家。正体と目的は謎。卓越した空手の技術で立ちはだかる

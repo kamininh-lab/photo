@@ -1371,9 +1371,9 @@
     g.restore();
     T(g, 'Original Illustration by このみ', px + pw / 2, py + ph + 40, 24, '#c8b8ff', 'center', SERIF);
     logo(g, 1380, 200, 1.2);
-    T(g, '龍は倒れ、囚われの姫は解き放たれた。', 1380, 380, 40, '#ffd0ec', 'center', MIN, '#1a0c40', 8);
-    T(g, '月は沈み、街に朝の色が戻る。', 1380, 440, 40, '#ffffff', 'center', MIN, '#1a0c40', 8);
-    T(g, '――ふたりの反逆は、まだ始まったばかり。', 1380, 500, 34, '#ffffff', 'center', MIN, '#1a0c40', 8);
+    T(g, '龍は倒れた。だが、姫はまだ結界の中。', 1380, 380, 40, '#ffd0ec', 'center', MIN, '#1a0c40', 8);      // 四角の裏切りのあと（会話 dragon_end）
+    T(g, '裏切りの夜が明け、街に朝の色が戻る。', 1380, 440, 40, '#ffffff', 'center', MIN, '#1a0c40', 8);
+    T(g, '――ふたりの反逆は、ここから始まる。', 1380, 500, 34, '#ffffff', 'center', MIN, '#1a0c40', 8);
     g.save(); g.translate(420, 60); stats(g, 560); g.restore();
     T(g, 'キャラクターデザイン・原案　このみ', 1380, 850, 28, '#ffffff', 'center', UI, '#120a30', 6);
     T(g, 'ゲーム制作　Claude  ×  Codex', 1380, 892, 24, '#c8b8ff', 'center', UI, '#120a30', 5);

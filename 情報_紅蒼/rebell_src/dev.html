@@ -1869,6 +1869,11 @@ healCd: 60, rezCd: 120, domeCd: 240, domeT: 0, shotCd: 90, healT: 0, healLeft: 0
 var m = G.mako; m.sx = m.x; m.sy = m.y;
 R.snd('dash');
 },
+ensure: function () {
+var m = R.game.mako; if (m && m.on && !m.enter) return;
+if (!(m && m.on)) R.Mako.arrive();
+m = R.game.mako; m.x = m.tx; m.y = GY; m.st = 'idle'; m.t = 0; m.enter = false; m.face = R.game.pl.x >= m.x ? 1 : -1; R.game.makoMet = true;
+},
 ready: function () { var m = R.game.mako; return !m || !m.enter; },
 update: function (X_) {
 G = R.game; X = X_;
@@ -1948,6 +1953,7 @@ return true;
 draw: function (g, cam) {
 var m = R.game.mako; if (!m || !m.on) return;
 G = R.game; var p = G.pl, t = G.t, i, f, s, x = m.x - cam, y = m.y;
+if (G.state === 'talk' && G.talk && G.talk.exitOn) x += Math.max(0, G.talk.exitT - 8) * 3.4;
 g.save();
 if (m.domeT > 0 && G.state !== 'talk') {
 var a = m.domeT < 60 ? ((t >> 2) % 2 ? 0.25 : 0.6) : 0.5 + 0.1 * Math.sin(t * 0.15), px = p.x - cam, py = p.y;
@@ -3978,7 +3984,7 @@ R.beginTalk('guard', { vs: gb }); return;
 if (G.bossIntro > 0) G.bossIntro--;
 if (G.bossDefeated) {
 G.stateT++;
-if (G.stateT === 40 && b.type === 'dragon' && !G.dragonEnd && R.TALKS && R.TALKS.dragon_end) { G.dragonEnd = true; G.shots = []; R.beginTalk('dragon_end', { vs: G.boss || { x: p.x + 60 } }); return; }
+if (G.stateT === 40 && b.type === 'dragon' && !G.dragonEnd && R.TALKS && R.TALKS.dragon_end) { G.dragonEnd = true; G.shots = []; if (R.Mako && R.Mako.ensure) R.Mako.ensure(); R.beginTalk('dragon_end', { vs: G.boss || { x: p.x + 60 } }); return; }
 if (G.stateT === 40 && b.type === 'guard' && !G.guardEnd && R.TALKS && R.TALKS.guard_end) { G.guardEnd = true; G.shots = []; R.beginTalk('guard_end', { vs: { x: G.boss ? G.boss.x : p.x + 60 } }); return; }
 if (G.stateT === 70) { G.arena = null; R.bgm('clear'); G.state = 'clear'; G.stateT = 0; }
 }
@@ -7394,9 +7400,9 @@ if (img && img.complete && img.naturalWidth) { g.imageSmoothingEnabled = true; g
 g.restore();
 T(g, 'Original Illustration by このみ', px + pw / 2, py + ph + 40, 24, '#c8b8ff', 'center', SERIF);
 logo(g, 1380, 200, 1.2);
-T(g, '龍は倒れ、囚われの姫は解き放たれた。', 1380, 380, 40, '#ffd0ec', 'center', MIN, '#1a0c40', 8);
-T(g, '月は沈み、街に朝の色が戻る。', 1380, 440, 40, '#ffffff', 'center', MIN, '#1a0c40', 8);
-T(g, '――ふたりの反逆は、まだ始まったばかり。', 1380, 500, 34, '#ffffff', 'center', MIN, '#1a0c40', 8);
+T(g, '龍は倒れた。だが、姫はまだ結界の中。', 1380, 380, 40, '#ffd0ec', 'center', MIN, '#1a0c40', 8);
+T(g, '裏切りの夜が明け、街に朝の色が戻る。', 1380, 440, 40, '#ffffff', 'center', MIN, '#1a0c40', 8);
+T(g, '――ふたりの反逆は、ここから始まる。', 1380, 500, 34, '#ffffff', 'center', MIN, '#1a0c40', 8);
 g.save(); g.translate(420, 60); stats(g, 560); g.restore();
 T(g, 'キャラクターデザイン・原案　このみ', 1380, 850, 28, '#ffffff', 'center', UI, '#120a30', 6);
 T(g, 'ゲーム制作　Claude  ×  Codex', 1380, 892, 24, '#c8b8ff', 'center', UI, '#120a30', 5);
@@ -7675,13 +7681,31 @@ mako: [
 ],
 dragon_end: [
 { who: 'kurenai', face: 'joy', text: ['やったぁ……！', '龍、倒したよー！'] },
-{ who: 'shikaku', face: 'smile', text: ['龍の反応、消失……。', 'そして――姫さまの反応、確認！　無事だよ！'] },
-{ who: 'aoi', face: 'shy', text: ['……よかった。', '間に合ったんだね。'] },
+{ who: 'aoi', face: 'shy', text: ['……よかった。', 'これで、姫さまを迎えに行けるね。'] },
 { who: 'mako', face: 'relief', text: ['……ふう。二人とも、よくがんばったね。', 'あとで、ちゃんと手当てさせてね。'] },
 { who: 'kurenai', face: 'joy', text: ['へへっ、四角、ありがとね！', '最後まで、ずーっと見ててくれて！'] },
-{ who: 'shikaku', face: 'smile', text: ['お礼はいいよ。武器の手入れは、帰ってからね。', '――二人とも、おつかれさま。'] },
-{ who: 'aoi', face: 'normal', text: ['……紅い月が、沈んでいく。', '井立さんの言っていた答えも、この先にあるはず。'] },
-{ who: 'kurenai', face: 'joy', pose: 'event', text: ['うん！　姫さまを迎えに行こう、蒼！'] }
+{ who: 'shikaku', face: 'smile', text: ['うん。最後まで、ずっと見てたよ。', '――本当に、よく倒してくれたね。'] },
+{ who: 'shikaku', face: 'serious', text: ['あの龍を学園に封じたのは、ぼくだ。結界を張ったのも。', 'でも、封じた本人には、とどめが刺せなくてね。'] },
+{ who: 'aoi', face: 'normal', text: ['……四角？', '何を、言ってるの。'] },
+{ who: 'shikaku', face: 'smile', text: ['だから作ったんだ。龍を斬れる大鎌と、刀を。', 'それを振るえる二人が、ここまで来てくれるようにね。'] },
+{ who: 'kurenai', face: 'damage', text: ['うそ……。じゃあ、姫さまは……！？', '道案内も、解析も、ぜんぶ……！'] },
+{ who: 'shikaku', face: 'serious', text: ['姫さまは、ぼくの結界の中だよ。龍は、その番人だった。', '番人は、もういない。……二人のおかげでね。'] },
+{ who: 'aoi', face: 'normal', text: ['……井立さんが、龍を守っていたのは。', '「行けば、わかる」って、このことだったんだね。'] },
+{ who: 'shikaku', face: 'smile', text: ['役目は、ここまで。その武器は、ぼくが作った。', '――だから、止めるのも、ぼくだ。'] },
+{ who: 'kurenai', face: 'damage', text: ['えっ……大鎌が、光らない……！？', '蒼、刀は！？'] },
+{ who: 'aoi', face: 'normal', text: ['……だめ。', '魔法陣が、消えてる。'] },
+{ who: 'shikaku', face: 'shout', text: ['さよなら、二人とも。', '機械兵、全機――始末して。'] },
+{ who: 'mako', face: 'command', text: ['――そこまで。二人とも、私につかまって。', '言ったでしょう。ちゃんと、私が支えるって。'] },
+{ who: 'shikaku', face: 'serious', text: ['……大森 茉子。やっぱり、きみだけは予定になかった。', 'でも、出口は全部、塞いであるよ。'] },
+{ who: 'kurose', face: 'camera', text: ['――なら、こじ開けるまでだ。', 'いい顔になったな、四角 明宏。一枚、撮らせてもらう。'] },
+{ who: 'kurenai', face: 'silly', text: ['黒瀬さん！？'] },
+{ who: 'kurose', face: 'old', text: ['行け。ここは、俺が引き受ける。', 'このカメラは持っていけ。真実は、全部ここに写してある。'] },
+{ who: 'aoi', face: 'normal', text: ['黒瀬さん、一人じゃ……！'] },
+{ who: 'mako', face: 'anger', exit: true, text: ['……行くよ、紅、蒼。', 'あの人の覚悟を、無駄にしないで。'] },
+{ who: 'kurenai', face: 'anger', text: ['四角ぃーっ！　ぜったい、戻ってくるからね！', '姫さまも、黒瀬さんも、取り戻すんだから！'] },
+{ who: 'kurose', face: 'reach', text: ['黒瀬 龍士。通りすがりの、ただの空手使いだ。', 'さあ――まとめて、かかってこい。'] },
+{ who: 'shikaku', face: 'smile', text: ['……覚えておくと言ったのは、きみだったね。', 'ぼくも覚えておくよ。――おやすみ、黒瀬 龍士。'] },
+{ who: 'kurose', face: 'grin', text: ['……ふっ。', 'いい、月だ――。'] }
 ],
 kurose: [
 { who: 'kurose', face: 'camera', text: ['――そこまでだ。', 'いい月、いい顔だ。一枚、撮らせてもらう。'] },

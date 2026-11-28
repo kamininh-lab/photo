@@ -47,6 +47,12 @@
       var m = G.mako; m.sx = m.x; m.sy = m.y;
       R.snd('dash');
     },
+    // 龍を倒したあとの会話（dragon_end）の前に: 大森がまだ来ていなければ（一気に倒したとき）、会話なしで、その場に立たせる
+    ensure: function () {
+      var m = R.game.mako; if (m && m.on && !m.enter) return;
+      if (!(m && m.on)) R.Mako.arrive();
+      m = R.game.mako; m.x = m.tx; m.y = GY; m.st = 'idle'; m.t = 0; m.enter = false; m.face = R.game.pl.x >= m.x ? 1 : -1; R.game.makoMet = true;
+    },
     // 跳び込みと、はじめての会話が終わったか（35_dragon.js は、それまで吠えたまま待つ）
     ready: function () { var m = R.game.mako; return !m || !m.enter; },
     update: function (X_) {
@@ -135,6 +141,7 @@
     draw: function (g, cam) {
       var m = R.game.mako; if (!m || !m.on) return;
       G = R.game; var p = G.pl, t = G.t, i, f, s, x = m.x - cam, y = m.y;
+      if (G.state === 'talk' && G.talk && G.talk.exitOn) x += Math.max(0, G.talk.exitT - 8) * 3.4;      // 会話の中で二人が走り去るとき、大森も一緒に（龍を倒したあとの脱出）
       g.save();
       // プロテクション: 主人公を包む、六角形の網の半球
       if (m.domeT > 0 && G.state !== 'talk') {
