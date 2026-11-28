@@ -17,8 +17,8 @@ import make_midboss as MB
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SOURCE_ART = os.path.join(os.path.dirname(HERE), 'art', 'source')
-SHEET = 'A3D98E67-D447-4FD4-862F-E48AC1932280.png'
-FACES = '82469B3C-36B8-4807-9C18-69D9A8C8F6CA.png'
+SHEET = 'omori-sprites.png'      # もとの名前は A3D98E67-….png
+FACES = 'omori-cutin-cool.png'      # もとの名前は 82469B3C-….png
 BAND = {'A': (112, 174), 'B': (238, 302), 'C': (368, 428), 'D': (500, 572), 'E': (648, 712)}
 
 

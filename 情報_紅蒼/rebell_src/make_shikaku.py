@@ -11,16 +11,21 @@ import os, sys, io, base64
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(os.path.dirname(HERE), 'art', 'source', '9806F106-69D2-4777-A6FD-6E40D70D3EC1.png')
+SRC = os.path.join(os.path.dirname(HERE), 'art', 'source', 'shikaku-sprites.png')      # もとの名前は 9806F106-….png
 CUTS = [('smile', (0, 56, 272, 241)), ('serious', (862, 762, 1070, 903)), ('shout', (1136, 762, 1296, 871))]
+# 裏切りのカットイン（shikaku-betrayal-cutin.png、1672x941）: 龍を倒したあとの会話（dragon_end）などで使う
+#   smirk 不敵な微笑 / calc 冷徹な計算 / sneer ほくそ笑み / order 冷静な指示 / rage 怒り / waver 葛藤・迷い
+SRC2 = os.path.join(os.path.dirname(HERE), 'art', 'source', 'shikaku-betrayal-cutin.png')
+CUTS2 = [('smirk', (60, 185, 460, 457)), ('calc', (640, 180, 1040, 452)), ('sneer', (1190, 180, 1590, 452)),
+         ('order', (110, 590, 510, 862)), ('rage', (620, 590, 1020, 862)), ('waver', (1180, 600, 1580, 872))]
 OUT_W, OUT_H = 450, 306
 
 
 def main():
     dbg = sys.argv[1] if len(sys.argv) > 1 else None
-    im = Image.open(SRC).convert('RGB')
+    im1, im2 = Image.open(SRC).convert('RGB'), Image.open(SRC2).convert('RGB')
     parts = []
-    for name, box in CUTS:
+    for name, box, im in [(n, b, im1) for n, b in CUTS] + [(n, b, im2) for n, b in CUTS2]:
         c = im.crop(box).resize((OUT_W, OUT_H), Image.LANCZOS)
         buf = io.BytesIO(); c.save(buf, 'WEBP', quality=88, method=6)
         parts.append('  %s: "data:image/webp;base64,%s"' % (name, base64.b64encode(buf.getvalue()).decode('ascii')))

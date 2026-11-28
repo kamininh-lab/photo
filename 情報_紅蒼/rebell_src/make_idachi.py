@@ -16,7 +16,7 @@ import make_midboss as MB
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SOURCE_ART = os.path.join(os.path.dirname(HERE), 'art', 'source')
-SHEET = 'E9752ECD-8C11-402E-A348-CE34425C40C4.png'
+SHEET = 'idate-sprites.png'      # もとの名前は E9752ECD-….png
 # 段の帯（見出しの文字より下）
 BAND = {'A': (108, 173), 'B': (238, 306), 'C': (368, 436), 'D': (495, 574), 'E': (640, 712)}
 

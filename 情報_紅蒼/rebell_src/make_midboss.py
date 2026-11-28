@@ -18,7 +18,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SOURCE_ART = os.path.join(os.path.dirname(HERE), 'art', 'source')
 SHEET = 'kurose-sprites.png'
 # 2 枚目のシート（バリエーション。1536x1024）: 新しい技のコマ・表情アイコン 7 つ・カットイン 2 枚・大きな絵
-SHEET2 = 'EE62119D-A923-42FA-9E4F-19A8E8E3E7FB.png'
+SHEET2 = 'kurose-sprites-16x16.png'      # もとの名前は EE62119D-….png
 OUTLINE = np.array(T.OUTLINE, np.uint8)
 # 段の帯（見出しの線より下、ラベルの文字より上）。N1・N2 は 2 枚目のシート
 BAND = {'A': (86, 143), 'B': (197, 246), 'C': (303, 357), 'D': (399, 453), 'E': (512, 580), 'F': (652, 702), 'G': (778, 871),
