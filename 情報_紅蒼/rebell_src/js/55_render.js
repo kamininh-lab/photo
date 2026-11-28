@@ -403,6 +403,60 @@
     }
   }
 
+  // ---- 谷山（昼）の乗り物と出来事 ----
+  // 走るトラック: 荷台の上（y）に乗れる。dir = 進んでいる向き（運転席が前）
+  function truck(fg, x, y, w, dir, n) {
+    var GYv = R.GY, col = [['#f4f4f4', '#c8ccd4', '#e04848'], ['#3ab0a0', '#24806e', '#f0c040'], ['#4a7ae0', '#2c50a8', '#ffffff']][n % 3], cx = dir > 0 ? x + w : x - 16, k;
+    fg.fillStyle = '#2a2e3a'; fg.fillRect(x - 2, GYv - 12, w + 4, 4);      // 車台
+    fg.fillStyle = col[0]; fg.fillRect(x, y, w, GYv - 12 - y); fg.fillStyle = col[1]; fg.fillRect(x, GYv - 16, w, 4);
+    fg.fillStyle = '#ffffff'; fg.fillRect(x, y, w, 1); fg.fillStyle = col[1]; for (k = x + 6; k < x + w - 2; k += 7) fg.fillRect(k, y + 3, 1, GYv - 20 - y);
+    fg.fillStyle = col[2]; fg.fillRect(x + 4, y + 8, w - 8, 5);      // 荷台の帯
+    fg.fillStyle = col[2] === '#ffffff' ? '#e04848' : col[2]; fg.fillRect(cx, y + 12, 16, GYv - 24 - y);      // 運転席
+    fg.fillStyle = '#8fd8ff'; fg.fillRect(dir > 0 ? cx + 7 : cx + 2, y + 15, 7, 7);
+    fg.fillStyle = '#ffe04a'; fg.fillRect(dir > 0 ? cx + 15 : cx, GYv - 16, 1, 3);
+    fg.fillStyle = '#16181e'; [x + 8, x + w - 10, cx + 8].forEach(function (wx) { fg.beginPath(); fg.arc(wx, GYv - 5, 5, 0, Math.PI * 2); fg.fill(); });
+    fg.fillStyle = '#9aa4b0'; [x + 8, x + w - 10, cx + 8].forEach(function (wx) { fg.fillRect(wx - 1, GYv - 6, 2, 2); });
+  }
+  // クレーンのつり荷: コンテナの上（y）に乗れる。画面の上まで、ワイヤーがのびる
+  function craneLoad(fg, x, y, w, n) {
+    var col = n % 2 ? ['#e05050', '#ff9090', '#a83030'] : ['#f0c040', '#fff0a0', '#b08a20'], k, mx = x + (w >> 1);
+    fg.fillStyle = '#3a3e4c'; fg.fillRect(mx, -200, 1, y + 200 - 10); fg.fillRect(mx - 1, y - 12, 3, 4);
+    fg.strokeStyle = '#3a3e4c'; fg.lineWidth = 1; fg.beginPath(); fg.moveTo(mx + 0.5, y - 8); fg.lineTo(x + 3.5, y); fg.moveTo(mx + 0.5, y - 8); fg.lineTo(x + w - 3.5, y); fg.stroke();
+    fg.fillStyle = col[0]; fg.fillRect(x, y, w, 20); fg.fillStyle = col[1]; fg.fillRect(x, y, w, 2); fg.fillStyle = col[2]; fg.fillRect(x, y + 18, w, 2);
+    for (k = x + 4; k < x + w - 2; k += 4) fg.fillRect(k, y + 4, 1, 13);
+    fg.fillStyle = (G.t >> 4) % 2 ? '#ff3048' : '#7a1020'; fg.fillRect(x + 1, y + 20, 2, 2); fg.fillRect(x + w - 3, y + 20, 2, 2);
+  }
+  // 待ち伏せの壁（紅い光の柵）と、追ってくる帝国の重装ローラー車
+  function dayEvents(fg) {
+    var GYv = R.GY, t = G.t, k, x, c = G.chase;
+    if (G.amb && G.arena) {
+      [G.arena[0], G.arena[1]].forEach(function (ax) {
+        x = Math.round(ax - cam); if (x < -8 || x > R.W + 8) return;
+        fg.globalAlpha = 0.28 + 0.12 * Math.sin(t * 0.2); fg.fillStyle = '#ff2e48'; fg.fillRect(x - 4, -100, 8, GYv + 100);
+        fg.globalAlpha = 1; fg.fillStyle = '#ff7a8a'; fg.fillRect(x - 1, -100, 2, GYv + 100);
+        fg.fillStyle = '#ffffff'; for (k = (t * 3) % 16 - 100; k < GYv; k += 16) fg.fillRect(x - 1, k, 2, 5);
+        fg.fillStyle = '#2a2e3a'; fg.fillRect(x - 6, GYv - 8, 12, 8); fg.fillStyle = '#ff2e48'; fg.fillRect(x - 3, GYv - 6, 6, 2);
+      });
+    }
+    if (c) {
+      x = Math.round(c.x - cam); if (x < -10 || x > R.W + 120) return;
+      var bob = c.dead ? 0 : (t >> 2) % 2, y0 = GYv - 66 + bob, rr = 20, rx = x - rr - 2, a = c.dead ? 0 : t * 0.18;
+      fg.fillStyle = '#1a0a14'; fg.fillRect(x - 112, y0 + 8, 84, 46);      // 車体
+      fg.fillStyle = '#5a0a1a'; fg.fillRect(x - 110, y0 + 10, 80, 40); fg.fillStyle = '#8a1024'; fg.fillRect(x - 110, y0 + 10, 80, 3);
+      fg.fillStyle = '#1a0a14'; for (k = x - 104; k < x - 34; k += 10) fg.fillRect(k, y0 + 16, 2, 30);
+      fg.fillStyle = '#2a0a14'; fg.fillRect(x - 78, y0 - 6, 40, 18); fg.fillStyle = c.dead ? '#3a1a20' : (t >> 3) % 2 ? '#ff3048' : '#ffb040'; fg.fillRect(x - 50, y0 - 2, 10, 6);      // 操縦席と、紅い目
+      fg.fillStyle = '#a00a1e'; fg.fillRect(x - 100, y0 - 22, 3, 32); fg.fillRect(x - 97, y0 - 22, 14, 10); fg.fillStyle = '#ffd36a'; fg.fillRect(x - 92, y0 - 19, 4, 4);      // 帝国の旗
+      fg.fillStyle = '#16181e'; [x - 96, x - 70, x - 46].forEach(function (wx) { fg.beginPath(); fg.arc(wx, GYv - 7, 7, 0, Math.PI * 2); fg.fill(); });
+      fg.fillStyle = '#3a3e4c'; fg.fillRect(x - 34, y0 + 26, 14, 6);      // ローラーの腕
+      fg.fillStyle = '#2a2e3a'; fg.beginPath(); fg.arc(rx, GYv - rr, rr, 0, Math.PI * 2); fg.fill();      // とげのあるローラー
+      fg.fillStyle = '#6a7484'; fg.beginPath(); fg.arc(rx, GYv - rr, rr - 4, 0, Math.PI * 2); fg.fill();
+      fg.fillStyle = '#e8eef4';
+      for (k = 0; k < 10; k++) { var an = a + k * Math.PI / 5; fg.beginPath(); fg.moveTo(rx + Math.cos(an - 0.14) * rr, GYv - rr + Math.sin(an - 0.14) * rr); fg.lineTo(rx + Math.cos(an) * (rr + 6), GYv - rr + Math.sin(an) * (rr + 6)); fg.lineTo(rx + Math.cos(an + 0.14) * rr, GYv - rr + Math.sin(an + 0.14) * rr); fg.fill(); }
+      fg.fillStyle = '#ff3048'; fg.fillRect(rx - 2, GYv - rr - 2, 4, 4);
+      if (c.dead) { fg.globalAlpha = 0.5; fg.fillStyle = '#3a3e4c'; for (k = 0; k < 5; k++) fg.fillRect(x - 90 + k * 14 + Math.sin(t * 0.05 + k) * 3, y0 - 20 - ((t * 0.6 + k * 17) % 50), 8, 8); fg.globalAlpha = 1; }      // 止まったあとの煙
+    }
+  }
+
   // ---- 1 フレームの描画。奥から順に 4 回に分けて呼ぶ ----
   var cam = 0, oy = 0;      // いまのカメラ位置と、画面ゆれの縦ずれ
 
@@ -434,13 +488,16 @@
     if (G.S.sky) skyWorld(fg);      // 空のステージの足場と乗り物（端末より奥）
     // 端末
     for (i = 0; i < G.terminals.length; i++) { var tm = G.terminals[i], ty = tm.y; fg.drawImage(I.terminal[tm.on ? ((G.t >> 4) % 2) : 0], Math.round(tm.x - cam - 17), ty - 56); if (!tm.on && (G.t >> 4) % 2) { fg.fillStyle = '#7af3ff'; fg.fillRect(Math.round(tm.x - cam) - 1, ty - 66, 2, 5); fg.fillRect(Math.round(tm.x - cam) - 3, ty - 62, 6, 1); } }
-    if (G.S.vertical) towerGimmicks(fg);
+    if (G.S.vertical || G.S.day) towerGimmicks(fg);      // 崩れる足場・レーザー柵は、昼のステージ（谷山）にもある
+    if (G.S.day) dayEvents(fg);
     // 縦のステージのてっぺん: 航空灯が明滅する
     if (G.S.vertical && (G.t >> 5) % 2 === 0) { var gl = G.S.goal; fg.globalAlpha = 0.5; fg.fillStyle = '#ff2e48'; fg.fillRect(gl[0] + gl[2] / 2 - 9 - cam, gl[1] - 162, 18, 18); fg.globalAlpha = 1; }
     // 動く足場（水色に光る板。下に噴射の光）
     var MV = G.movers || [], SPG = G.springs || [], mx, my, k;
     for (i = 0; i < MV.length; i++) {
       mx = Math.round(MV[i].x - cam); my = Math.round(MV[i].y); k = MV[i].w;
+      if (MV[i].kind === 'truck') { if (mx < R.W + 30 && mx + k > -30) truck(fg, mx, my, k, Math.sin((G.time + MV[i].ph) / MV[i].per * Math.PI * 2) >= 0 ? 1 : -1, i); continue; }
+      if (MV[i].kind === 'crane') { if (mx < R.W + 10 && mx + k > -10) craneLoad(fg, mx, my, k, i); continue; }
       if (MV[i].kind) continue;      // 飛空艇・エアカーは skyWorld で描いた
       if (mx > R.W + 10 || mx + k < -10) continue;
       fg.fillStyle = '#2f2b55'; fg.fillRect(mx, my, k, 7);

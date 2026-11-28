@@ -3419,32 +3419,45 @@ window.REBELL_SHIKAKU = {
       // 第2章 第1話（2026-11-28 の要望「夜でなく、明るい街にして少し長めのマップを進むステージ」）: 谷山の臨海通りを、昼間に南へ走り抜ける。
       //   ch = 章（なければ第1章）。day = 昼のステージ（空・遠景・地形を昼の絵に。月・ネオンの霧・雨・光のにじみは出さない）
       //   第1章の第1話（3840）より長い 5400。穴は浅めで、海ぞいの運河（落ちるとゲームオーバー）。石の段の代わりに、コンテナを積む
-      //   穴の手前と向こう岸のすぐ近くには、地上の機兵を置かない（跳ぶところでぶつかって、穴へ押し戻されないように）。
+      //   運河の手前と向こう岸のすぐ近くには、地上の機兵を置かない（跳ぶところでぶつかって、押し戻されないように）。
       //   ボスはいない: 通りの終わりの道路標識の下（goal）まで行くとクリア。posters = 帝国の手配書の立て看板の x
       id: 'taniyama', ch: 2, day: true, title: '第1話　谷山　白昼の臨海通り', sub: 'STAGE 1  -  TANIYAMA BAYSIDE', bgm: 'city', len: 5400,
-      talk: 'taniyama', endTalk: 'taniyama_end', withMako: true,      // withMako = ステージの前の会話に大森がいる（会話の途中で別行動へ。50_game.js） goalMsg: '臨海通りを抜けた！ ― 南へ',
-      ground: [[0, 1320], [1400, 2620], [2700, 3920], [3996, 5400]],
+      talk: 'taniyama', endTalk: 'taniyama_end', withMako: true,      // withMako = ステージの前の会話に大森がいる（会話の途中で別行動へ。50_game.js）
+      goalMsg: '臨海通りを抜けた！ ― 南へ',
+      // アクションを足した版（2026-11-28 の要望「もっとアクション性があるステージに」。ユーザーが選んだ 3 つ: 乗り物と仕掛け・敵の待ち伏せ・追われる区間）
+      //   乗り物: movers の 7 番目が 'truck' = 走るトラック（荷台に乗って、スパイク帯を越える）、'crane' = クレーンのつり荷（運河の上を行き来する）
+      //   仕掛け: crumbles = 崩れる足場（2 つ目の運河）、lasers = レーザー柵（ひざの高さ。跳び越えるか、消えるのを待つ）
+      //   ambushes = 待ち伏せ: trigger を越えると arena に閉じこめられ、waves を全部倒すまで進めない（50_game.js の updStageEvents）
+      //   chase = 追われる区間: trigger を越えると、帝国の重装ローラー車が後ろから迫る。to まで走り抜けると、標識の柱にぶつかって止まる
+      //   運河は 116〜130 ドット（二段ジャンプなら届く。つり荷・崩れる足場に乗れば楽）
+      ground: [[0, 1320], [1436, 2570], [2700, 3920], [4036, 5400]],
       blocks: [[420, 64, 30], [484, 64, 58], [900, 70, 32], [1180, 56, 40], [1560, 64, 32], [1624, 64, 64], [1688, 64, 96],
-      [2050, 60, 36], [2780, 64, 30], [2844, 64, 62], [3300, 70, 40], [4100, 64, 34], [4164, 64, 68], [4600, 60, 40]],
-      spikes: [[700, 30], [1500, 30], [2300, 36], [3060, 30], [3620, 36], [4420, 30]],
-      springs: [1000, 2480, 3700],
-      movers: [[1310, 140, 60, 70, 0, 160], [3910, 130, 56, 60, -20, 150]],
-      plats: [[560, 120, 70], [660, 96, 60], [960, 130, 70], [1100, 104, 60], [1760, 100, 80], [1880, 128, 60], [2150, 120, 70], [2260, 92, 60],
-      [2420, 124, 64], [2930, 110, 70], [3040, 140, 60], [3180, 100, 70], [3420, 126, 64], [3520, 96, 60], [3760, 130, 70],
-      [4240, 100, 70], [4360, 124, 60], [4700, 116, 70], [4820, 90, 60], [4960, 128, 64]],
-      enemies: [['robot', 620], ['drone', 690, 70], ['robot', 820], ['robot', 1060], ['drone', 1130, 80], ['robot', 1240],
-      ['drone', 1700, 50], ['robot', 1820], ['robot', 1960], ['drone', 2120, 90], ['robot', 2200], ['robot', 2340], ['drone', 2440, 70],
-      ['robot', 2900], ['drone', 2960, 80], ['robot', 3000], ['robot', 3150], ['drone', 3260, 60], ['robot', 3400],
-      ['robot', 3500], ['drone', 3600, 70], ['drone', 4260, 60], ['drone', 4380, 50], ['robot', 4300], ['robot', 4480],
-      ['drone', 4560, 80], ['robot', 4680], ['robot', 4880], ['drone', 4980, 70], ['robot', 5060]],
-      items: [['crystal', 450, 140], ['crystal', 516, 112], ['crystal', 595, 100], ['crystal', 690, 76], ['crystal', 995, 110], ['crystal', 1130, 84],
-      ['chest', 1212, 152], ['crystal', 1340, 120], ['crystal', 1590, 140], ['crystal', 1656, 108], ['crystal', 1720, 76], ['potion', 1800, 80],
-      ['crystal', 1910, 108], ['crystal', 2185, 100], ['crystal', 2290, 72], ['crystal', 2452, 104], ['crystal', 2812, 140], ['crystal', 2876, 110],
-      ['crystal', 2965, 90], ['crystal', 3070, 120], ['chest', 3215, 80], ['crystal', 3452, 106], ['crystal', 3550, 76], ['crystal', 3795, 110],
-      ['crystal', 3936, 110], ['potion', 4196, 104], ['crystal', 4275, 80], ['crystal', 4390, 104], ['crystal', 4735, 96], ['crystal', 4850, 70],
+      [2780, 64, 30], [2844, 64, 62], [4130, 64, 34], [4194, 64, 68], [4600, 60, 40], [4860, 64, 34]],
+      spikes: [[700, 180], [1500, 30], [2960, 200], [4420, 30], [4740, 30]],
+      springs: [1000, 3740],
+      movers: [[690, 146, 56, 132, 0, 210, 'truck'], [1318, 150, 50, 80, 0, 170, 'crane'], [2950, 146, 56, 76, 0, 180, 'truck'], [3076, 146, 56, 76, 0, 180, 'truck'],
+      [3918, 150, 50, 80, -12, 170, 'crane']],
+      crumbles: [[2578, 176, 36], [2624, 164, 36], [2668, 178, 30]],
+      lasers: [[1880, 181, 40, 150, 0], [3800, 181, 40, 150, 60]],
+      plats: [[560, 120, 70], [960, 130, 70], [1100, 104, 60], [1760, 100, 80], [1950, 128, 60], [2150, 120, 70], [2260, 92, 60],
+      [2420, 124, 64], [2930, 96, 60], [3180, 100, 70], [3420, 126, 64], [3520, 96, 60],
+      [4270, 100, 70], [4380, 124, 60], [4700, 116, 70], [4960, 128, 64]],
+      enemies: [['robot', 620], ['drone', 780, 60], ['robot', 1060], ['drone', 1130, 80], ['robot', 1240],
+      ['drone', 1700, 50], ['robot', 1820], ['robot', 1990], ['drone', 2760, 70], ['robot', 2900], ['drone', 3060, 50],
+      ['robot', 3240], ['drone', 3850, 70]],
+      ambushes: [
+        { trigger: 2200, arena: [2040, 2560], waves: [[['robot', 2090], ['robot', 2510], ['drone', 2300, 132]], [['robot', 2080], ['robot', 2520], ['drone', 2180, 132], ['drone', 2420, 132]]] },
+        { trigger: 3380, arena: [3190, 3710], waves: [[['robot', 3240], ['robot', 3660], ['drone', 3330, 132], ['drone', 3560, 132]], [['robot', 3230], ['robot', 3450], ['robot', 3670], ['drone', 3300, 132], ['drone', 3600, 132]]] }
+      ],
+      chase: { trigger: 4110, to: 5110, speed: 1.45 },
+      items: [['crystal', 450, 140], ['crystal', 516, 112], ['crystal', 595, 100], ['crystal', 740, 120], ['crystal', 800, 120], ['crystal', 860, 120], ['crystal', 995, 110], ['crystal', 1130, 84],
+      ['chest', 1212, 152], ['crystal', 1360, 126], ['crystal', 1400, 126], ['crystal', 1590, 140], ['crystal', 1656, 108], ['crystal', 1720, 76], ['potion', 1800, 80],
+      ['crystal', 1980, 108], ['crystal', 2185, 100], ['crystal', 2290, 72], ['crystal', 2452, 104], ['crystal', 2596, 156], ['crystal', 2642, 144], ['crystal', 2812, 140], ['crystal', 2876, 110],
+      ['crystal', 2990, 122], ['crystal', 3060, 122], ['crystal', 3130, 122], ['chest', 3215, 80], ['crystal', 3452, 106], ['crystal', 3550, 76], ['potion', 3760, 176],
+      ['crystal', 3960, 118], ['crystal', 4010, 112], ['crystal', 4162, 140], ['crystal', 4226, 106], ['crystal', 4305, 80], ['crystal', 4410, 104], ['crystal', 4735, 96],
       ['crystal', 4992, 108]],
-      checkpoints: [150, 1440, 2740, 4040],
-      posters: [300, 1150, 2000, 2560, 3500, 4500],
+      checkpoints: [150, 1470, 2740, 4072],
+      posters: [300, 1150, 2000, 2440, 3500, 4500],
       goal: [5200, GY, 200]
     }
   ];
@@ -5519,6 +5532,8 @@ window.REBELL_SHIKAKU = {
     if (!fromCheckpoint) { G.guardMet = false; G.makoMet = false; }
     G.mako = null;      // 助っ人の大森（36_mako.js）は、龍が真の力を解き放つたびに駆けつける
     G.guardWait = null; G.guardEnd = false; G.endTalked = false;
+    if (!fromCheckpoint || !G.ambDone) G.ambDone = {};      // 待ち伏せ・追われる区間（updStageEvents）。倒しきった待ち伏せは、やり直しても覚えておく
+    G.amb = null; G.chase = null; G.chaseDone = false;
     G.dragonEnd = false;      // 中ボスを倒したか・もう会ったか（やり直しても覚えておく。ステージを最初から始めるときだけ戻す）
     S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });
     S.items.forEach(function (q) { G.items.push({ type: q[0], x: q[1], y: q[2], t: 0, open: false }); });
@@ -5726,7 +5741,7 @@ window.REBELL_SHIKAKU = {
     if (G.slow > 0) G.slow--;
     if (G.cross) updCross(); else if (!(G.slow > 0) || G.t % 3 === 0) { updEnemies(); updShots(); }
     if (!G.cross) updTouch();
-    updItems(); updFx(); updBossTrigger(); updSpikes();
+    updItems(); updFx(); updBossTrigger(); updStageEvents(); updSpikes();
     // カメラ
     if (G.S.sky) { skyScroll(); return; }      // 空のステージ: 主人公には合わせず、決まった道のりを進む
     var p = G.pl, tx = p.x - R.W * 0.42 + p.face * 26, lo = 0, hi = G.S.len - R.W;
@@ -5742,6 +5757,70 @@ window.REBELL_SHIKAKU = {
     // 高い所に上がると、カメラが少し上を向く（塔の上から跳んでも、自分が画面の外へ消えない）
     G.cam.y = (G.cam.y || 0) + (clamp(104 - p.y, 0, 84) - (G.cam.y || 0)) * 0.1;
   };
+  // ステージごとの出来事（第2章 第1話 谷山）: 敵の待ち伏せ（S.ambushes）と、追われる区間（S.chase）
+  //   待ち伏せ: trigger を越えると、arena の中に閉じこめられる（カメラも止まる）。waves の敵を順に全部倒すと、先へ進める
+  //   追われる区間: trigger を越えると、帝国の重装ローラー車（G.chase）が後ろから迫る。追いつかれると大きなダメージで前へはね飛ばされる。
+  //     車は画面の左の外には置いていかれない（いつも画面の左端のすぐ外から来る）。to まで走り抜けると、ぶつかって止まる
+  function updStageEvents() {
+    var S = G.S, p = G.pl, A = S.ambushes, C = S.chase, i, a, m, c;
+    if (G.state !== 'play') return;
+    if (A) {
+      m = G.amb;
+      if (!m) {
+        for (i = 0; i < A.length; i++) {
+          a = A[i];
+          if (!G.ambDone[i] && !G.arena && p.x > a.trigger && p.x < a.arena[1] - 40) {
+            G.amb = m = { i: i, wave: -1, list: [], wait: 40, t: 0 }; G.arena = a.arena.slice();
+            toast('待ち伏せだ！ ― 倒しきるまで、先へ進めない', '#ff4a5e'); R.snd('deny'); shake(6); G.flash = 0.3;
+            break;
+          }
+        }
+      }
+      if (m) {
+        a = A[m.i]; m.t++;
+        if (m.list.every(function (e) { return e.dead || e.gone; })) {
+          if (m.wait > 0) m.wait--;
+          else if (m.wave + 1 < a.waves.length) {      // 次の群れ: 紅い光とともに現れる
+            m.wave++; m.list = [];
+            a.waves[m.wave].forEach(function (q) {
+              var e = spawn(q[0], q[1], q[2]); e.amb = true; G.enemies.push(e); m.list.push(e);
+              fx({ type: 'ring', x: e.x, y: e.y - 16, life: 22, r: 34, col: '#ff4a5e' }); burst(e.x, e.y - 16, 10, ['#ff4a5e', '#ffffff'], 2, 18);
+            });
+            R.snd('switch'); m.wait = 50;
+            if (m.wave > 0) toast('まだ来る！ ― 第 ' + (m.wave + 1) + ' 波', '#ff4a5e');
+          } else {      // 倒しきった
+            G.ambDone[m.i] = true; G.amb = null; G.arena = null;
+            toast('突破！ ― 道が開いた', '#ffe04a'); R.snd('levelup'); p.joyT = 70; p.joyAll = true;
+            G.items.push({ type: 'potion', x: clamp(p.x + 40, a.arena[0] + 30, a.arena[1] - 30), y: GY - 16, t: 0, open: false });
+          }
+        }
+      }
+    }
+    if (C && !G.chaseDone) {
+      c = G.chase;
+      if (!c && p.x > C.trigger && !G.arena) {
+        c = G.chase = { x: G.cam.x - 90, t: 0, dead: false };
+        toast('帝国の重装車だ！ ― 追いつかれる前に、走り抜けろ！', '#ff4a5e'); R.snd('explosion'); shake(9); R.bgm('boss');
+      }
+      if (c && !c.dead) {
+        c.t++;
+        if (c.x < G.cam.x - 90) c.x = G.cam.x - 90;
+        c.x += C.speed + (c.t > 500 ? 0.15 : 0);
+        if (c.t % 4 === 0) part(c.x - rand(0, 50), GY - rand(0, 6), rand(-1.2, -0.3), rand(-1, -0.2), 26, c.t % 8 ? '#c8ccd4' : '#8a8f9c', 2, 0.02);
+        if (c.t % 26 === 0) { shake(2.5); R.snd('land'); }
+        G.enemies.forEach(function (e) { if (!e.dead && e.x < c.x + 4 && e.y > GY - 70) { e.dead = true; burst(e.x, e.y - 14, 12, ['#ff9a3a', '#ffffff'], 2.6, 22); R.snd('hit_heavy'); } });      // 通り道の機兵は、ひきつぶされる
+        if (p.x - p.w / 2 < c.x && p.y > GY - 74) {
+          if (p.inv <= 0) { hurtPlayer(16, 1, true); shake(8); }
+          p.x = Math.max(p.x, c.x + 6); p.vx = 4.6; if (p.ground || p.vy > -2) { p.vy = -4.2; p.ground = false; }      // 前へ、はね飛ばされる
+        }
+        if (c.x >= C.to) {      // 標識の柱にぶつかって、止まる
+          c.dead = true; c.x = C.to; G.chaseDone = true;
+          for (i = 0; i < 4; i++) burst(c.x - rand(0, 50), GY - rand(10, 60), 16, ['#ff9a3a', '#ffe04a', '#ffffff'], 3.2, 30);
+          shake(12); G.flash = 0.6; R.snd('explosion'); toast('振り切った！', '#ffe04a'); R.bgm(S.bgm); p.joyT = 70; p.joyAll = true;
+        }
+      }
+    }
+  }
   // 中ボスを退けたあと: 道が開き、ステージの曲に戻る（52_karate.js から呼ばれる）
   R.midBossDone = function (e) {
     e.dead = true; e.gone = true;
@@ -7552,6 +7631,60 @@ window.REBELL_SHIKAKU = {
     }
   }
 
+  // ---- 谷山（昼）の乗り物と出来事 ----
+  // 走るトラック: 荷台の上（y）に乗れる。dir = 進んでいる向き（運転席が前）
+  function truck(fg, x, y, w, dir, n) {
+    var GYv = R.GY, col = [['#f4f4f4', '#c8ccd4', '#e04848'], ['#3ab0a0', '#24806e', '#f0c040'], ['#4a7ae0', '#2c50a8', '#ffffff']][n % 3], cx = dir > 0 ? x + w : x - 16, k;
+    fg.fillStyle = '#2a2e3a'; fg.fillRect(x - 2, GYv - 12, w + 4, 4);      // 車台
+    fg.fillStyle = col[0]; fg.fillRect(x, y, w, GYv - 12 - y); fg.fillStyle = col[1]; fg.fillRect(x, GYv - 16, w, 4);
+    fg.fillStyle = '#ffffff'; fg.fillRect(x, y, w, 1); fg.fillStyle = col[1]; for (k = x + 6; k < x + w - 2; k += 7) fg.fillRect(k, y + 3, 1, GYv - 20 - y);
+    fg.fillStyle = col[2]; fg.fillRect(x + 4, y + 8, w - 8, 5);      // 荷台の帯
+    fg.fillStyle = col[2] === '#ffffff' ? '#e04848' : col[2]; fg.fillRect(cx, y + 12, 16, GYv - 24 - y);      // 運転席
+    fg.fillStyle = '#8fd8ff'; fg.fillRect(dir > 0 ? cx + 7 : cx + 2, y + 15, 7, 7);
+    fg.fillStyle = '#ffe04a'; fg.fillRect(dir > 0 ? cx + 15 : cx, GYv - 16, 1, 3);
+    fg.fillStyle = '#16181e'; [x + 8, x + w - 10, cx + 8].forEach(function (wx) { fg.beginPath(); fg.arc(wx, GYv - 5, 5, 0, Math.PI * 2); fg.fill(); });
+    fg.fillStyle = '#9aa4b0'; [x + 8, x + w - 10, cx + 8].forEach(function (wx) { fg.fillRect(wx - 1, GYv - 6, 2, 2); });
+  }
+  // クレーンのつり荷: コンテナの上（y）に乗れる。画面の上まで、ワイヤーがのびる
+  function craneLoad(fg, x, y, w, n) {
+    var col = n % 2 ? ['#e05050', '#ff9090', '#a83030'] : ['#f0c040', '#fff0a0', '#b08a20'], k, mx = x + (w >> 1);
+    fg.fillStyle = '#3a3e4c'; fg.fillRect(mx, -200, 1, y + 200 - 10); fg.fillRect(mx - 1, y - 12, 3, 4);
+    fg.strokeStyle = '#3a3e4c'; fg.lineWidth = 1; fg.beginPath(); fg.moveTo(mx + 0.5, y - 8); fg.lineTo(x + 3.5, y); fg.moveTo(mx + 0.5, y - 8); fg.lineTo(x + w - 3.5, y); fg.stroke();
+    fg.fillStyle = col[0]; fg.fillRect(x, y, w, 20); fg.fillStyle = col[1]; fg.fillRect(x, y, w, 2); fg.fillStyle = col[2]; fg.fillRect(x, y + 18, w, 2);
+    for (k = x + 4; k < x + w - 2; k += 4) fg.fillRect(k, y + 4, 1, 13);
+    fg.fillStyle = (G.t >> 4) % 2 ? '#ff3048' : '#7a1020'; fg.fillRect(x + 1, y + 20, 2, 2); fg.fillRect(x + w - 3, y + 20, 2, 2);
+  }
+  // 待ち伏せの壁（紅い光の柵）と、追ってくる帝国の重装ローラー車
+  function dayEvents(fg) {
+    var GYv = R.GY, t = G.t, k, x, c = G.chase;
+    if (G.amb && G.arena) {
+      [G.arena[0], G.arena[1]].forEach(function (ax) {
+        x = Math.round(ax - cam); if (x < -8 || x > R.W + 8) return;
+        fg.globalAlpha = 0.28 + 0.12 * Math.sin(t * 0.2); fg.fillStyle = '#ff2e48'; fg.fillRect(x - 4, -100, 8, GYv + 100);
+        fg.globalAlpha = 1; fg.fillStyle = '#ff7a8a'; fg.fillRect(x - 1, -100, 2, GYv + 100);
+        fg.fillStyle = '#ffffff'; for (k = (t * 3) % 16 - 100; k < GYv; k += 16) fg.fillRect(x - 1, k, 2, 5);
+        fg.fillStyle = '#2a2e3a'; fg.fillRect(x - 6, GYv - 8, 12, 8); fg.fillStyle = '#ff2e48'; fg.fillRect(x - 3, GYv - 6, 6, 2);
+      });
+    }
+    if (c) {
+      x = Math.round(c.x - cam); if (x < -10 || x > R.W + 120) return;
+      var bob = c.dead ? 0 : (t >> 2) % 2, y0 = GYv - 66 + bob, rr = 20, rx = x - rr - 2, a = c.dead ? 0 : t * 0.18;
+      fg.fillStyle = '#1a0a14'; fg.fillRect(x - 112, y0 + 8, 84, 46);      // 車体
+      fg.fillStyle = '#5a0a1a'; fg.fillRect(x - 110, y0 + 10, 80, 40); fg.fillStyle = '#8a1024'; fg.fillRect(x - 110, y0 + 10, 80, 3);
+      fg.fillStyle = '#1a0a14'; for (k = x - 104; k < x - 34; k += 10) fg.fillRect(k, y0 + 16, 2, 30);
+      fg.fillStyle = '#2a0a14'; fg.fillRect(x - 78, y0 - 6, 40, 18); fg.fillStyle = c.dead ? '#3a1a20' : (t >> 3) % 2 ? '#ff3048' : '#ffb040'; fg.fillRect(x - 50, y0 - 2, 10, 6);      // 操縦席と、紅い目
+      fg.fillStyle = '#a00a1e'; fg.fillRect(x - 100, y0 - 22, 3, 32); fg.fillRect(x - 97, y0 - 22, 14, 10); fg.fillStyle = '#ffd36a'; fg.fillRect(x - 92, y0 - 19, 4, 4);      // 帝国の旗
+      fg.fillStyle = '#16181e'; [x - 96, x - 70, x - 46].forEach(function (wx) { fg.beginPath(); fg.arc(wx, GYv - 7, 7, 0, Math.PI * 2); fg.fill(); });
+      fg.fillStyle = '#3a3e4c'; fg.fillRect(x - 34, y0 + 26, 14, 6);      // ローラーの腕
+      fg.fillStyle = '#2a2e3a'; fg.beginPath(); fg.arc(rx, GYv - rr, rr, 0, Math.PI * 2); fg.fill();      // とげのあるローラー
+      fg.fillStyle = '#6a7484'; fg.beginPath(); fg.arc(rx, GYv - rr, rr - 4, 0, Math.PI * 2); fg.fill();
+      fg.fillStyle = '#e8eef4';
+      for (k = 0; k < 10; k++) { var an = a + k * Math.PI / 5; fg.beginPath(); fg.moveTo(rx + Math.cos(an - 0.14) * rr, GYv - rr + Math.sin(an - 0.14) * rr); fg.lineTo(rx + Math.cos(an) * (rr + 6), GYv - rr + Math.sin(an) * (rr + 6)); fg.lineTo(rx + Math.cos(an + 0.14) * rr, GYv - rr + Math.sin(an + 0.14) * rr); fg.fill(); }
+      fg.fillStyle = '#ff3048'; fg.fillRect(rx - 2, GYv - rr - 2, 4, 4);
+      if (c.dead) { fg.globalAlpha = 0.5; fg.fillStyle = '#3a3e4c'; for (k = 0; k < 5; k++) fg.fillRect(x - 90 + k * 14 + Math.sin(t * 0.05 + k) * 3, y0 - 20 - ((t * 0.6 + k * 17) % 50), 8, 8); fg.globalAlpha = 1; }      // 止まったあとの煙
+    }
+  }
+
   // ---- 1 フレームの描画。奥から順に 4 回に分けて呼ぶ ----
   var cam = 0, oy = 0;      // いまのカメラ位置と、画面ゆれの縦ずれ
 
@@ -7583,13 +7716,16 @@ window.REBELL_SHIKAKU = {
     if (G.S.sky) skyWorld(fg);      // 空のステージの足場と乗り物（端末より奥）
     // 端末
     for (i = 0; i < G.terminals.length; i++) { var tm = G.terminals[i], ty = tm.y; fg.drawImage(I.terminal[tm.on ? ((G.t >> 4) % 2) : 0], Math.round(tm.x - cam - 17), ty - 56); if (!tm.on && (G.t >> 4) % 2) { fg.fillStyle = '#7af3ff'; fg.fillRect(Math.round(tm.x - cam) - 1, ty - 66, 2, 5); fg.fillRect(Math.round(tm.x - cam) - 3, ty - 62, 6, 1); } }
-    if (G.S.vertical) towerGimmicks(fg);
+    if (G.S.vertical || G.S.day) towerGimmicks(fg);      // 崩れる足場・レーザー柵は、昼のステージ（谷山）にもある
+    if (G.S.day) dayEvents(fg);
     // 縦のステージのてっぺん: 航空灯が明滅する
     if (G.S.vertical && (G.t >> 5) % 2 === 0) { var gl = G.S.goal; fg.globalAlpha = 0.5; fg.fillStyle = '#ff2e48'; fg.fillRect(gl[0] + gl[2] / 2 - 9 - cam, gl[1] - 162, 18, 18); fg.globalAlpha = 1; }
     // 動く足場（水色に光る板。下に噴射の光）
     var MV = G.movers || [], SPG = G.springs || [], mx, my, k;
     for (i = 0; i < MV.length; i++) {
       mx = Math.round(MV[i].x - cam); my = Math.round(MV[i].y); k = MV[i].w;
+      if (MV[i].kind === 'truck') { if (mx < R.W + 30 && mx + k > -30) truck(fg, mx, my, k, Math.sin((G.time + MV[i].ph) / MV[i].per * Math.PI * 2) >= 0 ? 1 : -1, i); continue; }
+      if (MV[i].kind === 'crane') { if (mx < R.W + 10 && mx + k > -10) craneLoad(fg, mx, my, k, i); continue; }
       if (MV[i].kind) continue;      // 飛空艇・エアカーは skyWorld で描いた
       if (mx > R.W + 10 || mx + k < -10) continue;
       fg.fillStyle = '#2f2b55'; fg.fillRect(mx, my, k, 7);
@@ -10116,7 +10252,7 @@ window.REBELL_SHIKAKU = {
       { who: 'aoi', face: 'joy', text: ['ふふっ。行こう、紅。', '答えは、あの龍のところにあるよ。'] }
     ],
     // 第2章 第1話（谷山）の前: 裏切りの夜が明けた、まぶしい昼の臨海通り。黒瀬のカメラを手に南へ。
-    //   はじめは、学園から連れ出してくれた大森も一緒。帝国の情報を集めるため、ここで別行動に移る（2026-11-28 の要望）。
+    //   はじめは、学園から連れ出してくれた大森も一緒。井立と合流して帝国を調べるため、ここで別行動に移る（2026-11-28 の要望）。
     //   makoOut = この台詞から大森が右へ走り去る（36_mako.js）。街には帝国の手配書（40_stage.js の posters）。四角は出てこない
     taniyama: [
       { who: 'kurenai', face: 'wry', text: ['うわ、まぶしい……。', 'あんな夜のあとでも、朝はちゃんと来るんだね。'] },
@@ -10124,9 +10260,9 @@ window.REBELL_SHIKAKU = {
       { who: 'aoi', face: 'shy', text: ['茉子さん……。', 'あの夜、連れ出してくれて、ありがとう。'] },
       { who: 'mako', face: 'command', text: ['お礼はいいの。それより、これからのことを話すね。', '――私は、ここで二人と別れる。'] },
       { who: 'kurenai', face: 'surprise', text: ['えっ！？　茉子ねえ、一緒に来てくれないの！？'] },
-      { who: 'mako', face: 'puzzled', text: ['帝国が何をしようとしているのか、調べたいの。', '鹿児島じゅうを、どうするつもりなのか。'] },
-      { who: 'mako', face: 'normal', text: ['誰かが、帝国の動きを見ていないとね。', 'わかったことは、必ず二人に届けるから。'] },
-      { who: 'aoi', face: 'puzzled', text: ['……一人で、帝国のそばへ？', '危なすぎるよ。'] },
+      { who: 'mako', face: 'puzzled', text: ['井立くんと、合流するつもりなの。', '龍を守っていた彼なら……きっと、何かを知ってる。'] },
+      { who: 'mako', face: 'normal', text: ['二人で、帝国が何をしようとしているのか調べる。', 'わかったことは、必ず紅と蒼に届けるから。'] },
+      { who: 'aoi', face: 'puzzled', text: ['井立さんと……。', 'でも、帝国のそばへ行くなんて、危なすぎるよ。'] },
       { who: 'mako', face: 'joy', text: ['ふふっ、心配してくれてありがとう。でも、無理はしない。', '――二人こそ、無茶しないでね。'] },
       { who: 'kurenai', face: 'regret', text: ['……うん。約束だよ、茉子ねえ。', 'ぜったい、また会おうね！'] },
       { who: 'mako', face: 'relief', makoOut: true, text: ['うん、約束。', 'またね、紅、蒼。'] },

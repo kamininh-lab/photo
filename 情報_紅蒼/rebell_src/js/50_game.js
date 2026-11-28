@@ -1581,6 +1581,8 @@
     if (!fromCheckpoint) { G.guardMet = false; G.makoMet = false; }
     G.mako = null;      // 助っ人の大森（36_mako.js）は、龍が真の力を解き放つたびに駆けつける
     G.guardWait = null; G.guardEnd = false; G.endTalked = false;
+    if (!fromCheckpoint || !G.ambDone) G.ambDone = {};      // 待ち伏せ・追われる区間（updStageEvents）。倒しきった待ち伏せは、やり直しても覚えておく
+    G.amb = null; G.chase = null; G.chaseDone = false;
     G.dragonEnd = false;      // 中ボスを倒したか・もう会ったか（やり直しても覚えておく。ステージを最初から始めるときだけ戻す）
     S.enemies.forEach(function (q) { G.enemies.push(spawn(q[0], q[1], q[2])); });
     S.items.forEach(function (q) { G.items.push({ type: q[0], x: q[1], y: q[2], t: 0, open: false }); });
@@ -1788,7 +1790,7 @@
     if (G.slow > 0) G.slow--;
     if (G.cross) updCross(); else if (!(G.slow > 0) || G.t % 3 === 0) { updEnemies(); updShots(); }
     if (!G.cross) updTouch();
-    updItems(); updFx(); updBossTrigger(); updSpikes();
+    updItems(); updFx(); updBossTrigger(); updStageEvents(); updSpikes();
     // カメラ
     if (G.S.sky) { skyScroll(); return; }      // 空のステージ: 主人公には合わせず、決まった道のりを進む
     var p = G.pl, tx = p.x - R.W * 0.42 + p.face * 26, lo = 0, hi = G.S.len - R.W;
@@ -1804,6 +1806,70 @@
     // 高い所に上がると、カメラが少し上を向く（塔の上から跳んでも、自分が画面の外へ消えない）
     G.cam.y = (G.cam.y || 0) + (clamp(104 - p.y, 0, 84) - (G.cam.y || 0)) * 0.1;
   };
+  // ステージごとの出来事（第2章 第1話 谷山）: 敵の待ち伏せ（S.ambushes）と、追われる区間（S.chase）
+  //   待ち伏せ: trigger を越えると、arena の中に閉じこめられる（カメラも止まる）。waves の敵を順に全部倒すと、先へ進める
+  //   追われる区間: trigger を越えると、帝国の重装ローラー車（G.chase）が後ろから迫る。追いつかれると大きなダメージで前へはね飛ばされる。
+  //     車は画面の左の外には置いていかれない（いつも画面の左端のすぐ外から来る）。to まで走り抜けると、ぶつかって止まる
+  function updStageEvents() {
+    var S = G.S, p = G.pl, A = S.ambushes, C = S.chase, i, a, m, c;
+    if (G.state !== 'play') return;
+    if (A) {
+      m = G.amb;
+      if (!m) {
+        for (i = 0; i < A.length; i++) {
+          a = A[i];
+          if (!G.ambDone[i] && !G.arena && p.x > a.trigger && p.x < a.arena[1] - 40) {
+            G.amb = m = { i: i, wave: -1, list: [], wait: 40, t: 0 }; G.arena = a.arena.slice();
+            toast('待ち伏せだ！ ― 倒しきるまで、先へ進めない', '#ff4a5e'); R.snd('deny'); shake(6); G.flash = 0.3;
+            break;
+          }
+        }
+      }
+      if (m) {
+        a = A[m.i]; m.t++;
+        if (m.list.every(function (e) { return e.dead || e.gone; })) {
+          if (m.wait > 0) m.wait--;
+          else if (m.wave + 1 < a.waves.length) {      // 次の群れ: 紅い光とともに現れる
+            m.wave++; m.list = [];
+            a.waves[m.wave].forEach(function (q) {
+              var e = spawn(q[0], q[1], q[2]); e.amb = true; G.enemies.push(e); m.list.push(e);
+              fx({ type: 'ring', x: e.x, y: e.y - 16, life: 22, r: 34, col: '#ff4a5e' }); burst(e.x, e.y - 16, 10, ['#ff4a5e', '#ffffff'], 2, 18);
+            });
+            R.snd('switch'); m.wait = 50;
+            if (m.wave > 0) toast('まだ来る！ ― 第 ' + (m.wave + 1) + ' 波', '#ff4a5e');
+          } else {      // 倒しきった
+            G.ambDone[m.i] = true; G.amb = null; G.arena = null;
+            toast('突破！ ― 道が開いた', '#ffe04a'); R.snd('levelup'); p.joyT = 70; p.joyAll = true;
+            G.items.push({ type: 'potion', x: clamp(p.x + 40, a.arena[0] + 30, a.arena[1] - 30), y: GY - 16, t: 0, open: false });
+          }
+        }
+      }
+    }
+    if (C && !G.chaseDone) {
+      c = G.chase;
+      if (!c && p.x > C.trigger && !G.arena) {
+        c = G.chase = { x: G.cam.x - 90, t: 0, dead: false };
+        toast('帝国の重装車だ！ ― 追いつかれる前に、走り抜けろ！', '#ff4a5e'); R.snd('explosion'); shake(9); R.bgm('boss');
+      }
+      if (c && !c.dead) {
+        c.t++;
+        if (c.x < G.cam.x - 90) c.x = G.cam.x - 90;
+        c.x += C.speed + (c.t > 500 ? 0.15 : 0);
+        if (c.t % 4 === 0) part(c.x - rand(0, 50), GY - rand(0, 6), rand(-1.2, -0.3), rand(-1, -0.2), 26, c.t % 8 ? '#c8ccd4' : '#8a8f9c', 2, 0.02);
+        if (c.t % 26 === 0) { shake(2.5); R.snd('land'); }
+        G.enemies.forEach(function (e) { if (!e.dead && e.x < c.x + 4 && e.y > GY - 70) { e.dead = true; burst(e.x, e.y - 14, 12, ['#ff9a3a', '#ffffff'], 2.6, 22); R.snd('hit_heavy'); } });      // 通り道の機兵は、ひきつぶされる
+        if (p.x - p.w / 2 < c.x && p.y > GY - 74) {
+          if (p.inv <= 0) { hurtPlayer(16, 1, true); shake(8); }
+          p.x = Math.max(p.x, c.x + 6); p.vx = 4.6; if (p.ground || p.vy > -2) { p.vy = -4.2; p.ground = false; }      // 前へ、はね飛ばされる
+        }
+        if (c.x >= C.to) {      // 標識の柱にぶつかって、止まる
+          c.dead = true; c.x = C.to; G.chaseDone = true;
+          for (i = 0; i < 4; i++) burst(c.x - rand(0, 50), GY - rand(10, 60), 16, ['#ff9a3a', '#ffe04a', '#ffffff'], 3.2, 30);
+          shake(12); G.flash = 0.6; R.snd('explosion'); toast('振り切った！', '#ffe04a'); R.bgm(S.bgm); p.joyT = 70; p.joyAll = true;
+        }
+      }
+    }
+  }
   // 中ボスを退けたあと: 道が開き、ステージの曲に戻る（52_karate.js から呼ばれる）
   R.midBossDone = function (e) {
     e.dead = true; e.gone = true;
