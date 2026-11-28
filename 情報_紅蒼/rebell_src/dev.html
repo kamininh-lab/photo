@@ -1990,6 +1990,9 @@ draw: function (g, cam) {
 var m = R.game.mako; if (!m || !m.on) return;
 G = R.game; var p = G.pl, t = G.t, i, f, s, x = m.x - cam, y = m.y;
 if (G.state === 'talk' && G.talk && G.talk.exitOn) x += Math.max(0, G.talk.exitT - 8) * 3.4;
+var tk = G.talk, out = 0, fc = m.face;
+if (G.state === 'talk' && tk) for (i = 0; i <= tk.i && i < tk.lines.length; i++) if (tk.lines[i].makoOut) { if (tk.makoOutT == null) tk.makoOutT = tk.T; out = tk.T - tk.makoOutT; }
+if (out > 40) { x += (out - 40) * 2.4; fc = 1; if (x > R.W + 30) return; }
 g.save();
 if (m.domeT > 0 && G.state !== 'talk') {
 var a = m.domeT < 60 ? ((t >> 2) % 2 ? 0.25 : 0.6) : 0.5 + 0.1 * Math.sin(t * 0.15), px = p.x - cam, py = p.y;
@@ -2028,13 +2031,14 @@ g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
 if (m.st === 'hop') { var u = Math.min(1, m.t / m.dur); f = fr('jump', u < 0.2 ? 0 : u < 0.45 ? 1 : u < 0.7 ? 2 : u < 0.9 ? 3 : 4); }
 else if (m.act) f = m.act.k === 'shot' ? fr('shot', m.act.t < 6 ? 0 : m.act.t < 12 ? 1 : 2) : m.act.k === 'heal' ? fr('heal', m.act.t < 10 ? 0 : 1) : fr('cast', (m.act.t >> 3) % 2);
 else if (G.bossDefeated || (G.boss && G.boss.st === 'die')) f = fr('victory', 0);
+else if (out > 40) f = fr('run', (t >> 2) % 4);
 else if (G.state === 'talk') f = fr('stance', (t >> 4) % 3);
 else if (m.moveT > 0) f = m.run ? fr('run', (m.t >> 2) % 4) : fr('walk', (m.t >> 3) % 4);
 else f = fr('idle', (t >> 4) % 3);
 g.globalAlpha = 0.25; g.fillStyle = '#000000'; g.beginPath(); g.ellipse(x, GY, 8, 1.6, 0, 0, 2 * PI); g.fill(); g.globalAlpha = 1;
 if (img && img.complete && img.naturalWidth && f) {
 g.imageSmoothingEnabled = false;
-g.translate(x, y); g.scale(m.face * SC, SC);
+g.translate(x, y); g.scale(fc * SC, SC);
 g.drawImage(img, f[0], f[1], f[2], f[3], -f[4], -f[5], f[2], f[3]);
 }
 g.restore();
@@ -2150,7 +2154,7 @@ boss: { type: 'dragon', x: 3160, arena: [2740, 3250], trigger: 2752, name: '玉�
 },
 {
 id: 'taniyama', ch: 2, day: true, title: '第1話　谷山　白昼の臨海通り', sub: 'STAGE 1  -  TANIYAMA BAYSIDE', bgm: 'city', len: 5400,
-talk: 'taniyama', endTalk: 'taniyama_end', goalMsg: '臨海通りを抜けた！ ― 南へ',
+talk: 'taniyama', endTalk: 'taniyama_end', withMako: true,
 ground: [[0, 1320], [1400, 2620], [2700, 3920], [3996, 5400]],
 blocks: [[420, 64, 30], [484, 64, 58], [900, 70, 32], [1180, 56, 40], [1560, 64, 32], [1624, 64, 64], [1688, 64, 96],
 [2050, 60, 36], [2780, 64, 30], [2844, 64, 62], [3300, 70, 40], [4100, 64, 34], [4164, 64, 68], [4600, 60, 40]],
@@ -2160,7 +2164,7 @@ movers: [[1310, 140, 60, 70, 0, 160], [3910, 130, 56, 60, -20, 150]],
 plats: [[560, 120, 70], [660, 96, 60], [960, 130, 70], [1100, 104, 60], [1760, 100, 80], [1880, 128, 60], [2150, 120, 70], [2260, 92, 60],
 [2420, 124, 64], [2930, 110, 70], [3040, 140, 60], [3180, 100, 70], [3420, 126, 64], [3520, 96, 60], [3760, 130, 70],
 [4240, 100, 70], [4360, 124, 60], [4700, 116, 70], [4820, 90, 60], [4960, 128, 64]],
-enemies: [['robot', 330], ['robot', 620], ['drone', 690, 70], ['robot', 820], ['robot', 1060], ['drone', 1130, 80], ['robot', 1240],
+enemies: [['robot', 620], ['drone', 690, 70], ['robot', 820], ['robot', 1060], ['drone', 1130, 80], ['robot', 1240],
 ['drone', 1700, 50], ['robot', 1820], ['robot', 1960], ['drone', 2120, 90], ['robot', 2200], ['robot', 2340], ['drone', 2440, 70],
 ['robot', 2900], ['drone', 2960, 80], ['robot', 3000], ['robot', 3150], ['drone', 3260, 60], ['robot', 3400],
 ['robot', 3500], ['drone', 3600, 70], ['drone', 4260, 60], ['drone', 4380, 50], ['robot', 4300], ['robot', 4480],
@@ -4091,7 +4095,10 @@ if (S.sky) { G.cam.x = clamp(sx - 110, 0, S.path[S.path.length - 1][0]); G.cam.y
 G.goalT = 0;
 G.card = null; G.talk = null;
 G.state = 'play'; G.stateT = 0; G.fade = 1; G.fadeDir = -1;
-if (talk && R.TALKS && R.TALKS[talk]) R.beginTalk(talk); else R.openStage();
+if (talk && S.withMako && R.Mako && R.Mako.ensure) {
+R.Mako.ensure(); G.mako.x = p.x + 104; G.mako.face = -1;
+R.beginTalk(talk, { onEnd: function () { if (G.mako) G.mako.on = false; } });
+} else if (talk && R.TALKS && R.TALKS[talk]) R.beginTalk(talk); else R.openStage();
 };
 R.openStage = function () { var S = G.S; G.card = { t: 0, title: S.title, sub: S.sub }; R.bgm(S.bgm); };
 var PAR = { city: 180, tower: 200, sky: 120, school: 360, taniyama: 240 };
@@ -6050,6 +6057,7 @@ function any(m, codes) { for (var i = 0; i < codes.length; i++) if (m[codes[i]])
 function anyLatch() { for (var k in latch) if (latch[k]) return true; return false; }
 var SPEED = 2.8, SHOT = 7, REP_CD = 900, REP_HEAL = 0.25, SHD_CD = 1200, SHD_LEN = 420, IDLE = 150;
 R.DRONE_CFG = { REP_CD: REP_CD, SHD_CD: SHD_CD };
+R.DRONE_BROKEN = true;
 var img = null;
 function pic() { if (!img && window.REBELL_DRONE) { img = new Image(); img.src = window.REBELL_DRONE; } return img; }
 pic();
@@ -6071,7 +6079,10 @@ feedReset: function () { held = {}; },
 update: function (X) {
 var d = drone(), p = G.pl, i, s;
 if (!d.on) {
-if (anyLatch() && G.state === 'play') launch(d, p, X);
+if (anyLatch() && G.state === 'play' && R.DRONE_BROKEN) {
+if (!(d.brokenT > 0)) { X.toast('四角のドローンは、故障していて動かない……（2P は使えません）', '#ffc84a'); R.snd('deny'); d.brokenT = 240; }
+} else if (anyLatch() && G.state === 'play') launch(d, p, X);
+if (d.brokenT > 0) d.brokenT--;
 latch = {}; return;
 }
 d.t++;
@@ -8114,9 +8125,19 @@ idachi_end: [
 ],
 taniyama: [
 { who: 'kurenai', face: 'wry', text: ['うわ、まぶしい……。', 'あんな夜のあとでも、朝はちゃんと来るんだね。'] },
-{ who: 'aoi', face: 'sad', text: ['……うん。', '黒瀬さんのカメラ、まだ温かい気がする。'] },
+{ who: 'mako', face: 'normal', text: ['……二人とも、少しは眠れた？', 'ここまで来れば、帝国の追っ手もすぐには来ないはず。'] },
+{ who: 'aoi', face: 'shy', text: ['茉子さん……。', 'あの夜、連れ出してくれて、ありがとう。'] },
+{ who: 'mako', face: 'command', text: ['お礼はいいの。それより、これからのことを話すね。', '――私は、ここで二人と別れる。'] },
+{ who: 'kurenai', face: 'surprise', text: ['えっ！？　茉子ねえ、一緒に来てくれないの！？'] },
+{ who: 'mako', face: 'puzzled', text: ['帝国が何をしようとしているのか、調べたいの。', '鹿児島じゅうを、どうするつもりなのか。'] },
+{ who: 'mako', face: 'normal', text: ['誰かが、帝国の動きを見ていないとね。', 'わかったことは、必ず二人に届けるから。'] },
+{ who: 'aoi', face: 'puzzled', text: ['……一人で、帝国のそばへ？', '危なすぎるよ。'] },
+{ who: 'mako', face: 'joy', text: ['ふふっ、心配してくれてありがとう。でも、無理はしない。', '――二人こそ、無茶しないでね。'] },
+{ who: 'kurenai', face: 'regret', text: ['……うん。約束だよ、茉子ねえ。', 'ぜったい、また会おうね！'] },
+{ who: 'mako', face: 'relief', makoOut: true, text: ['うん、約束。', 'またね、紅、蒼。'] },
+{ who: 'aoi', face: 'sad', text: ['……行っちゃったね。', '黒瀬さんのカメラ、まだ温かい気がする。'] },
 { who: 'kurenai', face: 'regret', text: ['四角のこと……まだ、信じられないよ。', 'ずっと、一緒に戦ってると思ってたのに。'] },
-{ who: 'aoi', face: 'normal', text: ['私も。……でも、ここで立ち止まってたら、', '黒瀬さんに怒られちゃう気がする。'] },
+{ who: 'aoi', face: 'normal', text: ['私も。……でも、ここで立ち止まってたら、', '黒瀬さんにも、茉子さんにも怒られちゃう。'] },
 { who: 'kurenai', face: 'surprise', text: ['ねえ蒼、あの貼り紙……！', 'あたしたちの顔が、でっかく描いてある！'] },
 { who: 'aoi', face: 'puzzled', text: ['「反逆者（REBELL）　紅・蒼」……。', '帝国の手配書だね。もう、こんなところまで。'] },
 { who: 'kurenai', face: 'wry', text: ['へへっ……似顔絵、ちょっと美人すぎない？', '……なんて、言ってる場合じゃないか。'] },

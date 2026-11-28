@@ -142,6 +142,9 @@
       var m = R.game.mako; if (!m || !m.on) return;
       G = R.game; var p = G.pl, t = G.t, i, f, s, x = m.x - cam, y = m.y;
       if (G.state === 'talk' && G.talk && G.talk.exitOn) x += Math.max(0, G.talk.exitT - 8) * 3.4;      // 会話の中で二人が走り去るとき、大森も一緒に（龍を倒したあとの脱出）
+      var tk = G.talk, out = 0, fc = m.face;      // makoOut = この台詞から、大森だけが右へ去っていく（第2章 第1話の前: 帝国の情報を集めに、別行動へ）
+      if (G.state === 'talk' && tk) for (i = 0; i <= tk.i && i < tk.lines.length; i++) if (tk.lines[i].makoOut) { if (tk.makoOutT == null) tk.makoOutT = tk.T; out = tk.T - tk.makoOutT; }
+      if (out > 40) { x += (out - 40) * 2.4; fc = 1; if (x > R.W + 30) return; }      // 二人の右から、さらに右（先）へ走り去る
       g.save();
       // プロテクション: 主人公を包む、六角形の網の半球
       if (m.domeT > 0 && G.state !== 'talk') {
@@ -185,13 +188,14 @@
       if (m.st === 'hop') { var u = Math.min(1, m.t / m.dur); f = fr('jump', u < 0.2 ? 0 : u < 0.45 ? 1 : u < 0.7 ? 2 : u < 0.9 ? 3 : 4); }
       else if (m.act) f = m.act.k === 'shot' ? fr('shot', m.act.t < 6 ? 0 : m.act.t < 12 ? 1 : 2) : m.act.k === 'heal' ? fr('heal', m.act.t < 10 ? 0 : 1) : fr('cast', (m.act.t >> 3) % 2);
       else if (G.bossDefeated || (G.boss && G.boss.st === 'die')) f = fr('victory', 0);
+      else if (out > 40) f = fr('run', (t >> 2) % 4);
       else if (G.state === 'talk') f = fr('stance', (t >> 4) % 3);
       else if (m.moveT > 0) f = m.run ? fr('run', (m.t >> 2) % 4) : fr('walk', (m.t >> 3) % 4);
       else f = fr('idle', (t >> 4) % 3);
       g.globalAlpha = 0.25; g.fillStyle = '#000000'; g.beginPath(); g.ellipse(x, GY, 8, 1.6, 0, 0, 2 * PI); g.fill(); g.globalAlpha = 1;
       if (img && img.complete && img.naturalWidth && f) {
         g.imageSmoothingEnabled = false;
-        g.translate(x, y); g.scale(m.face * SC, SC);
+        g.translate(x, y); g.scale(fc * SC, SC);
         g.drawImage(img, f[0], f[1], f[2], f[3], -f[4], -f[5], f[2], f[3]);
       }
       g.restore();

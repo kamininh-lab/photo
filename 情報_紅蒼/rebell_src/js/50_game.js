@@ -1610,7 +1610,10 @@
     G.goalT = 0;
     G.card = null; G.talk = null;
     G.state = 'play'; G.stateT = 0; G.fade = 1; G.fadeDir = -1;
-    if (talk && R.TALKS && R.TALKS[talk]) R.beginTalk(talk); else R.openStage();
+    if (talk && S.withMako && R.Mako && R.Mako.ensure) {      // 大森も一緒にいる会話（第2章 第1話の前）: 会話のあいだだけ立たせて、終わったら外す（別行動に移る）
+      R.Mako.ensure(); G.mako.x = p.x + 104; G.mako.face = -1;      // 二人の右に立って、向かい合う
+      R.beginTalk(talk, { onEnd: function () { if (G.mako) G.mako.on = false; } });
+    } else if (talk && R.TALKS && R.TALKS[talk]) R.beginTalk(talk); else R.openStage();
   };
   // 章の題を出して、ステージの曲を始める
   R.openStage = function () { var S = G.S; G.card = { t: 0, title: S.title, sub: S.sub }; R.bgm(S.bgm); };
