@@ -21,9 +21,13 @@ IDLE = [(334, 361), (379, 405), (421, 448)]
 IDLE_Y = (78, 126)
 PIC_SIZE = (450, 306)
 TOL = 46      # 背景とみなす色の近さ（RGB の差の合計）
-PICS = {'normal': (24, 96, 189, 208), 'joy': (110, 925, 345, 1082), 'relief': (545, 922, 780, 1079)}
+PICS = {'relief': (545, 922, 780, 1079)}      # もとのシートの下のカットイン（目を閉じて見上げる）
+# フェイスカットインのシート（3972D8DA-….png、1448x1086。2026-11-28 にユーザーが追加）: 通常・微笑み・驚き・困惑・決意・うれしい
+FACE_SHEET = '3972D8DA-BE35-4139-BAC4-DADF603153C4.png'
+PICS2 = {'normal': (90, 170, 420, 394), 'smile': (555, 190, 885, 414), 'surprise': (1015, 190, 1345, 414),
+         'trouble': (50, 650, 380, 874), 'resolve': (560, 630, 890, 854), 'joy': (1015, 625, 1345, 849)}
 # 表情アイコン（74x94 くらい）: 目と口のあたりを横 3 : 縦 2 に切る
-ICONS = {'smile': 95, 'serious': 172, 'surprise': 248, 'trouble': 320, 'shy': 465, 'resolve': 539}
+ICONS = {'serious': 172, 'shy': 465}      # フェイスカットインにない表情だけ、アイコンから作る
 ICON_Y, ICON_W, ICON_H = 754, 73, 94      # アイコンの全体。枠の高さに合わせて約 3.3 倍にし、左右は暗い青でうめる
 
 
@@ -52,6 +56,9 @@ def main():
     uri, size, kind = MS.encode(atlas, 96, True)
     src = Image.open(os.path.join(SOURCE_ART, SHEET)).convert('RGB')
     pics = {k: src.crop(b).resize(PIC_SIZE, Image.LANCZOS) for k, b in PICS.items()}
+    src2 = Image.open(os.path.join(SOURCE_ART, FACE_SHEET)).convert('RGB')
+    for k, b in PICS2.items():
+        pics[k] = src2.crop(b).resize(PIC_SIZE, Image.LANCZOS)
     for k, x in ICONS.items():
         ic = src.crop((x, ICON_Y, x + ICON_W, ICON_Y + ICON_H)); w = int(round(ICON_W * PIC_SIZE[1] / float(ICON_H)))
         bgp = ic.resize(PIC_SIZE, Image.BICUBIC).filter(ImageFilter.GaussianBlur(18)).point(lambda v: int(v * 0.45))      # うしろは、同じ絵を大きくぼかして暗くしたもの

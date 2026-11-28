@@ -300,16 +300,16 @@
       { who: 'aoi', face: 'relief', text: ['ふう……。', 'これで、動物たちの檻も開けられるね。'] },
       { who: 'saki', face: 'surprise', text: ['あ、あのっ……！', 'もしかして、紅さんと、蒼さん……ですか？'] },
       { who: 'kurenai', face: 'surprise', text: ['えっ、だれ！？　どこから！？'] },
-      { who: 'saki', face: 'normal', text: ['大倉 咲です。この動物園で、いきものたちのお世話をしています。', '機獣が来てから、ずっと隠れていて……。'] },
-      { who: 'saki', face: 'joy', text: ['助けてくれて、ありがとうございます！', 'みんなも、きっと喜んでます。'] },
+      { who: 'saki', face: 'trouble', text: ['大倉 咲です。この動物園で、いきものたちのお世話をしています。', '機獣が来てから、ずっと隠れていて……。'] },
+      { who: 'saki', face: 'smile', text: ['助けてくれて、ありがとうございます！', 'みんなも、きっと喜んでます。'] },
       { who: 'aoi', face: 'puzzled', text: ['咲さん。どうして、私たちの名前を？'] },
-      { who: 'saki', face: 'serious', text: ['黒瀬さんから、聞いていました。', '「カメラを持った二人が来たら、渡してくれ」って。'] },
+      { who: 'saki', face: 'normal', text: ['黒瀬さんから、聞いていました。', '「カメラを持った二人が来たら、渡してくれ」って。'] },
       { who: 'kurenai', face: 'surprise', text: ['黒瀬さんが！？', '……これ、メモリーカード？'] },
       { who: 'saki', face: 'trouble', text: ['中身は、私にも見られません。', 'でも、あのカメラに入れれば、きっと――。'] },
       { who: 'aoi', face: 'normal', text: ['……カメラの地図に、新しい印。', '今度は、喜入。海ぞいの、石油の基地だね。'] },
       { who: 'saki', face: 'resolve', text: ['あの……私も、行かせてください。', 'いきものたちの力を借りれば、きっとお役に立てます。'] },
       { who: 'kurenai', face: 'joy', pose: 'event', text: ['ほんと！？　百人力だよ、咲ちゃん！', 'よーし、次は喜入だ！'] },
-      { who: 'saki', face: 'smile', text: ['はいっ。――まかせてください！'] },
+      { who: 'saki', face: 'joy', text: ['はいっ。――まかせてください！'] },
       { who: 'aoi', face: 'joy', text: ['ふふっ。よろしくね、咲さん。'] }
     ]
   };
@@ -323,7 +323,7 @@
     // 大森 茉子: 助っ人の回復役（36_mako.js）。pics = 表情ごとの絵（09_mako_art.js）:
     //   normal / command 支援指示 / heal 回復 / sad / silly おとぼけ / shy 照れ / joy 喜び / anger 怒り（冷静）/ surprise / puzzled 困惑 / relief 安堵
     mako: { side: -1, col: '#ff8ae0', dark: '#1e0a2e', lite: '#6a2a8a', mid: '#3e1660', plate: '#3a1452', name: '大森', kana: 'おおもり', en: 'OMORI MAKO', icon: null, pics: true },
-    // 大倉 咲: 第2章 第2話で出会う（37_saki.js）。pics = 表情ごとの絵（09_saki_art.js）: normal / joy / relief / smile / serious / surprise / trouble / shy / resolve
+    // 大倉 咲: 第2章 第2話で出会う（37_saki.js）。pics = 表情ごとの絵（09_saki_art.js）: フェイスカットインの normal 通常 / smile 微笑み / surprise 驚き / trouble 困惑 / resolve 決意 / joy うれしい、ほかに relief / serious / shy
     saki: { side: 1, col: '#7ad8ff', dark: '#06142e', lite: '#1a5a9a', mid: '#103a6a', plate: '#0e3260', name: '大倉', kana: 'おおくら', en: 'OKURA SAKI', icon: null, pics: true },
     // 四角: 通信で話す。pics = 表情ごとの絵（09_shikaku_art.js）、tag = 帯に出す小さな札
     shikaku: { side: 1, col: '#ffc84a', dark: '#07122e', lite: '#1c4a86', mid: '#123260', plate: '#143058', name: '四角', kana: 'よすみ', en: 'YOSUMI AKIHIRO', icon: null, pics: true, tag: '通信中  ‐  SUPPORT', tag2: '黒幕  ‐  MASTERMIND' }      // tag2 = 裏切りを明かしたあとの札（台詞の turn: true から）
