@@ -6,7 +6,7 @@
 
   R.STAGES = [
     {
-      id: 'city', title: '第一章　ネオン廃都の水道橋', sub: 'STAGE 1  -  NEON RUINS AQUEDUCT', bgm: 'city', len: 3840, talk: 'stage1',
+      id: 'city', title: '第1話　ネオン廃都の水道橋', sub: 'STAGE 1  -  NEON RUINS AQUEDUCT', bgm: 'city', len: 3840, talk: 'stage1',
       // 高低差のある地形（配置は Codex の設計。上の道と下の道の 2 層で、上の道は穴の手前で下に合流する）
       //   blocks = 石の段 [x, 幅, 高さ]（地面から積み上がった、乗れる壁。側面は壁キックで蹴れる）/ spikes = トゲ [x, 幅]
       //   springs = バネ [x, …]（踏むと約 134 ドット跳ね上がる）/ movers = 動く足場 [x, y, 幅, dx, dy, 周期フレーム]（2 点の間を往復）
@@ -42,7 +42,7 @@
       //   plats は下からすり抜けられる。カメラは登った高さに合わせて上がるだけで、下には戻らない。画面の下へ消えたら、その場でゲームオーバー（つづきは最後の端末から）。
       //   y は上ほど小さい（地面 = 192、てっぺん = -2100）。checkpoints / springs / rings は [x, y]、walls / fans = [x, y, 幅, 高さ]、
       //   crumbles = 崩れる足場 [x, y, 幅]、lasers = レーザー柵 [x, y, 幅, 周期, ずれ]、goal = てっぺんの足場（立つとステージクリア。ボスはいない）
-      id: 'tower', title: '第二章　天を衝く鉄塔', sub: 'STAGE 2  -  SKYWARD TOWER', bgm: 'city', len: 480, vertical: true, talk: 'tower',
+      id: 'tower', title: '第2話　天を衝く鉄塔', sub: 'STAGE 2  -  SKYWARD TOWER', bgm: 'city', len: 480, vertical: true, talk: 'tower',
       top: -2310, startX: 100, pxPerM: 14,
       ground: [[0, 480]],
       walls: [[176, -414, 24, 250], [272, -414, 24, 250], [176, -2040, 24, 186], [276, -2040, 24, 186]],
@@ -88,7 +88,7 @@
       //   plats = 浮き足場 [x, y, 幅]（下からすり抜けられる）。y は世界の y（上ほど小さい）
       //   movers = 乗り物 [x, y, 幅, dx, dy, 周期, 種類]（2 点の間を往復）。種類: 'ship' = 飛空艇（広い甲板）、'car' = エアカー（屋根に乗る）、省略 = 浮きリフト
       //   goal = 学園の手前に浮かぶ、大きな飛空艇の着艦デッキ（乗るとステージクリア）
-      id: 'sky', title: '第三章　紅月の空中回廊', sub: 'STAGE 3  -  SKY CORRIDOR', bgm: 'city', len: 3780, sky: true, talk: 'sky',
+      id: 'sky', title: '第3話　紅月の空中回廊', sub: 'STAGE 3  -  SKY CORRIDOR', bgm: 'city', len: 3780, sky: true, talk: 'sky',
       speed: 0.5, startX: 80, startY: 176, pxPerM: 14, goalMsg: '着艦！ ― 結界の上を越えた', endTalk: 'sky_end',
       path: [[0, 0], [360, 0], [1000, 240], [1260, 240], [1900, 500], [2160, 500], [2800, 720], [3300, 720]],
       ground: [],
@@ -106,7 +106,7 @@
       goal: [3110, -548, 360]
     },
     {
-      id: 'school', title: '第四章　玉龍学園　紅い月の下で', sub: 'STAGE 4  -  GYOKURYU ACADEMY', bgm: 'school', len: 3360, talk: 'school',
+      id: 'school', title: '第4話　玉龍学園　紅い月の下で', sub: 'STAGE 4  -  GYOKURYU ACADEMY', bgm: 'school', len: 3360, talk: 'school',
       // 足場だけの過酷なステージ: 地面があるのは、出発点（〜400）・小さな島 2 つ・中ボスの区間・龍の岸だけ。
       // あとは底なしの穴の上を、小さな足場・動く足場・石の柱（blocks。穴の底から立つ）で渡る。落ちると即ゲームオーバー。
       // 足場の間は 16〜50 ドット、上がり幅は 40 ドットまで（紅のふつうのジャンプで届く）。動く足場は、近づくのを待って乗る。

@@ -2048,7 +2048,7 @@ var R = window.REBELL, GY = R.GY;
 var ST = ['#24213f', '#2f2b55', '#3d3868', '#4f4984', '#655e9e', '#8078b8', '#a39bd0'];
 R.STAGES = [
 {
-id: 'city', title: '第一章　ネオン廃都の水道橋', sub: 'STAGE 1  -  NEON RUINS AQUEDUCT', bgm: 'city', len: 3840, talk: 'stage1',
+id: 'city', title: '第1話　ネオン廃都の水道橋', sub: 'STAGE 1  -  NEON RUINS AQUEDUCT', bgm: 'city', len: 3840, talk: 'stage1',
 ground: [[0, 880], [990, 1480], [1600, 2290], [2390, 3840]],
 blocks: [[300, 54, 32], [354, 62, 68], [1008, 52, 36], [1060, 60, 76], [1172, 64, 130], [1830, 58, 32], [2050, 58, 40], [2620, 56, 32]],
 spikes: [[626, 36], [1318, 36], [1920, 36], [2140, 30], [2716, 36]],
@@ -2071,7 +2071,7 @@ ruins: [[24, 3], [1610, 2], [2880, 2], [3700, 1]],
 boss: { type: 'guard', x: 3560, arena: [3040, 3800], trigger: 3130, name: '重機兵ガーディアン', sub: 'HEAVY GUARDIAN' }
 },
 {
-id: 'tower', title: '第二章　天を衝く鉄塔', sub: 'STAGE 2  -  SKYWARD TOWER', bgm: 'city', len: 480, vertical: true, talk: 'tower',
+id: 'tower', title: '第2話　天を衝く鉄塔', sub: 'STAGE 2  -  SKYWARD TOWER', bgm: 'city', len: 480, vertical: true, talk: 'tower',
 top: -2310, startX: 100, pxPerM: 14,
 ground: [[0, 480]],
 walls: [[176, -414, 24, 250], [272, -414, 24, 250], [176, -2040, 24, 186], [276, -2040, 24, 186]],
@@ -2103,7 +2103,7 @@ items: [['crystal', 124, 129], ['crystal', 189, 82], ['crystal', 252, 35], ['cry
 checkpoints: [[219, -120], [205, -420], [121, -802], [230, -1150], [305, -1500], [219, -1810]]
 },
 {
-id: 'sky', title: '第三章　紅月の空中回廊', sub: 'STAGE 3  -  SKY CORRIDOR', bgm: 'city', len: 3780, sky: true, talk: 'sky',
+id: 'sky', title: '第3話　紅月の空中回廊', sub: 'STAGE 3  -  SKY CORRIDOR', bgm: 'city', len: 3780, sky: true, talk: 'sky',
 speed: 0.5, startX: 80, startY: 176, pxPerM: 14, goalMsg: '着艦！ ― 結界の上を越えた', endTalk: 'sky_end',
 path: [[0, 0], [360, 0], [1000, 240], [1260, 240], [1900, 500], [2160, 500], [2800, 720], [3300, 720]],
 ground: [],
@@ -2121,7 +2121,7 @@ checkpoints: [[1262, -64], [2135, -320]],
 goal: [3110, -548, 360]
 },
 {
-id: 'school', title: '第四章　玉龍学園　紅い月の下で', sub: 'STAGE 4  -  GYOKURYU ACADEMY', bgm: 'school', len: 3360, talk: 'school',
+id: 'school', title: '第4話　玉龍学園　紅い月の下で', sub: 'STAGE 4  -  GYOKURYU ACADEMY', bgm: 'school', len: 3360, talk: 'school',
 ground: [[0, 400], [990, 1090], [1560, 1640], [2090, 2764], [3046, 3360]],
 blocks: [[760, 48, 70], [1320, 44, 110], [1408, 44, 130]],
 spikes: [[1052, 24]],
@@ -7576,8 +7576,9 @@ var ay = pk[1] - 150 + Math.sin(t * 0.16) * 8;
 g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(pk[0] - 16, ay - 20); g.lineTo(pk[0] + 16, ay - 20); g.lineTo(pk[0], ay); g.closePath(); g.fill();
 g.lineWidth = 4; g.strokeStyle = PINK; g.stroke();
 }
-panel(g, 36, 30, 520, 118, 16, 'rgba(14,8,40,.82)', '#c9b8ff', 4);
-T(g, 'KAGOSHIMA CITY', 64, 84, 46, '#ffffff', 'left', U.font, '#120a30', 6);
+panel(g, 36, 30, 560, 118, 16, 'rgba(14,8,40,.82)', '#c9b8ff', 4);
+T(g, '第1章', 64, 84, 40, GOLD, 'left', U.font, '#120a30', 6);
+T(g, 'KAGOSHIMA CITY', 200, 84, 40, '#ffffff', 'left', U.font, '#120a30', 6);
 T(g, 'REBELL ― 紅蒼交錯', 66, 126, 26, '#ffb8e6', 'left', U.font, '#120a30', 5);
 var s = moving ? m.to : m.at, S = R.STAGES[s], rk = G.ranks && G.ranks[s];
 panel(g, 620, 884, 1260, 172, 18, 'rgba(14,8,40,.88)', rk ? GOLD : PINK, 5);
