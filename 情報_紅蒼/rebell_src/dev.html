@@ -7367,7 +7367,7 @@ for (var s = 0; s < 2; s++) { g.strokeStyle = s ? CYAN : PINK; g.beginPath(); fo
 g.strokeStyle = '#ffffff'; for (i = 0; i < 6; i++) { a = i * PI / 3; g.beginPath(); g.moveTo(Math.cos(a) * r * 0.2, Math.sin(a) * r * 0.2); g.lineTo(Math.cos(a) * r, Math.sin(a) * r); g.stroke(); }
 g.restore();
 };
-var STORY = ['紅い月が昇る夜。', '目覚めた《龍》が、玉龍の姫をさらっていった。', '', '「反逆者（REBELL）」と呼ばれる二人――', '大鎌を振るう 紅（くれない）。刀を閃かせる 蒼（あおい）。', '', '囚われの姫を、取り戻せ。', '二人は、龍の待つ玉龍学園へ走る。'];
+var STORY = ['紅い月が昇る夜。', '目覚めた《龍》が、玉龍の姫をさらっていった。', '', 'その夜、立ち上がった二人の少女――', '大鎌を振るう 紅（くれない）。刀を閃かせる 蒼（あおい）。', '', '囚われの姫を、取り戻せ。', '二人は、龍の待つ玉龍学園へ走る。'];
 R.drawIntro = function (g) {
 var t = G.stateT, i;
 g.imageSmoothingEnabled = false; g.drawImage(R.BG.sky, 0, 0, 1920, 1080); g.globalAlpha = 0.85; g.drawImage(R.BG.far, -((t * 0.8) % 3840), 120, 3840, 1080); g.drawImage(R.BG.far, 3840 - ((t * 0.8) % 3840), 120, 3840, 1080); g.globalAlpha = 1;
@@ -7383,7 +7383,7 @@ if (t > 60) blinkText(g, 'ENTER でスキップ', 1700, 1040, 24);
 };
 R.introDone = function () { return G.stateT > STORY.length * 50 + 150; };
 var PRO2 = ['龍が倒れた、あの夜から――', '玉龍学園は、その名を改めた。', '《玉龍帝国》。その玉座に座る者の名は、まだ誰も知らない。', '帝国は、鹿児島全土の征服を開始した。', '',
-'「反逆者（REBELL）を、捕らえよ」――帝国の布告。', 'その名で呼ばれた二人は、帝国のお尋ね者となった。', '',
+'「龍を討った反逆者（REBELL）を、捕らえよ」――帝国の布告。', '紅と蒼は、反逆者として帝国のお尋ね者となった。', '',
 '信じていた人に、裏切られた。', '守ってくれた人を、置いてきた。', '',
 '――それでも、黒瀬の遺したカメラが、ここにある。', '真実を探しに、二人は南へ向かう。'], PRO2_HI = 11, PRO2_RED = [2, 3, 5], PRO2_GAP = 56;
 R.drawPrologue2 = function (g) {
