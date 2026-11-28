@@ -1306,6 +1306,33 @@
   };
   R.introDone = function () { return G.stateT > STORY.length * 50 + 150; };
 
+  // 第2章のプロローグ（エンディングのあと、第2章のマップの前。90_main.js の 'prologue2'）。2026-11-28 の要望:
+  //   玉龍学園が「玉龍帝国」と名を改めた / 二人は反逆者として帝国のお尋ね者になった / 裏切りの悲しみ / 黒瀬の形見（カメラ）を手に、真実を探しに行く
+  //   「四角が帝国の玉座にいる」「南へ向かう」は私の解釈（第2章の舞台が指宿・谷山方面なので）。HI = 大きく桃色で出す行
+  var PRO2 = ['龍が倒れた、あの夜から――', '玉龍学園は、その名を改めた。', '《玉龍帝国》。玉座には、四角 明宏。', '',
+    '「龍を討った反逆者を、捕らえよ」', '紅と蒼は、帝国のお尋ね者となった。', '',
+    '信じていた人に、裏切られた。', '守ってくれた人を、置いてきた。', '',
+    '――それでも、黒瀬の遺したカメラが、ここにある。', '真実を探しに、二人は南へ向かう。'], PRO2_HI = 10, PRO2_GAP = 56;
+  R.drawPrologue2 = function (g) {
+    var t = G.stateT, i;
+    g.imageSmoothingEnabled = false; g.drawImage(R.BG.sky, 0, 0, 1920, 1080); g.globalAlpha = 0.85; g.drawImage(R.BG.far, -((t * 0.5) % 3840), 120, 3840, 1080); g.drawImage(R.BG.far, 3840 - ((t * 0.5) % 3840), 120, 3840, 1080); g.globalAlpha = 1;
+    dim(g, 0.58); g.fillStyle = 'rgba(120,0,30,.22)'; g.fillRect(0, 0, 1920, 1080);      // 紅く沈んだ夜
+    var ha = clamp(t / 40, 0, 1);      // 見出し
+    g.globalAlpha = ha;
+    T(g, '第2章　IBUSUKI・TANIYAMA', 960, 120, 34, '#ffd36a', 'center', UI, '#1a0c40', 6);
+    T(g, '― プロローグ ―', 960, 168, 28, '#ffe8b0', 'center', MIN, '#1a0c40', 6);
+    g.fillStyle = 'rgba(255,211,106,.5)'; g.fillRect(660, 194, 600, 2);
+    for (i = 0; i < PRO2.length; i++) {
+      var a = clamp((t - 40 - i * PRO2_GAP) / 40, 0, 1); if (a <= 0 || !PRO2[i]) continue;
+      g.globalAlpha = a;
+      var hi = i === PRO2_HI, red = i === 2 || i === 4;
+      T(g, PRO2[i], 960, 262 + i * 62 - (1 - a) * 12, hi ? 46 : 38, hi ? '#ffd0ec' : red ? '#ff9aa8' : '#ffffff', 'center', MIN, '#1a0c40', 8);
+    }
+    g.globalAlpha = 1;
+    if (t > 60) blinkText(g, 'ENTER でスキップ', 1700, 1040, 24);
+  };
+  R.prologue2Done = function () { return G.stateT > 40 + PRO2.length * PRO2_GAP + 170; };
+
   R.drawPause = function (g) {
     dim(g, 0.62);
     T(g, 'PAUSE', 960, 270, 96, '#ffffff', 'center', SERIF, PINK, 10);

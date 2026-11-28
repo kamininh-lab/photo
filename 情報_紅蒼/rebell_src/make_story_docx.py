@@ -235,7 +235,17 @@ para('THANK YOU FOR PLAYING', align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, color=
 
 # ---- 第2章（準備中） ----
 doc.add_heading('第2章　IBUSUKI・TANIYAMA（準備中）', level=1)
-note('エンディングで決定を押すと、第2章の全体マップが出る。舞台は、鹿児島市の南の谷山から、指宿・開聞岳まで'
+doc.add_heading('プロローグ', level=2)
+note('エンディングで決定を押すと、紅く沈んだ夜の街を背に、一行ずつ浮かび上がる。')
+for s in ['龍が倒れた、あの夜から――', '玉龍学園は、その名を改めた。', '《玉龍帝国》。玉座には、四角 明宏。', '',
+          '「龍を討った反逆者を、捕らえよ」', '紅と蒼は、帝国のお尋ね者となった。', '',
+          '信じていた人に、裏切られた。', '守ってくれた人を、置いてきた。', '',
+          '――それでも、黒瀬の遺したカメラが、ここにある。', '真実を探しに、二人は南へ向かう。']:
+    if not s: para(after=0); continue
+    big = s.startswith('――それでも')
+    para(s, align=WD_ALIGN_PARAGRAPH.CENTER, after=2, bold=big, size=(13 if big else None), color=(RGBColor(0xD0, 0x2C, 0x86) if big else None))
+doc.add_heading('全体マップ', level=2)
+note('プロローグが終わると（決定で飛ばせる）、第2章の全体マップが出る。舞台は、鹿児島市の南の谷山から、指宿・開聞岳まで'
      '（北が上。左に薩摩半島、中央に錦江湾、右に大隅半島、上の端に桜島の南側）。')
 note('マスは 5 つ。鹿児島市街から、海ぞいに南へ下る道のり: '
      '谷山（海ぞいの工業地帯）→ 平川動物公園 → 喜入（石油の基地）→ 指宿（砂むし温泉と知林ヶ島）→ 開聞岳。')

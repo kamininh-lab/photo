@@ -76,6 +76,7 @@
     }
     else if (st === 'intro') R.drawIntro(F);
     else if (st === 'map') R.drawMap(F);
+    else if (st === 'prologue2') R.drawPrologue2(F);
     else if (st === 'ending') R.drawEnding(F);
   }
 
@@ -134,8 +135,13 @@
         G.t++; G.stateT++;
         if (G.stateT > 120 && ok) {
           R.snd('select');
-          if (!(R.openMapPreview && R.openMapPreview(1))) { G.state = 'title'; G.stateT = 0; G.titleFade = 24; }      // 「第1章 完」のあとは、第2章のマップ（下見。62_map.js）へ。そこで決定を押すと、ロゴなしでタイトルへ
+          if (R.drawPrologue2) { G.state = 'prologue2'; G.stateT = 0; }      // 「第1章 完」のあとは、第2章のプロローグ（60_hud.js）→ 第2章のマップ（下見。62_map.js）
+          else if (!(R.openMapPreview && R.openMapPreview(1))) { G.state = 'title'; G.stateT = 0; G.titleFade = 24; }
         }
+        break;
+      case 'prologue2':      // 第2章のプロローグ。決定で飛ばせる。終わると第2章のマップへ（そこで決定を押すと、ロゴなしでタイトルへ）
+        G.t++; G.stateT++;
+        if ((ok && G.stateT > 20) || R.prologue2Done()) { R.snd('select'); if (!(R.openMapPreview && R.openMapPreview(1))) { G.state = 'title'; G.stateT = 0; G.titleFade = 24; } }
         break;
     }
   }
