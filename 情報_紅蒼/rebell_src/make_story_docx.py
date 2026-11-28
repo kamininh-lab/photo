@@ -20,7 +20,7 @@ for m in re.finditer(r'\n    (\w+): \[(.*?)\n    \]', body, re.S):
         items.append((it.group(1), re.findall(r"'([^']*)'", it.group(2))))
     TALKS[m.group(1)] = items
 
-NAME = {'kurenai': '紅', 'aoi': '蒼', 'shikaku': '四角', 'kurose': '黒瀬', 'idachi': '井立', 'mako': '大森'}
+NAME = {'kurenai': '紅', 'aoi': '蒼', 'shikaku': '四角', 'kurose': '黒瀬', 'idachi': '井立', 'mako': '大森', 'saki': '大倉'}
 COL = {'kurenai': RGBColor(0xD0, 0x2C, 0x86), 'aoi': RGBColor(0x1E, 0x6F, 0xC0), 'shikaku': RGBColor(0xB0, 0x7A, 0x00),
        'kurose': RGBColor(0x7A, 0x3C, 0xC0), 'idachi': RGBColor(0x14, 0x7A, 0x96)}
 JP = 'Yu Mincho'; JPG = 'Yu Gothic'
