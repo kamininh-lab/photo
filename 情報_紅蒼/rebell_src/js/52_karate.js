@@ -780,6 +780,19 @@
   }
   // 会話のあいだの立ち姿（65_talk.js から）。話すときは手招き、聞いているときは腕を組む
   function talkPose(e, speaking, T) { e.fr = speaking ? F('taunt', (T >> 4) % 2) : F('pose', 0); }
+  // 龍を倒したあとの会話（65_talk.js の dragon_end）: 黒瀬が画面の左から跳び込み、二人と大森の後ろ（左）に立つ。
+  //   追っ手（四角の機械兵）のほうを向いて構え、二人が右へ走り去っても、その場に残る。55_render.js の renderChars から
+  function talkStand(g, cam) {
+    var tk = G.talk; if (!SP || !tk || tk.key !== 'dragon_end') return;
+    var k0 = -1, i; for (i = 0; i < tk.lines.length; i++) if (tk.lines[i].who === 'kurose') { k0 = i; break; }
+    if (k0 < 0 || tk.i < k0) { tk.kuroseT = null; return; }
+    if (tk.kuroseT == null) tk.kuroseT = tk.T;
+    var u = Math.min(1, (tk.T - tk.kuroseT) / 22), p = G.pl, tx = Math.max(cam + 24, p.x - 76);
+    var x = cam - 30 + (tx - cam + 30) * u, y = p.y - Math.round(46 * Math.sin(PI * u));
+    var ln = tk.lines[tk.i], speaking = u >= 1 && ln.who === 'kurose' && tk.outT < 0;
+    var f = speaking ? F('taunt', (tk.T >> 4) % 2) : F('pose', 0);
+    put(g, f.c, x - cam, y, -1, f);
+  }
   // HUD に出す顔（表情アイコンの番号）
   //   場面ごとの顔: ガード中は真剣 → 守りきりそうなら余裕 / カメラは嘲り / 二人を倒したら高笑い / 体力わずかは血のにじむ顔 /
   //   本気は怒り（技を出す瞬間は激昂）/ ふだんは、待つときと技を出すときで別の顔
@@ -798,7 +811,7 @@
   }
 
   R.Karate = {
-    init: init, enter: enter, drawFx: drawFx, icon: icon, talkPose: talkPose, MV: MV, start: start, startStep: startStep, startGuard: startGuard,
+    init: init, enter: enter, drawFx: drawFx, icon: icon, talkPose: talkPose, talkStand: talkStand, MV: MV, start: start, startStep: startStep, startGuard: startGuard,
     ok: function () { return !!SP; }
   };
 })();

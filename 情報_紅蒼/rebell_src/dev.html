@@ -4803,6 +4803,17 @@ g.drawImage(f.c, x - f.ox, Math.round(e.y - f.oy * sy), f.w, Math.round(f.h * sy
 g.restore();
 }
 function talkPose(e, speaking, T) { e.fr = speaking ? F('taunt', (T >> 4) % 2) : F('pose', 0); }
+function talkStand(g, cam) {
+var tk = G.talk; if (!SP || !tk || tk.key !== 'dragon_end') return;
+var k0 = -1, i; for (i = 0; i < tk.lines.length; i++) if (tk.lines[i].who === 'kurose') { k0 = i; break; }
+if (k0 < 0 || tk.i < k0) { tk.kuroseT = null; return; }
+if (tk.kuroseT == null) tk.kuroseT = tk.T;
+var u = Math.min(1, (tk.T - tk.kuroseT) / 22), p = G.pl, tx = Math.max(cam + 24, p.x - 76);
+var x = cam - 30 + (tx - cam + 30) * u, y = p.y - Math.round(46 * Math.sin(PI * u));
+var ln = tk.lines[tk.i], speaking = u >= 1 && ln.who === 'kurose' && tk.outT < 0;
+var f = speaking ? F('taunt', (tk.T >> 4) % 2) : F('pose', 0);
+put(g, f.c, x - cam, y, -1, f);
+}
 function icon(e) {
 var k;
 if (e.st === 'die' || e.exprT > 0) k = e.expr;
@@ -4817,7 +4828,7 @@ else k = e.st === 'move' ? 'n_normal' : 'normal';
 return ICONS[k] || 0;
 }
 R.Karate = {
-init: init, enter: enter, drawFx: drawFx, icon: icon, talkPose: talkPose, MV: MV, start: start, startStep: startStep, startGuard: startGuard,
+init: init, enter: enter, drawFx: drawFx, icon: icon, talkPose: talkPose, talkStand: talkStand, MV: MV, start: start, startStep: startStep, startGuard: startGuard,
 ok: function () { return !!SP; }
 };
 })();
@@ -5760,7 +5771,7 @@ var p = G.pl, X = G.cross, i, e, f;
 g.save(); g.setTransform(S, 0, 0, S, 0, oy * S);
 g.imageSmoothingEnabled = (S === 3); if (S === 3) g.imageSmoothingQuality = 'high';
 if (R.Idachi && G.boss) R.Idachi.drawHi(g, cam);
-if (G.state === 'talk') { if (R.Mako) R.Mako.draw(g, cam); R.talkChars(g, cam, charDraw); g.restore(); return; }
+if (G.state === 'talk') { if (R.Mako) R.Mako.draw(g, cam); if (R.Karate && R.Karate.talkStand) R.Karate.talkStand(g, cam); R.talkChars(g, cam, charDraw); g.restore(); return; }
 for (i = 0; i < G.ghosts.length; i++) {
 var gh = G.ghosts[i], gu = gh.t / gh.life;
 if (gh.leave) { g.globalAlpha = 0.95 * (1 - gu * gu); charDraw(g, gh.f, gh.x - cam, gh.y, gh.face, 0, 1, 1); }
@@ -7734,7 +7745,7 @@ dragon_end: [
 { who: 'mako', face: 'anger', exit: true, text: ['……行くよ、紅、蒼。', 'あの人の覚悟を、無駄にしないで。'] },
 { who: 'kurenai', face: 'regret', text: ['四角ぃーっ！　ぜったい、戻ってくるからね！', '姫さまも、黒瀬さんも、取り戻すんだから！'] },
 { who: 'kurose', face: 'reach', text: ['黒瀬 龍士。通りすがりの、ただの空手使いだ。', 'さあ――まとめて、かかってこい。'] },
-{ who: 'shikaku', face: 'sneer', text: ['……覚えておくと言ったのは、きみだったね。', 'ぼくも覚えておくよ。――おやすみ、黒瀬 龍士。'] },
+{ who: 'shikaku', face: 'waver', text: ['……覚えておくと言ったのは、きみだったね。', 'ぼくも覚えておくよ。――おやすみ、黒瀬 龍士。'] },
 { who: 'kurose', face: 'grin', text: ['……ふっ。', 'いい、月だ――。'] }
 ],
 kurose: [

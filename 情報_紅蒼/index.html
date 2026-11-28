@@ -6332,6 +6332,19 @@ window.REBELL_SHIKAKU = {
   }
   // 会話のあいだの立ち姿（65_talk.js から）。話すときは手招き、聞いているときは腕を組む
   function talkPose(e, speaking, T) { e.fr = speaking ? F('taunt', (T >> 4) % 2) : F('pose', 0); }
+  // 龍を倒したあとの会話（65_talk.js の dragon_end）: 黒瀬が画面の左から跳び込み、二人と大森の後ろ（左）に立つ。
+  //   追っ手（四角の機械兵）のほうを向いて構え、二人が右へ走り去っても、その場に残る。55_render.js の renderChars から
+  function talkStand(g, cam) {
+    var tk = G.talk; if (!SP || !tk || tk.key !== 'dragon_end') return;
+    var k0 = -1, i; for (i = 0; i < tk.lines.length; i++) if (tk.lines[i].who === 'kurose') { k0 = i; break; }
+    if (k0 < 0 || tk.i < k0) { tk.kuroseT = null; return; }
+    if (tk.kuroseT == null) tk.kuroseT = tk.T;
+    var u = Math.min(1, (tk.T - tk.kuroseT) / 22), p = G.pl, tx = Math.max(cam + 24, p.x - 76);
+    var x = cam - 30 + (tx - cam + 30) * u, y = p.y - Math.round(46 * Math.sin(PI * u));
+    var ln = tk.lines[tk.i], speaking = u >= 1 && ln.who === 'kurose' && tk.outT < 0;
+    var f = speaking ? F('taunt', (tk.T >> 4) % 2) : F('pose', 0);
+    put(g, f.c, x - cam, y, -1, f);
+  }
   // HUD に出す顔（表情アイコンの番号）
   //   場面ごとの顔: ガード中は真剣 → 守りきりそうなら余裕 / カメラは嘲り / 二人を倒したら高笑い / 体力わずかは血のにじむ顔 /
   //   本気は怒り（技を出す瞬間は激昂）/ ふだんは、待つときと技を出すときで別の顔
@@ -6350,7 +6363,7 @@ window.REBELL_SHIKAKU = {
   }
 
   R.Karate = {
-    init: init, enter: enter, drawFx: drawFx, icon: icon, talkPose: talkPose, MV: MV, start: start, startStep: startStep, startGuard: startGuard,
+    init: init, enter: enter, drawFx: drawFx, icon: icon, talkPose: talkPose, talkStand: talkStand, MV: MV, start: start, startStep: startStep, startGuard: startGuard,
     ok: function () { return !!SP; }
   };
 })();
@@ -7410,7 +7423,7 @@ window.REBELL_SHIKAKU = {
     g.save(); g.setTransform(S, 0, 0, S, 0, oy * S);
     g.imageSmoothingEnabled = (S === 3); if (S === 3) g.imageSmoothingQuality = 'high';      // 1.5 倍だけは、にじませたほうがドットがそろって見える
     if (R.Idachi && G.boss) R.Idachi.drawHi(g, cam);      // ステージ 2 のボス「井立」は、主人公と同じ細かい層・同じ大きさで描く（53_idachi.js）
-    if (G.state === 'talk') { if (R.Mako) R.Mako.draw(g, cam); R.talkChars(g, cam, charDraw); g.restore(); return; }          // 会話シーンでは、二人の立ち姿を並べる（65_talk.js）
+    if (G.state === 'talk') { if (R.Mako) R.Mako.draw(g, cam); if (R.Karate && R.Karate.talkStand) R.Karate.talkStand(g, cam); R.talkChars(g, cam, charDraw); g.restore(); return; }          // 会話シーンでは、二人の立ち姿を並べる（65_talk.js）
     // 残像（交代で跳び去る相棒は、元の色のまま薄れていく）
     for (i = 0; i < G.ghosts.length; i++) {
       var gh = G.ghosts[i], gu = gh.t / gh.life;
@@ -9668,7 +9681,7 @@ window.REBELL_SHIKAKU = {
       { who: 'mako', face: 'anger', exit: true, text: ['……行くよ、紅、蒼。', 'あの人の覚悟を、無駄にしないで。'] },
       { who: 'kurenai', face: 'regret', text: ['四角ぃーっ！　ぜったい、戻ってくるからね！', '姫さまも、黒瀬さんも、取り戻すんだから！'] },
       { who: 'kurose', face: 'reach', text: ['黒瀬 龍士。通りすがりの、ただの空手使いだ。', 'さあ――まとめて、かかってこい。'] },
-      { who: 'shikaku', face: 'sneer', text: ['……覚えておくと言ったのは、きみだったね。', 'ぼくも覚えておくよ。――おやすみ、黒瀬 龍士。'] },
+      { who: 'shikaku', face: 'waver', text: ['……覚えておくと言ったのは、きみだったね。', 'ぼくも覚えておくよ。――おやすみ、黒瀬 龍士。'] },
       { who: 'kurose', face: 'grin', text: ['……ふっ。', 'いい、月だ――。'] }
     ],
     // 中ボス「黒瀬 龍士」と初めて会ったとき（52_karate.js の enter から）。
